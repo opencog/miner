@@ -73,26 +73,23 @@ int main(int argc,char** argv) {
     options_description desc("Allowed options");
     desc.add_options()
         ("help,h", "Produce help message.\n")
-        ("rand-seed,r", value<unsigned long>(&rand_seed)->default_value(1),
+        (opt_desc_str(rand_seed_opt).c_str(),
+         value<unsigned long>(&rand_seed)->default_value(1),
          "Random seed.\n")
-        ("input-table,i", value<string>(&pa.input_table_file),
+        (opt_desc_str(input_table_opt).c_str(),
+         value<string>(&pa.input_table_file),
          "Input table file.\n")
-        ("combo-program,c", value<vector<string> >(&pa.combo_programs),
+        (opt_desc_str(combo_str_opt).c_str(),
+         value<vector<string> >(&pa.combo_programs),
          "Combo program to evaluate against the input table. It can be used several time so that several programs are evaluated at once.\n")
-        ("combo-programs-file,C", value<string>(&pa.combo_programs_file),
+        (opt_desc_str(combo_prog_file_opt).c_str(),
+         value<string>(&pa.combo_programs_file),
          "File containing combo programs to evaluate against the input table. Each combo program in the file is seperated by a new line and each results are displaied in the same order, seperated by a new line.\n")
-        ("labels,l", "If enabled then the combo program is expected to contain variables labels #labels1, etc, instead of place holders. For instance one provide the combo program \"and(#large #tall)\" instead of \"and(#24 #124)\". In such a case it is expected that the input data file contains the labels as first row.\n")
-        ("output-file,o", value<string>(&pa.output_file),
+        (opt_desc_str(labels_opt).c_str(), "If enabled then the combo program is expected to contain variables labels #labels1, etc, instead of place holders. For instance one provide the combo program \"and(#large #tall)\" instead of \"and(#24 #124)\". In such a case it is expected that the input data file contains the labels as first row.\n")
+        (opt_desc_str(output_file_opt).c_str(), value<string>(&pa.output_file),
          "File where to save the results. If empty then it outputs on the stdout.\n")
-        ("feature,f", value<vector<string> >(&pa.features),
-         "Feature to consider. Can be used several time for several features. Useful to output the mutual information between a set of features and the output of the combo program (option -c).\n")
-        ("features-file,F", value<string>(&pa.features_file),
-         "File containing features to consider, TODO.\n")
-        ("compute-MI,m", value<bool>(&pa.compute_MI)->default_value(false),
-         "Compute the mutual information between a given set of features (see option -f) and a given combo program (see option -c)")
-        ("display-output-table,d", value<bool>(&pa.display_output_table),
+        (opt_desc_str(display_output_table_opt).c_str(), value<bool>(&pa.display_output_table),
          "Display the output table resulting from applying the combo program on the input table.\n")
-        // ("residual-error,e", "If enabled then residual error of the combo program against the output of the data set is printed.\n")
         ;
 
     variables_map vm;
