@@ -399,6 +399,7 @@ HandleEntry* HandleEntry::filterSet(HandleEntry* set, Arity arity)
 }
 
 
+#if 1
 HandleEntry* HandleEntry::filterSet(HandleEntry* set, const char* name)
 {
     bool noName = (name == NULL || *name == 0);
@@ -443,7 +444,9 @@ HandleEntry* HandleEntry::filterSet(HandleEntry* set, const char* name)
     // head contains the filtered list.
     return head;
 }
+#endif
 
+#if 1
 HandleEntry* HandleEntry::filterSet(HandleEntry* set, Type type, bool subclass)
 {
 
@@ -484,6 +487,7 @@ HandleEntry* HandleEntry::filterSet(HandleEntry* set, Type type, bool subclass)
     // head contains the filtered list.
     return head;
 }
+#endif
 
 HandleEntry* HandleEntry::filterSet(HandleEntry* set, const char* name, Type type, bool subclass)
 {
@@ -494,7 +498,8 @@ HandleEntry* HandleEntry::filterSet(HandleEntry* set, Handle handle, Arity arity
 {
     // TODO: What is the arity parameter for?
 
-    HandleEntry* buffer = TLB::getAtom(handle)->getIncomingSet()->clone();
+    // HandleEntry* buffer = atomtable->getIncomingSet(h);
+    HandleEntry* buffer = NULL;
 
     return(intersection(set, buffer));
 }
@@ -772,6 +777,7 @@ HandleEntry* HandleEntry::filterSet(HandleEntry* set, AttentionValue::sti_t lowe
 }
 
 
+#if 1
 HandleEntry* HandleEntry::filterSet(HandleEntry* set, VersionHandle vh)
 {
 
@@ -812,6 +818,7 @@ HandleEntry* HandleEntry::filterSet(HandleEntry* set, VersionHandle vh)
     // head contains the filtered list.
     return head;
 }
+#endif
 
 bool HandleEntry::matchesFilterCriteria(Atom* atom, Type targetType, bool targetSubclasses, VersionHandle vh)
 {
@@ -990,5 +997,17 @@ HandleEntry* HandleEntry::fromHandleVector(const std::vector<Handle> &v)
         HandleEntry *temp = new HandleEntry(v[i]);
         ret = HandleEntry::concatenation(temp, ret);
     }
-    return(ret);
+    return ret;
+}
+
+HandleEntry* HandleEntry::fromHandleSet(const UnorderedHandleSet &s)
+{
+    HandleEntry *ret = NULL;
+    UnorderedHandleSet::const_iterator it = s.cbegin();
+    for (; it != s.cend(); it++)
+    {
+        HandleEntry *temp = new HandleEntry(*it);
+        ret = HandleEntry::concatenation(temp, ret);
+    }
+    return ret;
 }

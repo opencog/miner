@@ -26,23 +26,20 @@
 #ifndef _OPENCOG_HANDLE_ENTRY_H
 #define _OPENCOG_HANDLE_ENTRY_H
 
+#include <unordered_set>
 #include <string>
 #include <vector>
 
-#include <stdlib.h>
-#include <limits.h>
-
+#include <opencog/atomspace/Atom.h>
+#include <opencog/atomspace/AtomTable.h>
 #include <opencog/atomspace/AttentionValue.h>
 #include <opencog/atomspace/types.h>
 #include <opencog/atomspace/VersionHandle.h>
 
 using std::string;
 
-namespace opencog
-{
+using namespace opencog;
 
-class Atom;
-class AtomTable;
 
 /**
  * This class implements a linked-list of handles, and provides several
@@ -147,6 +144,7 @@ public:
      * @return A HandleEntry containing the elements of the vector.
      */
     static HandleEntry* fromHandleVector(const std::vector<Handle> &);
+    static HandleEntry* fromHandleSet(const UnorderedHandleSet &);
 
     /**
      * Removes a handle from the list.
@@ -413,6 +411,5 @@ public:
             Type targetType, VersionHandle vh);
 };
 
-} // namespace opencog
 
 #endif // _OPENCOG_HANDLE_ENTRY_H
