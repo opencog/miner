@@ -22,8 +22,6 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-//TODO move to persist
-
 #include "ZMQServer.h"
 
 using namespace opencog;
@@ -62,7 +60,7 @@ void ZMQServer::zmqLoop(string networkAddress)
 		{
 			case ZMQgetAtom:
 			{
-				boost::shared_ptr<Atom> atom = atomSpace->cloneAtom(
+				AtomPtr atom = atomSpace->cloneAtom(
 				        Handle(requestMessage.handle()));
 				ProtocolBufferSerializer::serialize(*atom, replyMessage.mutable_atom());
 				break;

@@ -22,8 +22,6 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-//TODO move to persist
-
 #ifndef _OPENCOG_ZMQ_CLIENT_H
 #define _OPENCOG_ZMQ_CLIENT_H
 
@@ -53,7 +51,7 @@ public:
     ZMQClient(string networkAddres="tcp://127.0.0.1:5555"); //"ipc:///tmp/AtomSpaceZMQ.ipc"
     ~ZMQClient();
 
-    boost::shared_ptr<Atom> getAtom(Handle& h);
+    AtomPtr getAtom(Handle& h);
     
     /** @todo add other functions as needed */
 };

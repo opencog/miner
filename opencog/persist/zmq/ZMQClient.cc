@@ -22,8 +22,6 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-//TODO move to persist
-
 #include "ZMQClient.h"
 #include <zmq.hpp>
 #include <opencog/atomspace/ZMQMessages.pb.h>
@@ -59,7 +57,7 @@ void ZMQClient::SendMessage(ZMQRequestMessage& requestMessage,
     replyMessage.ParseFromArray(reply.data(), reply.size());
 }
 
-boost::shared_ptr<Atom> ZMQClient::getAtom(Handle& h)
+AtomPtr ZMQClient::getAtom(Handle& h)
 {
     ZMQRequestMessage req;
     ZMQReplyMessage rep;
@@ -68,7 +66,7 @@ boost::shared_ptr<Atom> ZMQClient::getAtom(Handle& h)
     req.set_handle(h.value());
     SendMessage(req, rep);
     Atom* atom = ProtocolBufferSerializer::deserialize(rep.atom());
-    return boost::shared_ptr<Atom>(atom);
+    return AtomPtr(atom);
 };
 
 
