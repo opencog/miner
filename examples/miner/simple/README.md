@@ -33,8 +33,8 @@ guile -l simple.scm
 
 or paste scheme commands one by one in guile.
 
-The results should have been stored in the `results` variable, which
-can be shown as follows:
+The results should have been stored in the `results-as` and
+`results-lst` variables, which can be shown as follows:
 
 ```scheme
 results-as

@@ -1,5 +1,5 @@
 #
-# Master Opencog CMake file.
+# Master Miner CMake file.
 #
 # General organization:
 # -- check for different compilers, OS'es
@@ -19,7 +19,7 @@ IF(CMAKE_VERSION VERSION_GREATER 3.0.2)
 	CMAKE_POLICY(SET CMP0037 OLD)
 ENDIF(CMAKE_VERSION VERSION_GREATER 3.0.2)
 
-PROJECT(opencog)
+PROJECT(miner)
 
 # ----------------------------------------------------------
 # User-modifiable options. Feel free to change these!
@@ -50,88 +50,6 @@ ADD_DEFINITIONS(-DPROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
                 -DPROJECT_BINARY_DIR="${CMAKE_BINARY_DIR}")
 
 # ===============================================================
-# Detect different compilers and OS'es, tweak flags as necessary.
-
-IF (CMAKE_COMPILER_IS_GNUCXX)
-	# Atomspace is already asking for version 5.0, so ask for that.
-	IF (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
-		MESSAGE(FATAL_ERROR "GCC version must be at least 5.0!")
-	ENDIF (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
-
-	IF (APPLE)
-		SET(CMAKE_C_FLAGS "-Wall -Wno-long-long -Wno-conversion")
-		SET(CMAKE_C_FLAGS_DEBUG "-O0 -g")
-		SET(CMAKE_C_FLAGS_PROFILE "-O0 -pg")
-		SET(CMAKE_C_FLAGS_RELEASE "-O2 -g0")
-		# Vital to do this otherwise unresolved symbols everywhere:
-		SET(CMAKE_SHARED_LINKER_FLAGS "-Wl,-flat_namespace,-undefined,dynamic_lookup")
-		SET(CMAKE_EXE_LINKER_FLAGS "-Wl,-flat_namespace,-undefined,dynamic_lookup")
-
-		# The Apple linker does not support the --no-as-needed flag.
-		SET(NO_AS_NEEDED "")
-
-	ELSE (APPLE)
-		SET(CMAKE_C_FLAGS "-Wall -fPIC")
-		# SET(CMAKE_C_FLAGS "-Wl,--copy-dt-needed-entries")
-		SET(CMAKE_C_FLAGS_DEBUG "-ggdb3 -fstack-protector")
-		SET(CMAKE_C_FLAGS_PROFILE "-O2 -g3 -fstack-protector -pg")
-		SET(CMAKE_C_FLAGS_RELEASE "-O2 -g -fstack-protector")
-
-		SET(NO_AS_NEEDED "-Wl,--no-as-needed")
-	ENDIF (APPLE)
-
-	# 1) -Wno-variadic-macros is to avoid warnings regarding using
-	# variadic in macro OC_ASSERT (the warning warns that this is only
-	# available from C99, lol!)
-	#
-	# 2) -fopenmp for multithreading support
-	#
-	# 3) -std=gnu++11 for C++11 and GNU extensions support
-	SET(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -Wno-variadic-macros -fopenmp -std=gnu++11")
-
-	SET(CMAKE_CXX_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
-	SET(CMAKE_CXX_FLAGS_PROFILE ${CMAKE_C_FLAGS_PROFILE})
-	SET(CMAKE_CXX_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
-
-	# Options for generating gcov code coverage output
-	SET(CMAKE_C_FLAGS_COVERAGE "-O0 -g -fprofile-arcs -ftest-coverage -fno-inline")
-	SET(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_C_FLAGS_COVERAGE} -fno-default-inline")
-	# Might be needed for some combinations of ln and gcc
-	IF (CMAKE_BUILD_TYPE STREQUAL "Coverage")
-		LINK_LIBRARIES(gcov)
-	ENDIF (CMAKE_BUILD_TYPE STREQUAL "Coverage")
-ENDIF (CMAKE_COMPILER_IS_GNUCXX)
-
-# ----------------------------------------------------
-# Do the windows build.
-
-IF (WIN32)
-	ADD_DEFINITIONS(-DWIN32)
-	IF (CYGWIN)
-		ADD_DEFINITIONS(-DCYGWIN)
-	#   SET(WIN32 1)
-	ENDIF (CYGWIN)
-
-	# It is "not unix" when the code is compiled under windows but not
-	# under cygwin
-	IF (NOT UNIX)
-		ADD_DEFINITIONS(-DWIN32_NOT_UNIX)
-		FIND_PACKAGE(PThreads REQUIRED)
-		FIND_PACKAGE(STLPort REQUIRED)
-		INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/include/win32" ${PTHREADS_INCLUDE_DIR} ${STLPORT_INCLUDE_DIR})
-		LINK_LIBRARIES(${PTHREADS_LIBRARY} ${STLPORT_LIBRARIES})
-		ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE)
-	ELSE (NOT UNIX)
-		LINK_LIBRARIES(pthread)
-		IF (CYGWIN)
-			SET(CMAKE_SHARED_LINKER_FLAGS "-Wl")
-		ELSE (CYGWIN)
-			SET(CMAKE_SHARED_LINKER_FLAGS "-Wl,--enable-new-dtags")
-		ENDIF (CYGWIN)
-	ENDIF (NOT UNIX)
-ENDIF (WIN32)
-
-# ===============================================================
 # Check for existance of various required, optional packages.
 # Listed in alphabetical order, more or less.
 # CogUtil must come first, because it supplies various FindXXX macros.
@@ -140,22 +58,14 @@ ENDIF (WIN32)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/lib/")
 
 # Cogutil
-FIND_PACKAGE(CogUtil 2.0.1 CONFIG REQUIRED)
+FIND_PACKAGE(CogUtil CONFIG REQUIRED)
 IF (COGUTIL_FOUND)
-    MESSAGE(STATUS "CogUtil found.")
-    ADD_DEFINITIONS(-DHAVE_COGUTIL)
-    SET(HAVE_COGUTIL 1)
+	MESSAGE(STATUS "CogUtil version ${COGUTIL_VERSION} found.")
+	ADD_DEFINITIONS(-DHAVE_COGUTIL)
+	SET(HAVE_COGUTIL 1)
 ELSE (COGUTIL_FOUND)
-    MESSAGE(FATAL_ERROR "CogUtil missing: it is needed!")
+	MESSAGE(FATAL_ERROR "CogUtil missing: it is needed!")
 ENDIF (COGUTIL_FOUND)
-
-# add the 'cmake' directory from cogutil to search path
-list(APPEND CMAKE_MODULE_PATH  ${COGUTIL_DATA_DIR}/cmake)
-
-include(${COGUTIL_DATA_DIR}/cmake/Summary.cmake)
-
-# ===================================================================
-# Check for existance of various required, optional packages.
 
 # AtomSpace
 FIND_PACKAGE(AtomSpace 5.0.3 CONFIG REQUIRED)
@@ -168,14 +78,19 @@ ELSE (ATOMSPACE_FOUND)
 ENDIF (ATOMSPACE_FOUND)
 
 # URE
-FIND_PACKAGE(URE 1.0.0 CONFIG)
+FIND_PACKAGE(URE 1.0.0 CONFIG REQUIRED)
 IF (URE_FOUND)
 	MESSAGE(STATUS "URE found.")
 	ADD_DEFINITIONS(-DHAVE_URE)
 	SET(HAVE_URE 1)
 ELSE (URE_FOUND)
-	MESSAGE(STATUS "URE was not found. PLN and Miner will not be built.")
+	MESSAGE(STATUS "URE missing: it is needed!")
 ENDIF (URE_FOUND)
+
+# add the 'cmake' directory from cogutil to search path
+list(APPEND CMAKE_MODULE_PATH  ${COGUTIL_DATA_DIR}/cmake)
+include(OpenCogGccOptions)
+include(Summary)
 
 # ----------------------------------------------------------
 # Check for boost. We need dynamic-linked, threaded libs by default.
@@ -217,40 +132,9 @@ IF (NOT CXXTEST_FOUND)
 ENDIF (NOT CXXTEST_FOUND)
 
 # ----------------------------------------------------------
-# Glasgow Haskell compiler
-FIND_PACKAGE(GHC)
-IF (GHC_FOUND)
-	ADD_DEFINITIONS(-DHAVE_GHC)
-	SET(HAVE_GHC 1)
-ELSE (GHC_FOUND)
-	SET(GHC_DIR_MESSAGE "GHC was not found; Haskell bindings will not be built.")
-	MESSAGE(STATUS "${GHC_DIR_MESSAGE}")
-ENDIF (GHC_FOUND)
-
-FIND_PACKAGE(Stack)
-IF (STACK_FOUND)
-	ADD_DEFINITIONS(-DHAVE_STACK)
-	SET(HAVE_STACK 1)
-	SET(STACK_FOUND_MESSAGE "The Haskell Tool Stack found.")
-ELSE (STACK_FOUND)
-	SET(STACK_FOUND_MESSAGE "The Haskell Tool Stack not found.")
-ENDIF (STACK_FOUND)
-MESSAGE(STATUS "${STACK_FOUND_MESSAGE}")
-
-# ----------------------------------------------------------
 # This is required for Guile
 FIND_LIBRARY(GMP_LIBRARY gmp)
 FIND_PATH(GMP_INCLUDE_DIR gmp.h)
-
-# Gtk-3 required for visualization
-FIND_PACKAGE(GTK3)
-IF (GTK3_FOUND)
-	# MESSAGE(STATUS "GTK3 found.")
-	ADD_DEFINITIONS(-DHAVE_GTK)
-	SET(HAVE_GTK 1)
-ELSE (GTK3_FOUND)
-	MESSAGE(STATUS "GTK missing: needed for the the gtk-visualizer.")
-ENDIF (GTK3_FOUND)
 
 # Gnu Guile scheme interpreter
 # Version 2.2.2 is needed for mrs io ports, compilation, atomics, nlp
@@ -263,137 +147,6 @@ ELSE (GUILE_FOUND AND GMP_LIBRARY AND GMP_INCLUDE_DIR)
 	SET(GUILE_DIR_MESSAGE "Guile was not found; the scheme shell will not be built.\nTo over-ride, make sure GUILE_LIBRARIES and GUILE_INCLUDE_DIRS are set.")
 	MESSAGE(STATUS "${GUILE_DIR_MESSAGE}")
 ENDIF (GUILE_FOUND AND GMP_LIBRARY AND GMP_INCLUDE_DIR)
-
-# ----------------------------------------------------------
-# Lapack is needed for BLOPEX
-FIND_PACKAGE(LAPACK)
-IF (LAPACK_FOUND)
-	# MESSAGE(STATUS "LAPACK found.")
-	ADD_DEFINITIONS(-DHAVE_LAPACK)
-	SET(HAVE_LAPACK 1)
-ELSE (LAPACK_FOUND)
-	MESSAGE(STATUS "LAPACK missing: needed for blopex-based clustering.")
-ENDIF (LAPACK_FOUND)
-
-# ----------------------------------------------------------
-# Link-Grammar is needed for several NLP subsystems
-# Only 5.4.0 or newer has the required API in it.
-FIND_PACKAGE(LinkGrammar 5.4.0)
-IF (LINK_GRAMMAR_FOUND)
-	SET(HAVE_LINK_GRAMMAR 1)
-	INCLUDE_DIRECTORIES(${LINK_GRAMMAR_INCLUDE_DIRS})
-ELSE (LINK_GRAMMAR_FOUND)
-	MESSAGE(STATUS "Link Grammar missing: needed for NLP.")
-ENDIF (LINK_GRAMMAR_FOUND)
-
-FIND_PACKAGE(UUID)
-IF (UUID_FOUND)
-	SET(HAVE_UUID 1)
-	INCLUDE_DIRECTORIES(${UUID_INCLUDE_DIRS})
-	ADD_DEFINITIONS(${UUID_DEFINITIONS})
-ELSE (UUID_FOUND)
-	MESSAGE(STATUS "UUID library missing: needed for NLP.")
-ENDIF (UUID_FOUND)
-
-# ----------------------------------------------------------
-# Octomap
-FIND_PACKAGE(Octomap)
-IF(OCTOMAP_FOUND AND OCTOMAP_LIBRARY)
-  ADD_DEFINITIONS(-DHAVE_OCTOMAP)
-  SET(HAVE_OCTOMAP 1)
-  INCLUDE_DIRECTORIES(${OCTOMAP_INCLUDE_DIR})
-  SET(OCTOMAP_DIR_MESSAGE "Octomap was found.")
-ELSE (OCTOMAP_FOUND AND OCTOMAP_LIBRARY)
-  SET(OCTOMAP_DIR_MESSAGE "Octomap missing: needed for the SpaceTime map.")
-ENDIF(OCTOMAP_FOUND AND OCTOMAP_LIBRARY)
-
-# ----------------------------------------------------------
-# Python and Cython
-#
-# NOTE: Python interpreter is needed for runing python unit tests,
-# and for running the FindCython module.
-#
-# Search for Python3 first, and use that, if found. Else use Python2.
-# To use Python2 only from the build directory run the following
-# rm CMakeCache.txt && cmake -DCMAKE_DISABLE_FIND_PACKAGE_Python3Interp=TRUE ..
-
-FIND_PACKAGE(Python3Interp)
-IF (3.4.0 VERSION_LESS "${PYTHON3_VERSION_STRING}")
-	SET (HAVE_PY_INTERP 1)
-	SET (PYTHON_VER python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR})
-	MESSAGE(STATUS "Python ${PYTHON3_VERSION_STRING} interpreter found.")
-ENDIF()
-
-IF (NOT HAVE_PY_INTERP)
-	FIND_PACKAGE(PythonInterp)
-	IF (2.7.0 VERSION_LESS ${PYTHON_VERSION_STRING})
-		SET (HAVE_PY_INTERP 1)
-		SET (PYTHON_VER python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR})
-		MESSAGE(STATUS "Python ${PYTHON_VERSION_STRING} interpreter found.")
-	ENDIF()
-ENDIF()
-
-FIND_PACKAGE(PythonLibs)
-IF (PYTHONLIBS_FOUND AND
-     ((PYTHON3INTERP_FOUND AND 3.4.0 VERSION_LESS ${PYTHONLIBS_VERSION_STRING})
-     OR
-     (2.7.0 VERSION_LESS ${PYTHONLIBS_VERSION_STRING})))
-	SET (HAVE_PY_LIBS 1)
-	MESSAGE(STATUS "Python ${PYTHONLIBS_VERSION_STRING} libraries found.")
-ELSE()
-	MESSAGE(STATUS "Python libraries NOT found.")
-ENDIF()
-
-# Cython is used to generate python bindings.
-IF(HAVE_PY_INTERP)
-	FIND_PACKAGE(Cython 0.23.0)
-
-	IF (CYTHON_FOUND AND HAVE_PY_LIBS)
-		ADD_DEFINITIONS(-DHAVE_CYTHON)
-		SET(HAVE_CYTHON 1)
-
-		# Find python destination dir for python bindings
-		# because it may differ on each operating system.
-		EXECUTE_PROCESS(
-			COMMAND ${PYTHON_EXECUTABLE} "${PROJECT_SOURCE_DIR}/scripts/get_python_lib.py" "${CMAKE_INSTALL_PREFIX}"
-			OUTPUT_VARIABLE PYTHON_DEST
-		)
-
-		# Replace new line at end
-		STRING(REPLACE "\n" "" PYTHON_DEST "${PYTHON_DEST}")
-		IF ("${PYTHON_DEST}" STREQUAL "")
-			MESSAGE(FATAL_ERROR "Python destination dir not found")
-		ELSE ("${PYTHON_DEST}" STREQUAL "")
-			MESSAGE(STATUS "Python destination dir found: ${PYTHON_DEST}" )
-		ENDIF ("${PYTHON_DEST}" STREQUAL "")
-
-		# thunk
-		SET(PYTHON_ROOT "${PYTHON_DEST}")
-		SET(PYTHON_DEST "${PYTHON_DEST}/opencog")
-
-		MESSAGE(STATUS
-			"Python install dir: ${PYTHON_DEST}" )
-
-	ELSE (CYTHON_FOUND AND HAVE_PY_LIBS)
-		IF(NOT CYTHON_FOUND)
-			MESSAGE(STATUS "Cython executable not found.")
-		ENDIF(NOT CYTHON_FOUND)
-	ENDIF (CYTHON_FOUND AND HAVE_PY_LIBS)
-
-	# Nosetests will find and automatically run python tests.
-	IF (PYTHON3INTERP_FOUND)
-		FIND_PROGRAM(NOSETESTS_EXECUTABLE nosetests3)
-	ELSE ()
-		FIND_PROGRAM(NOSETESTS_EXECUTABLE nosetests-2.7)
-	ENDIF ()
-	IF (NOT NOSETESTS_EXECUTABLE)
-		MESSAGE(STATUS "nosetests not found: needed for python tests")
-	ENDIF ()
-	IF (NOSETESTS_EXECUTABLE AND CYTHON_FOUND AND HAVE_PY_LIBS)
-		SET(HAVE_NOSETESTS 1)
-		MESSAGE(STATUS "Using nosetests executable " ${NOSETESTS_EXECUTABLE})
-	ENDIF (NOSETESTS_EXECUTABLE AND CYTHON_FOUND AND HAVE_PY_LIBS)
-ENDIF(HAVE_PY_INTERP)
 
 # ----------------------------------------------------------
 # Optional, currently needed only to hush up DRD in util/Logger.cc
@@ -409,47 +162,6 @@ IF (VALGRIND_FOUND)
 ELSE (VALGRIND_FOUND)
 	MESSAGE(STATUS "VALGRIND missing: needed for thread debugging.")
 ENDIF (VALGRIND_FOUND)
-
-# -----------------------------------------------------------------------------
-# XXX FIXME. The jsoncpp, TBB and ZeroMQ packages are needed by
-# the deprecated and/or obsolete AtomSpacePublisher module.
-# I'm not sure, but I suspect that module doesn't work.  It's
-# not maintained by anyone; it's certainly out of date, and doesn't
-# support any of the modern features. So ....!? FIXME
-
-# jsoncpp
-FIND_PACKAGE(PkgConfig)
-IF(PKG_CONFIG_FOUND)
-  pkg_check_modules(JSONCPP jsoncpp)
-  IF(JSONCPP_FOUND)
-    ADD_DEFINITIONS(-DHAVE_JSONCPP)
-    SET(HAVE_JSONCPP 1)
-    SET(JSONCPP_DIR_MESSAGE "JsonCPP was found")
-  ELSE(JSONCPP_FOUND)
-    SET(JSONCPP_DIR_MESSAGE "JsonCPP was not found; the AtomSpace Publisher Module needs JsonCPP to publish events in JSON.\nIf you need to receive AtomSpace events in JSON, install JsonCPP using your package manager \nsuch as apt or build from source: https://github.com/open-source-parsers/jsoncpp/wiki/Building")
-  ENDIF(JSONCPP_FOUND)
-ENDIF(PKG_CONFIG_FOUND)
-MESSAGE(STATUS "${JSONCPP_DIR_MESSAGE}")
-
-# Threaded Building Blocks (Intel TBB) library
-FIND_PACKAGE(TBB)
-IF (TBB_FOUND)
-	SET(HAVE_TBB 1)
-ELSE (TBB_FOUND)
-	SET(TBB_DIR_MESSAGE "Intel TBB (Threaded Building Blocks) was not found; the AtomSpace Publisher module will not be built. Installation instructions: https://www.threadingbuildingblocks.org/download")
-ENDIF (TBB_FOUND)
-MESSAGE(STATUS "${TBB_DIR_MESSAGE}")
-
-# ZeroMQ
-FIND_PACKAGE(ZMQ 3.2.4)
-IF (ZMQ_FOUND AND ZMQ_LIBRARY)
-	ADD_DEFINITIONS(-DHAVE_ZMQ)
-	SET(HAVE_ZMQ 1)
-	SET(ZMQ_DIR_MESSAGE "ZeroMQ was found.")
-ELSE (ZMQ_FOUND AND ZMQ_LIBRARY)
-	SET(ZMQ_DIR_MESSAGE "ZeroMQ was not found; the AtomSpace Publisher module, and the message system used by GUI monitor for OAC will not be built.\nTo over-ride, make sure that the environment variable ZMQ_LIBRARY is set.\nInstallation instructions: http://zeromq.org/intro:get-the-software")
-ENDIF (ZMQ_FOUND AND ZMQ_LIBRARY)
-MESSAGE(STATUS "${ZMQ_DIR_MESSAGE}")
 
 # ===================================================================
 # Global includes
@@ -520,34 +232,10 @@ SET (MAN_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/share/man")
 # ==========================================================
 # Decide what to build, based on the packages found.
 
-IF(HAVE_ATOMSPACE AND HAVE_COGUTIL)
-	SET(HAVE_ATTENTION 1)
-	SET(HAVE_DIMEMBED 1)
-	SET(HAVE_STATISTICS 1)
-ENDIF(HAVE_ATOMSPACE AND HAVE_COGUTIL)
-
 IF(HAVE_URE)
-	SET(HAVE_PLN 1)
 	SET(HAVE_MINER 1)
 ENDIF(HAVE_URE)
 
-IF(HAVE_ATOMSPACE AND HAVE_GUILE)
-	SET(HAVE_OPENPSI 1)
-ENDIF(HAVE_ATOMSPACE AND HAVE_GUILE)
-
-IF(HAVE_ATOMSPACE)
-	SET(HAVE_SERVER 1)
-ENDIF(HAVE_ATOMSPACE)
-
-IF(HAVE_ATOMSPACE AND HAVE_GUILE AND HAVE_LINK_GRAMMAR AND HAVE_UUID)
-	SET(HAVE_NLP 1)
-ENDIF(HAVE_ATOMSPACE AND HAVE_GUILE AND HAVE_LINK_GRAMMAR AND HAVE_UUID)
-
-IF(HAVE_SERVER AND HAVE_TBB AND HAVE_ZMQ AND HAVE_JSONCPP)
-  SET(HAVE_EVENT_PUBLISHING_DEPENDENCIES 1)
-ENDIF(HAVE_SERVER AND HAVE_TBB AND HAVE_ZMQ AND HAVE_JSONCPP)
-
-ADD_SUBDIRECTORY(lib)
 ADD_SUBDIRECTORY(opencog)
 
 IF (CXXTEST_FOUND)
@@ -584,44 +272,12 @@ IF (CXXTEST_FOUND)
 	ENDIF (CMAKE_BUILD_TYPE STREQUAL "Coverage")
 ENDIF (CXXTEST_FOUND)
 
-ADD_SUBDIRECTORY(examples EXCLUDE_FROM_ALL)
-
-IF (NOT WIN32)
-	ADD_CUSTOM_TARGET (examples
-		# using CMAKE_BUILD_TOOL results in teh cryptic error message
-		# warning: jobserver unavailable: using -j1.  Add `+' to parent make rule.
-		# This is because make doesn't know how to pass jobserver args to
-		# the submake.  So, instead, just use $(MAKE) (with round parens)
-		# -- that will do the right thing.
-		# COMMAND ${CMAKE_BUILD_TOOL}
-		COMMAND $(MAKE)
-		WORKING_DIRECTORY examples
-		COMMENT "Building examples"
-	)
-ENDIF (NOT WIN32)
-
 ADD_CUSTOM_TARGET(cscope
 	COMMAND find opencog examples tests -name '*.cc' -o -name '*.h' -o -name '*.cxxtest' -o -name '*.scm' > ${CMAKE_SOURCE_DIR}/cscope.files
 	COMMAND cscope -b
 	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 	COMMENT "Generating CScope database"
 )
-
-ADD_SUBDIRECTORY(experiments EXCLUDE_FROM_ALL)
-
-IF (NOT WIN32)
-	ADD_CUSTOM_TARGET (experiments
-		# using CMAKE_BUILD_TOOL results in teh cryptic error message
-		# warning: jobserver unavailable: using -j1.  Add `+' to parent make rule.
-		# This is because make doesn't know how to pass jobserver args to
-		# the submake.  So, instead, just use $(MAKE) (with round parens)
-		# -- that will do the right thing.
-		# COMMAND ${CMAKE_BUILD_TOOL}
-		COMMAND $(MAKE)
-		WORKING_DIRECTORY experiments
-		COMMENT "Building experiments"
-	)
-ENDIF (NOT WIN32)
 
 # ===================================================================
 # Packaging
@@ -638,22 +294,21 @@ STRING(TIMESTAMP UTC_DATE %Y%m%d UTC)
 FILE(WRITE "${PROJECT_BINARY_DIR}/install_manifest.txt")
 ## It doesn't have a header-file declaring the version similar to cogutil and
 ## atomspace.
-SET(SEMANTIC_VERSION 0.1.4)
+SET(SEMANTIC_VERSION 1.0.0)
 
 ## Cpack configuration
 SET(CPACK_GENERATOR "DEB")
 SET(CPACK_PACKAGE_CONTACT "opencog@googlegroups.com")
 SET(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
 SET(CPACK_PACKAGE_DIRECTORY "${CMAKE_BINARY_DIR}/packages")
-SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "The Open Cognition Framework")
-SET(CPACK_PACKAGE_NAME "opencog-dev")
+SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "OpenCog Pattern Miner")
+SET(CPACK_PACKAGE_NAME "miner-dev")
 SET(CPACK_PACKAGE_VENDOR "opencog.org")
 SET(CPACK_PACKAGE_VERSION "${SEMANTIC_VERSION}-${UTC_DATE}")
 SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 SET(CPACK_PACKAGE_FILE_NAME
 	"${CPACK_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}_${PACKAGE_ARCHITECTURE}")
 SET(CPACK_PACKAGING_INSTALL_PREFIX "/usr/local")
-SET(CPACK_PACKAGE_EXECUTABLES "cogserver" "The Open Cognition Framework")
 
 ## Debian specific configurations
 SET(DEPENDENCY_LIST
@@ -679,29 +334,8 @@ SET(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://opencog.org")
 INCLUDE(CPack)
 
 # ===================================================================
-# documentation
-FIND_PACKAGE(Doxygen)
-ADD_SUBDIRECTORY(doc EXCLUDE_FROM_ALL)
-
-# ===================================================================
 # Show a summary of what we found, what we will do.
 
-SUMMARY_ADD("Attention" "Agents for attention allocation dynamics" HAVE_ATTENTION)
-SUMMARY_ADD("Blopex" "BLOPEX block eigenvalue solver" HAVE_LAPACK)
-SUMMARY_ADD("Cython bindings" "Cython (python) bindings" HAVE_CYTHON)
-SUMMARY_ADD("Dim. Embedding" "Compute dimensional embedding of the AtomSpace" HAVE_DIMEMBED)
-SUMMARY_ADD("Doxygen" "Code documentation" DOXYGEN_FOUND)
-SUMMARY_ADD("GTK Visualizer" "GTK3-based Atomspace Visualizer" HAVE_GTK)
-SUMMARY_ADD("Python tests" "Python bindings nose tests" HAVE_NOSETESTS)
-SUMMARY_ADD("REST Events" "REST Atomspace Event Publisher module"
-	HAVE_EVENT_PUBLISHING_DEPENDENCIES)
-SUMMARY_ADD("Server" "The CogServer" HAVE_SERVER)
-SUMMARY_ADD("SpaceTime" "3D Space-Time object tracker" HAVE_OCTOMAP)
-SUMMARY_ADD("Unit tests" "Unit tests" CXXTEST_FOUND)
-SUMMARY_ADD("NLP" "Natural Language Processing" HAVE_NLP)
-SUMMARY_ADD("Haskell codes" "Logic via Lojban" HAVE_STACK AND BUILD_LOJBAN)
-SUMMARY_ADD("PLN" "Probabilistic Logic Network" HAVE_PLN)
 SUMMARY_ADD("Miner" "URE based hypergraph pattern miner" HAVE_MINER)
-SUMMARY_ADD("OpenPsi" "MicroPsi OpenCog implementation" HAVE_OPENPSI)
 
 SUMMARY_SHOW()
