@@ -290,7 +290,7 @@ double Surprisingness::emp_prob(const Handle& pattern, const HandleSeq& db)
 
 double Surprisingness::emp_prob_mem(const Handle& pattern, const HandleSeq& db)
 {
-	TruthValuePtr emp_prob_tv = get_emp_prob(pattern);
+	TruthValuePtr emp_prob_tv = get_emp_tv(pattern);
 	if (emp_prob_tv) {
 		return emp_prob_tv->get_mean();
 	}
@@ -308,31 +308,35 @@ double Surprisingness::emp_prob_subsmp(const Handle& pattern,
 	                subsmp(db, subsize) : db);
 }
 
-HandleSeq Surprisingness::subsmp(const HandleSeq& db, unsigned subsize)
+TruthValuePtr Surprisingness::emp_tv(const Handle& pattern, const HandleSeq& db)
 {
-	unsigned ts = db.size();
-	if (ts/2 <= subsize and subsize < ts) {
-		// Subsample by randomly removing (swapping all elements to
-		// remove with the tail, then removing the tail, which is
-		// considerably faster than removing element by element).
-		HandleSeq smp_db(db);
-		unsigned i = ts;
-		while (subsize < i) {
-			unsigned rnd_idx = randGen().randint(i);
-			std::swap(smp_db[rnd_idx], smp_db[--i]);
-		}
-		smp_db.resize(i);
-		return smp_db;
-	} else if (0 <= subsize and subsize < ts/*/2*/) {
-		// Subsample by randomly adding
-		HandleSeq smp_db(subsize);
-		lazy_random_selector select(ts);
-		for (size_t i = 0; i < subsize; i++)
-			smp_db[i] = db[select()];
-		return smp_db;
-	} else {
-		return db;
+	double ucount = universe_count(pattern, db);
+	unsigned ms = (unsigned)std::min((double)UINT_MAX, ucount);
+	double sup = MinerUtils::support(pattern, db, ms);
+	double mean = sup / ucount;
+	double conf = ucount / (ucount + SimpleTruthValue::DEFAULT_K);
+	return createSimpleTruthValue(mean, conf);
+}
+
+TruthValuePtr Surprisingness::emp_tv_mem(const Handle& pattern,
+                                         const HandleSeq& db)
+{
+	TruthValuePtr etv = get_emp_tv(pattern);
+	if (etv) {
+		return etv;
 	}
+	etv = emp_tv(pattern, db);
+	set_emp_tv(pattern, etv);
+	return etv;
+}
+
+TruthValuePtr Surprisingness::emp_tv_subsmp(const Handle& pattern,
+                                            const HandleSeq& db,
+                                            unsigned subsize)
+{
+	return emp_tv(pattern,
+	              subsize < db.size() ?
+	              subsmp(db, subsize) : db);
 }
 
 double Surprisingness::emp_prob_bs(const Handle& pattern,
@@ -344,7 +348,7 @@ double Surprisingness::emp_prob_bs(const Handle& pattern,
 		std::vector<double> essprobs;
 		dorepeat(n_resample)
 			essprobs.push_back(emp_prob_subsmp(pattern, db, subsize));
-		return boost::accumulate(essprobs, 0.0) / essprobs.size();
+		return avrg(essprobs);
 	} else {
 		return emp_prob(pattern, db);
 	}
@@ -376,13 +380,90 @@ double Surprisingness::emp_prob_pbs_mem(const Handle& pattern,
                                         const HandleSeq& db,
                                         double prob_estimate)
 {
-	TruthValuePtr emp_prob_tv = get_emp_prob(pattern);
-	if (emp_prob_tv) {
-		return emp_prob_tv->get_mean();
+	TruthValuePtr etv = get_emp_tv(pattern);
+	if (etv) {
+		return etv->get_mean();
 	}
 	double ep = emp_prob_pbs(pattern, db, prob_estimate);
 	set_emp_prob(pattern, ep);
 	return ep;
+}
+
+TruthValuePtr Surprisingness::emp_tv_bs(const Handle& pattern,
+                                        const HandleSeq& db,
+                                        unsigned n_resample,
+                                        unsigned subsize)
+{
+	if (subsize < db.size()) {
+		std::vector<TruthValuePtr> esstvs;
+		dorepeat(n_resample)
+			esstvs.push_back(emp_tv_subsmp(pattern, db, subsize));
+		return avrg_tv(esstvs);
+	} else {
+		return emp_tv(pattern, db);
+	}
+}
+
+TruthValuePtr Surprisingness::emp_tv_pbs(const Handle& pattern,
+                                         const HandleSeq& db,
+                                         double prob_estimate)
+{
+	// Calculate an estimate of the support of the pattern to decide
+	// whether we should subsample the db corpus. Indeed some
+	// pattern have intractably large support.
+	double support_estimate = prob_to_support(pattern, db, prob_estimate);
+
+	// If the support estimate is above the db size then we
+	// subsample
+	if (db.size() < support_estimate) {
+		// Calculate the empiric probability of pattern
+		unsigned subsize = subsmp_size(pattern, db, support_estimate);
+		unsigned n_resampling = 10;  // TODO: move this hardwired contant
+		                             // to a user parameter
+		return emp_tv_bs(pattern, db, n_resampling, subsize);
+	} else {
+		return emp_tv(pattern, db);
+	}
+}
+
+TruthValuePtr Surprisingness::emp_tv_pbs_mem(const Handle& pattern,
+                                             const HandleSeq& db,
+                                             double prob_estimate)
+{
+	TruthValuePtr etv = get_emp_tv(pattern);
+	if (etv) {
+		return etv;
+	}
+	etv = emp_tv_pbs(pattern, db, prob_estimate);
+	set_emp_tv(pattern, etv);
+	return etv;
+}
+
+HandleSeq Surprisingness::subsmp(const HandleSeq& db, unsigned subsize)
+{
+	unsigned ts = db.size();
+	if (ts/2 <= subsize and subsize < ts) {
+		// Subsample by randomly removing (swapping all elements to
+		// remove with the tail, then removing the tail, which is
+		// considerably faster than removing element by element).
+		HandleSeq smp_db(db);
+		unsigned i = ts;
+		while (subsize < i) {
+			unsigned rnd_idx = randGen().randint(i);
+			std::swap(smp_db[rnd_idx], smp_db[--i]);
+		}
+		smp_db.resize(i);
+		return smp_db;
+	} else if (0 <= subsize and subsize < ts/*/2*/) {
+		// Subsample by randomly adding
+		HandleSeq smp_db(subsize);
+		lazy_random_selector select(ts);
+		for (size_t i = 0; i < subsize; i++)
+			smp_db[i] = db[select()];
+		return smp_db;
+	} else {
+		return db;
+	}
 }
 
 unsigned Surprisingness::subsmp_size(const Handle& pattern,
@@ -673,7 +754,7 @@ const Handle& Surprisingness::emp_prob_key()
 	return epk;
 }
 
-TruthValuePtr Surprisingness::get_emp_prob(const Handle& pattern)
+TruthValuePtr Surprisingness::get_emp_tv(const Handle& pattern)
 {
 	ValuePtr val = pattern->getValue(emp_prob_key());
 	if (val)
@@ -681,16 +762,15 @@ TruthValuePtr Surprisingness::get_emp_prob(const Handle& pattern)
 	return nullptr;
 }
 
-void Surprisingness::set_emp_prob(const Handle& pattern,
-                                  double emp_prob)
+void Surprisingness::set_emp_tv(const Handle& pattern, TruthValuePtr etv)
 {
-	TruthValuePtr emp_prob_tv = createSimpleTruthValue(emp_prob, 1.0);
-	pattern->setValue(emp_prob_key(), ValueCast(emp_prob_tv));
+	pattern->setValue(emp_prob_key(), ValueCast(etv));
 }
 
-double avrg(double l, double r)
+void Surprisingness::set_emp_prob(const Handle& pattern, double ep)
 {
-	return (l + r) / 2.0;
+	TruthValuePtr etv = createSimpleTruthValue(ep, 1.0);
+	set_emp_tv(pattern, etv);
 }
 
 double Surprisingness::jsd(const TruthValuePtr l_tv, const TruthValuePtr r_tv)
@@ -733,12 +813,47 @@ double Surprisingness::kld(const std::vector<double>& l_cdf,
 	return kldi;
 }
 
+double Surprisingness::avrg(double l, double r)
+{
+	return (l + r) / 2.0;
+}
+
+double Surprisingness::avrg(std::vector<double>& vs)
+{
+	return boost::accumulate(vs, 0.0) / vs.size();
+}
+
+TruthValuePtr Surprisingness::avrg_tv(const std::vector<TruthValuePtr>& tvs)
+{
+	// Calculate the TV means and variances
+	std::vector<BetaDistribution> dists;
+	std::vector<double> means, variances;
+	boost::transform(tvs, std::back_inserter(dists), mk_beta_distribution);
+	boost::transform(dists, std::back_inserter(means),
+	                 [](const BetaDistribution& bd) { return bd.mean(); });
+	boost::transform(tvs, std::back_inserter(variances),
+	                 [](const BetaDistribution& bd) { return bd.variance(); });
+
+	// For now the mixed TV remains a SimpleTV, thus a
+	// beta-distribution. The mean and variance is calculated
+	// according to
+	// https://en.wikipedia.org/wiki/Mixture_distribution#Moments
+	double mean = avrg(means);
+	std::vector<double> relative_variances(variances);
+	for (std::size_t i = 0; i < relative_variances.size(); i++)
+		relative_variances[i] += sq(means[i] - mean);
+	double variance = avrg(relative_variances);
+
+	return mk_stv(mean, variance);
+}
+
 std::vector<double> Surprisingness::avrg_cdf(const std::vector<double>& l_cdf,
                                              const std::vector<double>& r_cdf)
 {
 	OC_ASSERT(l_cdf.size() == r_cdf.size());
 	std::vector<double> m_cdf(l_cdf.size());
-	boost::transform(l_cdf, r_cdf, m_cdf.begin(), avrg);
+	boost::transform(l_cdf, r_cdf, m_cdf.begin(),
+	                 [](double l, double r) { return avrg(l, r); });
 	return m_cdf;
 }
 

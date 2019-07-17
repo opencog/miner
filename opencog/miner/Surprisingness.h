@@ -522,25 +522,15 @@ public:
 	/**
 	 * Like emp_prob but subsample the db to have subsize (if db
 	 * size is greater than subsize).
-	 *
-	 * TODO: memoizing support is current disabled.
 	 */
 	static double emp_prob_subsmp(const Handle& pattern,
 	                              const HandleSeq& db,
 	                              unsigned subsize=UINT_MAX);
 
 	/**
-	 * Randomly subsample db so that the resulting db has size
-	 * subsize.
-	 */
-	static HandleSeq subsmp(const HandleSeq& db, unsigned subsize);
-
-	/**
-	 * Like emp_prob but uses bootstrapping for more efficiency. nbs is
-	 * the number of subsamplings taking place, and subsize is the size
-	 * of each subsample.
-	 *
-	 * TODO: memoizing support is current disabled.
+	 * Like emp_prob but uses bootstrapping for more
+	 * efficiency. n_resample is the number of subsamplings taking
+	 * place, and subsize is the size of each subsample.
 	 */
 	static double emp_prob_bs(const Handle& pattern,
 	                          const HandleSeq& db,
@@ -566,6 +556,62 @@ public:
 	static double emp_prob_pbs_mem(const Handle& pattern,
 	                               const HandleSeq& db,
 	                               double prob_estimate);
+
+	/**
+	 * Calculate the empiric truth value of a pattern according to a
+	 * database db.
+	 */
+	static TruthValuePtr emp_tv(const Handle& pattern, const HandleSeq& db);
+
+	/**
+	 * Like emp_tv with memoization.
+	 */
+	static TruthValuePtr emp_tv_mem(const Handle& pattern,
+	                                const HandleSeq& db);
+
+	/**
+	 * Like emp_tv but subsample the db to have subsize (if db
+	 * size is greater than subsize).
+	 */
+	static TruthValuePtr emp_tv_subsmp(const Handle& pattern,
+	                                   const HandleSeq& db,
+	                                   unsigned subsize=UINT_MAX);
+
+	/**
+	 * Like emp_tv but uses bootstrapping for more
+	 * efficiency. n_resample is the number of subsamplings taking
+	 * place, and subsize is the size of each subsample.
+	 */
+	static TruthValuePtr emp_tv_bs(const Handle& pattern,
+	                               const HandleSeq& db,
+	                               unsigned n_resample,
+	                               unsigned subsize);
+
+	/**
+	 * Calculate the empirical truth value of the given pattern,
+	 * possibly bootstrapping if necessary. The heuristic to determine
+	 * whether the bootstrapping should take place, and how, is
+	 * calculated based on the pattern, the db size and the probability
+	 * estimate of the pattern.
+	 *
+	 * pbs stands for possibly bootstrapping.
+	 */
+	static TruthValuePtr emp_tv_pbs(const Handle& pattern,
+	                                const HandleSeq& db,
+	                                double prob_estimate);
+
+	/**
+	 * Like emp_tv_pbs with memoization.
+	 */
+	static TruthValuePtr emp_tv_pbs_mem(const Handle& pattern,
+	                                    const HandleSeq& db,
+	                                    double prob_estimate);
+
+	/**
+	 * Randomly subsample db so that the resulting db has size
+	 * subsize.
+	 */
+	static HandleSeq subsmp(const HandleSeq& db, unsigned subsize);
 
 	/**
 	 * Determine the number of samples and the subsample size given a
@@ -851,8 +897,9 @@ public:
 	/**
 	 * Get/set the empirical probability of the given pattern.
 	 */
-	static TruthValuePtr get_emp_prob(const Handle& pattern);
-	static void set_emp_prob(const Handle& pattern, double emp_prob);
+	static TruthValuePtr get_emp_tv(const Handle& pattern);
+	static void set_emp_tv(const Handle& pattern, TruthValuePtr etv);
+	static void set_emp_prob(const Handle& pattern, double ep);
 
 	/**
 	 * Given 2 TVs, typically representing the empirical probability
@@ -872,6 +919,24 @@ public:
 	 */
 	static double kld(const std::vector<double>& l_cdf,
 	                  const std::vector<double>& r_cdf);
+
+	/**
+	 * Calculate the average of 2 values, that is (l+r)/2
+	 */
+	static double avrg(double l, double r);
+
+	/**
+	 * Calculate the average of n values, that is (sum vs)/|vs|
+	 */
+	static double avrg(std::vector<double>& vs);
+
+	/**
+	 * Given a sequence of truth values, return the truth value
+	 * representing their average. Note that this process looses
+	 * information as the returned truth value is a simple truth value
+	 * equivalent to a Beta distribution, thus cannot be multimodal.
+	 */
+	static TruthValuePtr avrg_tv(const std::vector<TruthValuePtr>& tvs);
 
 	/**
 	 * Given 2 cdfs, return their average, that is (cdf1 + cdf2)/2.
