@@ -31,7 +31,7 @@
                              #:incremental-expansion #f
                              #:surprisingness 'none))
 
-;; Call the miner on the text set of interest instead, should yield
+;; Call the miner on the database of interest instead, should yield
 ;; the same results.
 (define results-lst (cog-mine (list AB AC)
                               #:minsup 2

@@ -140,8 +140,8 @@ HandleSet MinerUtils::focus_shallow_abstract(const Valuations& valuations, unsig
 		// valuations (using pointer equality to speed it up)
 		bool same_scv = &rv_scv == &var_scv;
 
-		// Ref to keep track of the number of text instances where the
-		// value of var is equal to the value to rv
+		// Ref to keep track of the number of data tree instances where
+		// the value of var is equal to the value to rv
 		unsigned& rv_count = facvars[rv];
 
 		// If they are in different stronly connected valuations, then
@@ -329,17 +329,17 @@ Handle MinerUtils::vardecl_compose(const Handle& vardecl, const HandleMap& var2s
 	}
 }
 
-HandleSeq MinerUtils::get_texts(const Handle& texts_cpt)
+HandleSeq MinerUtils::get_db(const Handle& db_cpt)
 {
-	// Retrieve all members of texts_cpt
-	HandleSeq texts;
-	IncomingSet member_links = texts_cpt->getIncomingSetByType(MEMBER_LINK);
+	// Retrieve all members of db_cpt
+	HandleSeq db;
+	IncomingSet member_links = db_cpt->getIncomingSetByType(MEMBER_LINK);
 	for (const LinkPtr l : member_links) {
 		Handle member = l->getOutgoingAtom(0);
-		if (member != texts_cpt)
-			texts.push_back(member);
+		if (member != db_cpt)
+			db.push_back(member);
 	}
-	return texts;
+	return db;
 }
 
 unsigned MinerUtils::get_uint(const Handle& h)
@@ -349,7 +349,7 @@ unsigned MinerUtils::get_uint(const Handle& h)
 }
 
 unsigned MinerUtils::support(const Handle& pattern,
-                             const HandleSeq& texts,
+                             const HandleSeq& db,
                              unsigned ms)
 {
 	// Partition the pattern into strongly connected components
@@ -363,43 +363,43 @@ unsigned MinerUtils::support(const Handle& pattern,
 	std::vector<unsigned> freqs;
 	boost::transform(cps, std::back_inserter(freqs),
 	                 [&](const Handle& cp)
-	                 { return component_support(cp, texts, ms); });
+	                 { return component_support(cp, db, ms); });
 
 	// Return the product of all frequencies
 	return boost::accumulate(freqs, 1, std::multiplies<unsigned>());
 }
 
 unsigned MinerUtils::component_support(const Handle& component,
-                                       const HandleSeq& texts,
+                                       const HandleSeq& db,
                                        unsigned ms)
 {
 	if (totally_abstract(component))
-		return texts.size();
-	return restricted_satisfying_set(component, texts, ms)->get_arity();
+		return db.size();
+	return restricted_satisfying_set(component, db, ms)->get_arity();
 }
 
 bool MinerUtils::enough_support(const Handle& pattern,
-                                const HandleSeq& texts,
+                                const HandleSeq& db,
                                 unsigned ms)
 {
-	return ms <= support_mem(pattern, texts, ms);
+	return ms <= support_mem(pattern, db, ms);
 }
 
 HandleSetSeq MinerUtils::shallow_abstract(const Handle& pattern,
-                                          const HandleSeq& texts,
+                                          const HandleSeq& db,
                                           unsigned ms)
 {
-	Valuations valuations(pattern, texts);
+	Valuations valuations(pattern, db);
 	return shallow_abstract(valuations, ms);
 }
 
 HandleSet MinerUtils::shallow_specialize(const Handle& pattern,
-                                         const HandleSeq& texts,
+                                         const HandleSeq& db,
                                          unsigned ms,
                                          unsigned mv)
 {
 	// Calculate all shallow abstractions of pattern
-	HandleSetSeq shabs_per_var = shallow_abstract(pattern, texts, ms);
+	HandleSetSeq shabs_per_var = shallow_abstract(pattern, db, ms);
 
 	// For each variable of pattern, generate the corresponding shallow
 	// specializations
@@ -498,28 +498,28 @@ HandleSeq MinerUtils::get_conjuncts(const Handle& pattern)
 }
 
 Handle MinerUtils::restricted_satisfying_set(const Handle& pattern,
-                                             const HandleSeq& texts,
+                                             const HandleSeq& db,
                                              unsigned ms)
 {
-	static AtomSpace tmp_texts_as; // TODO: fix to be thread safe
-	tmp_texts_as.clear();
-	HandleSeq tmp_texts;
-	for (const auto& text : texts)
-		tmp_texts.push_back(tmp_texts_as.add_atom(text));
+	static AtomSpace tmp_db_as; // TODO: fix to be thread safe
+	tmp_db_as.clear();
+	HandleSeq tmp_db;
+	for (const auto& dt : db)
+		tmp_db.push_back(tmp_db_as.add_atom(dt));
 
 	// Avoid pattern matcher warning
 	if (totally_abstract(pattern) and n_conjuncts(pattern) == 1)
-		return tmp_texts_as.add_link(SET_LINK, tmp_texts);
+		return tmp_db_as.add_link(SET_LINK, tmp_db);
 
 	// Define pattern to run
-	AtomSpace tmp_query_as(&tmp_texts_as);
+	AtomSpace tmp_query_as(&tmp_db_as);
 	Handle tmp_pattern = tmp_query_as.add_atom(pattern),
 		vardecl = get_vardecl(tmp_pattern),
 		body = get_body(tmp_pattern),
 		gl = tmp_query_as.add_link(GET_LINK, vardecl, body);
 
 	// Run pattern matcher
-	SatisfyingSet sater(&tmp_texts_as);
+	SatisfyingSet sater(&tmp_db_as);
 	sater.max_results = ms;
 	GetLinkCast(gl)->satisfy(sater);
 
@@ -780,7 +780,7 @@ Handle MinerUtils::expand_conjunction_connect(const Handle& cnjtion,
 
 HandleSet MinerUtils::expand_conjunction_connect_rec(const Handle& cnjtion,
                                                      const Handle& pattern,
-                                                     const HandleSeq& texts,
+                                                     const HandleSeq& db,
                                                      unsigned ms,
                                                      unsigned mv,
                                                      const HandleMap& pv2cv,
@@ -810,14 +810,14 @@ HandleSet MinerUtils::expand_conjunction_connect_rec(const Handle& cnjtion,
 				// If npat does not have enough support, any recursive
 				// call will produce specializations that do not have
 				// enough support, thus can be ignored.
-				if (not enough_support(npat, texts, ms))
+				if (not enough_support(npat, db, ms))
 					continue;
 
 				patterns.insert(npat);
 			}
 
 			HandleSet rrs = expand_conjunction_connect_rec(cnjtion, pattern,
-			                                               texts, ms, mv,
+			                                               db, ms, mv,
 			                                               pv2cv_ext, pvi + 1);
 			patterns.insert(rrs.begin(), rrs.end());
 		}
@@ -827,7 +827,7 @@ HandleSet MinerUtils::expand_conjunction_connect_rec(const Handle& cnjtion,
 
 HandleSet MinerUtils::expand_conjunction(const Handle& cnjtion,
                                          const Handle& pattern,
-                                         const HandleSeq& texts,
+                                         const HandleSeq& db,
                                          unsigned ms,
                                          unsigned mv)
 {
@@ -836,7 +836,7 @@ HandleSet MinerUtils::expand_conjunction(const Handle& cnjtion,
 	Handle apat = alpha_convert(pattern, get_variables(cnjtion));
 
 	// Consider all variable mappings from apat to cnjtion
-	return expand_conjunction_connect_rec(cnjtion, apat, texts, ms, mv);
+	return expand_conjunction_connect_rec(cnjtion, apat, db, ms, mv);
 }
 
 const Handle& MinerUtils::support_key()
@@ -860,12 +860,12 @@ double MinerUtils::get_support(const Handle& pattern)
 }
 
 double MinerUtils::support_mem(const Handle& pattern,
-                               const HandleSeq& texts,
+                               const HandleSeq& db,
                                unsigned ms)
 {
 	double sup = get_support(pattern);
 	if (sup < 0) {
-		sup = support(pattern, texts, ms);
+		sup = support(pattern, db, ms);
 		set_support(pattern, sup);
 	}
 	return sup;

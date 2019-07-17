@@ -138,19 +138,19 @@ public:
 typedef std::set<SCValuations> SCValuationsSet;
 
 /**
- * Class representing valuations of a pattern against a text, that is
- * mappings from variables to values. Valuations is composed of
- * strongly connected valuations, as to not perform their expensive
+ * Class representing valuations of a pattern against a data tree,
+ * that is mappings from variables to values. Valuations is composed
+ * of strongly connected valuations, as to not perform their expensive
  * Cartesian products.
  */
 class Valuations : public ValuationsBase
 {
 public:
 	/**
-	 * Given a pattern and texts (ground terms), calculate its
+	 * Given a pattern and db (ground terms), calculate its
 	 * valuations.
 	 */
-	Valuations(const Handle& pattern, const HandleSeq& texts);
+	Valuations(const Handle& pattern, const HandleSeq& db);
 	Valuations(const Variables& variables, const SCValuationsSet& scvs);
 	Valuations(const Variables& variables);
 

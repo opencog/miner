@@ -19,7 +19,7 @@
 ;;         ...
 ;;         <xn>
 ;;       <g-body>
-;;     <texts>
+;;     <db>
 ;;     <ms>
 ;; Evaluation <tv2>
 ;;   Predicate "abstraction"
@@ -52,7 +52,7 @@
 ;;         <xi+1>
 ;;         ...
 ;;         <xn>
-;;     <texts>
+;;     <db>
 ;;     <ms>
 ;;
 ;; assuming that tv1 and tv2 are equal to (stv 1 1), then calculate
@@ -79,7 +79,7 @@
 (define specialization-rule
   (let* (;; Variables
          (g (Variable "$g"))
-         (texts (Variable "$texts"))
+         (db (Variable "$db"))
          (ms (Variable "$ms"))
          (xs-f (Variable "$xs-f"))
          ;; Types
@@ -89,12 +89,12 @@
          (ConceptT (Type "ConceptNode"))
          ;; Vardecls
          (g-decl (TypedVariable g (TypeChoice LambdaT PutT)))
-         (texts-decl (TypedVariable texts ConceptT))
+         (db-decl (TypedVariable db ConceptT))
          (ms-decl (TypedVariable ms NumberT))
          (xs-f-decl xs-f)
-         (vardecl (VariableList g-decl texts-decl ms-decl xs-f-decl))
+         (vardecl (VariableList g-decl db-decl ms-decl xs-f-decl))
          ;; Clauses
-         (minsup-g (minsup-eval g texts ms))
+         (minsup-g (minsup-eval g db ms))
          (shabs-eval (abstraction-eval xs-f minsup-g))
          ;; Make sure the pattern has the minimum support
          (precond-1 (absolutely-true-eval minsup-g))
@@ -107,7 +107,7 @@
                         (Quote (Put
                           (Unquote g)
                           (Unquote xs-f)))
-                        texts
+                        db
                         ms)
                       minsup-g
                       shabs-eval))))
@@ -124,7 +124,7 @@
              (pre-minsup-pred (car premises))
              (pre-minsup-pred-tv (cog-tv pre-minsup-pred))
              (gf (cog-outgoing-atom con-minsup-args 0))
-             (texts (cog-outgoing-atom con-minsup-args 1))
+             (db (cog-outgoing-atom con-minsup-args 1))
              (ms-atom (cog-outgoing-atom con-minsup-args 2))
              (conclusion-tv (if (and (tv->bool pre-minsup-pred-tv)
                                      ;; The lazyness of 'and' allows
@@ -132,7 +132,7 @@
                                      ;; if g doesn't have enough
                                      ;; support TODO: do you really
                                      ;; need this?
-                                     (cog-enough-support? gf texts ms-atom))
+                                     (cog-enough-support? gf db ms-atom))
                                 ;; Both g and g,f have enough support
                                 (stv 1 1)
                                 ;; f.g doesn't have enough support

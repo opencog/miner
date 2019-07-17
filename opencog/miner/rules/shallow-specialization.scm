@@ -8,16 +8,16 @@
 ;;   Predicate "abstraction"
 ;;   List
 ;;     <abstractions>
-;;     minsup(pattern, texts, ms)
+;;     minsup(pattern, db, ms)
 ;;
-;; Instead, given a minsup(pattern, texts, ms) evaluation, it directly
+;; Instead, given a minsup(pattern, db, ms) evaluation, it directly
 ;; generate shallow specializations of pattern.
 ;;
 ;; Evaluation (stv 1 1)
 ;;   Predicate "minsup"
 ;;   List
 ;;     <pattern>
-;;     <texts>
+;;     <db>
 ;;     <ms>
 ;; |-
 ;; Set
@@ -25,14 +25,14 @@
 ;;     Predicate "minsup"
 ;;     List
 ;;       <pattern-shallow-specialization-1>
-;;       <texts>
+;;       <db>
 ;;       <ms>
 ;;   ...
 ;;   Evaluation (stv 1 1)
 ;;     Predicate "minsup"
 ;;     List
 ;;       <pattern-shallow-specialization-n>
-;;       <texts>
+;;       <db>
 ;;       <ms>
 
 (load "miner-rule-utils.scm")
@@ -47,7 +47,7 @@
 (define (gen-shallow-specialization-rule unary mv)
   (let* (;; Variables
          (pattern (Variable "$pattern"))
-         (texts (Variable "$texts"))
+         (db (Variable "$db"))
          (ms (Variable "$ms"))
          ;; Types
          (LambdaT (Type "LambdaLink"))
@@ -55,14 +55,14 @@
          (NumberT (Type "NumberNode"))
          ;; Vardecls
          (pattern-decl (TypedVariable pattern LambdaT))
-         (texts-decl (TypedVariable texts ConceptT))
+         (db-decl (TypedVariable db ConceptT))
          (ms-decl (TypedVariable ms NumberT))
          ;; Clauses
-         (minsup-pattern (minsup-eval pattern texts ms)))
+         (minsup-pattern (minsup-eval pattern db ms)))
   (Bind
     (VariableList
       pattern-decl
-      texts-decl
+      db-decl
       ms-decl)
     (And
       (Present minsup-pattern)
@@ -90,11 +90,11 @@
     (if (= (length premises) 1)
         (let* ((minsup-pattern (car premises))
                (pattern (get-pattern minsup-pattern))
-               (texts (get-texts minsup-pattern))
+               (db (get-db minsup-pattern))
                (ms (get-ms minsup-pattern))
-               (shaspes (cog-shallow-specialize pattern texts ms (Number mv)))
+               (shaspes (cog-shallow-specialize pattern db ms (Number mv)))
                (minsup-shaspe (lambda (x) (cog-set-tv!
-                                           (minsup-eval x texts ms)
+                                           (minsup-eval x db ms)
                                            (stv 1 1))))
                (minsup-shaspes (map minsup-shaspe (cog-outgoing-set shaspes))))
           (Set minsup-shaspes)))))

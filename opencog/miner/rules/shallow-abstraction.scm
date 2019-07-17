@@ -14,7 +14,7 @@
 ;;         ...
 ;;         <xn>
 ;;       <g-body>
-;;     <texts>
+;;     <db>
 ;;     <ms>
 ;; |-
 ;; Set
@@ -35,7 +35,7 @@
 ;;               ...
 ;;               <xn>
 ;;             <g-body>
-;;           <texts>
+;;           <db>
 ;;           <ms>
 ;; ...
 ;;
@@ -53,7 +53,7 @@
 (define shallow-abstraction-rule
   (let* (;; Variables
          (g (Variable "$g"))
-         (texts (Variable "$texts"))
+         (db (Variable "$db"))
          (ms (Variable "$ms"))
          ;; Types
          (LambdaT (Type "LambdaLink"))
@@ -62,14 +62,14 @@
          (NumberT (Type "NumberNode"))
          ;; Vardecls
          (g-decl (TypedVariable g (TypeChoice LambdaT PutT)))
-         (texts-decl (TypedVariable texts ConceptT))
+         (db-decl (TypedVariable db ConceptT))
          (ms-decl (TypedVariable ms NumberT))
          ;; Clauses
-         (minsup-g (minsup-eval g texts ms)))
+         (minsup-g (minsup-eval g db ms)))
   (Bind
     (VariableList
       g-decl
-      texts-decl
+      db-decl
       ms-decl)
     (And
       (Present minsup-g)
@@ -91,9 +91,9 @@
   (if (= (length premises) 1)
       (let* ((minsup-g (car premises))
              (g (get-pattern minsup-g))
-             (texts (get-texts minsup-g))
+             (db (get-db minsup-g))
              (ms (get-ms minsup-g))
-             (shabs-lists (cog-shallow-abstract g texts ms))
+             (shabs-lists (cog-shallow-abstract g db ms))
              (list->eval (lambda (x) (cog-set-tv!
                                       (abstraction-eval x minsup-g)
                                       (stv 1 1))))

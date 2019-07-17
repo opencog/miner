@@ -35,9 +35,9 @@ using namespace opencog;
 #define an as.add_node
 #define al as.add_link
 
-Handle MinerUTestUtils::add_texts_cpt(AtomSpace& as)
+Handle MinerUTestUtils::add_db_cpt(AtomSpace& as)
 {
-	return an(CONCEPT_NODE, "texts");
+	return an(CONCEPT_NODE, "db");
 }
 
 Handle MinerUTestUtils::add_minsup_prd(AtomSpace& as)
@@ -65,7 +65,7 @@ Handle MinerUTestUtils::add_minsup_eval(AtomSpace& as,
 	                          add_minsup_prd(as),
 	                          al(LIST_LINK,
 	                             pattern,
-	                             add_texts_cpt(as),
+	                             add_db_cpt(as),
 	                             an(NUMBER_NODE, std::to_string(minsup))));
 	if (TruthValue::DEFAULT_TV() != tv)
 		minsup_eval_h->setTruthValue(tv);
@@ -91,7 +91,7 @@ Handle MinerUTestUtils::add_isurp_eval(AtomSpace& as,
 	                         add_isurp_prd(as, mode),
 	                         al(LIST_LINK,
 	                            pattern,
-	                            add_texts_cpt(as)));
+	                            add_db_cpt(as)));
 	return isurp_eval_h;
 }
 
@@ -140,7 +140,7 @@ HandleSeq MinerUTestUtils::add_variables(AtomSpace& as,
 Handle MinerUTestUtils::ure_pm(AtomSpace& as,
                                SchemeEval& scm,
                                const Handle& pm_rb,
-                               const AtomSpace& texts_as,
+                               const AtomSpace& db_as,
                                int minsup,
                                int maximum_iterations,
                                Handle initpat,
@@ -148,17 +148,17 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
                                unsigned max_conjuncts,
                                double complexity_penalty)
 {
-	HandleSeq texts;
-	texts_as.get_handles_by_type(std::inserter(texts, texts.end()),
-	                             opencog::ATOM, true);
-	return ure_pm(as, scm, pm_rb, texts, minsup, maximum_iterations, initpat,
+	HandleSeq db;
+	db_as.get_handles_by_type(std::inserter(db, db.end()),
+	                          opencog::ATOM, true);
+	return ure_pm(as, scm, pm_rb, db, minsup, maximum_iterations, initpat,
 	              incremental_expansion, max_conjuncts, complexity_penalty);
 }
 
 Handle MinerUTestUtils::ure_pm(AtomSpace& as,
                                SchemeEval& scm,
                                const Handle& pm_rb,
-                               const HandleSeq& texts,
+                               const HandleSeq& db,
                                int minsup,
                                int maximum_iterations,
                                Handle initpat,
@@ -166,9 +166,9 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
                                unsigned max_conjuncts,
                                double complexity_penalty)
 {
-	// Make (Member text (Concept "texts)) links
-	for (const Handle& text : texts)
-		al(MEMBER_LINK, text, add_texts_cpt(as));
+	// Make (Member dt (Concept "db)) links
+	for (const Handle& dt : db)
+		al(MEMBER_LINK, dt, add_db_cpt(as));
 
 	// If init is not defined then use top
 	if (not initpat)
@@ -176,7 +176,7 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
 
 	// Add the axiom that initpat has enough support, and use it as
 	// source for the forward chainer
-	bool es = MinerUtils::enough_support(initpat, texts, minsup);
+	bool es = MinerUtils::enough_support(initpat, db, minsup);
 
 	// If it doesn't have enough support return the empty solution
 	if (not es)
@@ -209,7 +209,7 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
 	return results;
 }
 
-HandleTree MinerUTestUtils::cpp_pm(const AtomSpace& texts_as,
+HandleTree MinerUTestUtils::cpp_pm(const AtomSpace& db_as,
                                    int minsup,
                                    int conjuncts,
                                    const Handle& initpat,
@@ -217,10 +217,10 @@ HandleTree MinerUTestUtils::cpp_pm(const AtomSpace& texts_as,
 {
 	MinerParameters param(minsup, conjuncts, initpat, maxdepth);
 	Miner pm(param);
-	return pm(texts_as);
+	return pm(db_as);
 }
 
-HandleTree MinerUTestUtils::cpp_pm(const HandleSeq& texts,
+HandleTree MinerUTestUtils::cpp_pm(const HandleSeq& db,
                                    int minsup,
                                    int conjuncts,
                                    const Handle& initpat,
@@ -228,7 +228,7 @@ HandleTree MinerUTestUtils::cpp_pm(const HandleSeq& texts,
 {
 	MinerParameters param(minsup, conjuncts, initpat, maxdepth);
 	Miner pm(param);
-	return pm(texts);
+	return pm(db);
 }
 
 Handle MinerUTestUtils::add_is_cpt_pattern(AtomSpace& as, const Handle& cpt)

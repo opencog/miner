@@ -101,27 +101,27 @@ public:
 	 * parent) with frequency equal to or above minsup, starting from
 	 * the initial pattern, excluded.
 	 */
-	HandleTree operator()(const AtomSpace& texts_as);
+	HandleTree operator()(const AtomSpace& db_as);
 
 	/**
-	 * Like above but only mine amongst the provided text collection.
+	 * Like above but only mine amongst the provided data tree collection.
 	 */
-	HandleTree operator()(const HandleSeq& texts);
+	HandleTree operator()(const HandleSeq& db);
 
 	/**
-	 * Specialization. Given a pattern and a collection to text atoms,
+	 * Specialization. Given a pattern and a collection of data trees,
 	 * generate all specialized patterns of the given pattern.
 	 */
 	HandleTree specialize(const Handle& pattern,
-	                      const HandleSeq& texts,
+	                      const HandleSeq& db,
 	                      int maxdepth=-1);
 
 	/**
-	 * Like above, where all valid texts have been converted into
+	 * Like above, where all valid data trees have been converted into
 	 * valuations.
 	 */
 	HandleTree specialize(const Handle& pattern,
-	                      const HandleSeq& texts,
+	                      const HandleSeq& db,
 	                      const Valuations& valuations,
 	                      int maxdepth);
 
@@ -129,7 +129,7 @@ public:
 	 * Alternate specialization that reflects how the URE would work.
 	 */
 	HandleTree specialize_alt(const Handle& pattern,
-	                          const HandleSeq& texts,
+	                          const HandleSeq& db,
 	                          const Valuations& valuations,
 	                          int maxdepth);
 
@@ -146,7 +146,7 @@ private:
 	 * whether the valuation has any variable left to specialize from.
 	 */
 	bool terminate(const Handle& pattern,
-	               const HandleSeq& texts,
+	               const HandleSeq& db,
 	               const Valuations& valuations,
 	               int maxdepth) const;
 
@@ -157,7 +157,7 @@ private:
 	 * obtained specializations.
 	 */
 	HandleTree specialize_shabs(const Handle& pattern,
-	                            const HandleSeq& texts,
+	                            const HandleSeq& db,
 	                            const Valuations& valuations,
 	                            int maxdepth);
 
@@ -167,23 +167,22 @@ private:
 	 * obtained specialization.
 	 */
 	HandleTree specialize_shapat(const Handle& pattern,
-	                             const HandleSeq& texts,
+	                             const HandleSeq& db,
 	                             const Handle& var,
 	                             const Handle& shapat,
 	                             int maxdepth);
 
 	/**
 	 * Calculate if the pattern has enough support w.r.t. to the given
-	 * texts, that is whether its frequency is greater than or equal
+	 * db, that is whether its frequency is greater than or equal
 	 * to minsup.
 	 */
 	bool enough_support(const Handle& pattern,
-	                    const HandleSeq& texts) const;
+	                    const HandleSeq& db) const;
 
 	/**
-	 * Given a pattern and a text corpus, calculate the pattern
-	 * frequency, that is the number of matches if pattern is strongly
-	 * connected.
+	 * Given a pattern and a db, calculate the pattern support, that is
+	 * the number of matches if pattern is strongly connected.
 	 *
 	 * If pattern is not strongly connected AND some heuristic is in
 	 * place TODO, then the definition of frequency deviates from the
@@ -193,9 +192,9 @@ private:
 	 * ms is used to halt the frequency calculation if it reaches a
 	 * certain maximum, for saving resources.
 	 */
-	unsigned freq(const Handle& pattern,
-	              const HandleSeq& texts,
-	              unsigned ms) const;
+	unsigned support(const Handle& pattern,
+	                 const HandleSeq& db,
+	                 unsigned ms) const;
 
 	/**
 	 * Calculate the frequency of the whole pattern, given the
@@ -204,15 +203,15 @@ private:
 	unsigned freq(const std::vector<unsigned>& freqs) const;
 
 	/**
-	 * Filter in only texts matching the pattern
+	 * Filter in only db matching the pattern
 	 */
-	HandleSeq filter_texts(const Handle& pattern,
-	                       const HandleSeq& texts) const;
+	HandleSeq filter_db(const Handle& pattern,
+	                       const HandleSeq& db) const;
 
 	/**
-	 * Check whether a pattern matches a text.
+	 * Check whether a pattern matches a dt.
 	 */
-	bool match(const Handle& pattern, const Handle& text) const;
+	bool match(const Handle& pattern, const Handle& dt) const;
 
 	/**
 	 * Like above but returns the Set of Lists of values associated to
@@ -221,7 +220,7 @@ private:
 	 *
 	 * TODO: optimize
 	 */
-	Handle matched_results(const Handle& pattern, const Handle& text) const;
+	Handle matched_results(const Handle& pattern, const Handle& dt) const;
 };
 
 } // ~namespace opencog

@@ -52,8 +52,8 @@ private:
 	// I-Surprisingness rule base
 	Handle _isurp_rb;
 
-	// Concept holding the texts, a.k.a. the data base to mine.
-	Handle _texts_cpt;
+	// Concept holding the db, the database to mine.
+	Handle _db_cpt;
 
 	// Variables
 	Handle X, Y, Z, W;
@@ -64,7 +64,7 @@ private:
 	HandleSeq ure_isurp(const std::string& mode, unsigned max_conjuncts);
 
 	// Load the ugly male soda drinker corpus and associate all
-	// inheritance links to _texts_cpt.
+	// inheritance links to _db_cpt.
 	void load_ugly_male_soda_drinker_corpus();
 
 	// Populate the atomspace with n_cpts concept nodes
@@ -72,7 +72,7 @@ private:
 
 	// Populate Inheritance between n_cpts concept nodes with a
 	// probability ip to have an inheritance between 2 concept nodes,
-	// and associate all created atoms to _texts_cpt. The semantics of
+	// and associate all created atoms to _db_cpt. The semantics of
 	// Inheritance is not taken into account.
 	void populate_uniform_inheritance_links(unsigned n_cpts, double ip);
 
@@ -138,11 +138,11 @@ void SurprisingnessUTest::load_ugly_male_soda_drinker_corpus()
 	std::string rs =
 		_scm.eval("(load-from-path \"ugly-male-soda-drinker-corpus.scm\")");
 	logger().debug() << "rs = " << rs;
-	HandleSet texts;
-	_as.get_handles_by_type(std::inserter(texts, texts.end()),
+	HandleSet db;
+	_as.get_handles_by_type(std::inserter(db, db.end()),
 	                        opencog::INHERITANCE_LINK, true);
-	for (const Handle text : texts)
-		al(MEMBER_LINK, text, _texts_cpt);
+	for (const Handle dt : db)
+		al(MEMBER_LINK, dt, _db_cpt);
 }
 
 HandleSeq SurprisingnessUTest::populate_concepts(unsigned n_cpts)
@@ -151,7 +151,7 @@ HandleSeq SurprisingnessUTest::populate_concepts(unsigned n_cpts)
 	HandleSeq cpts(n_cpts);
 	for (unsigned i = 0; i < n_cpts; i++) {
 		cpts[i] = an(CONCEPT_NODE, std::string("C") + std::to_string(i));
-		al(MEMBER_LINK, cpts[i], _texts_cpt);
+		al(MEMBER_LINK, cpts[i], _db_cpt);
 	}
 	return cpts;
 }
@@ -168,7 +168,7 @@ void SurprisingnessUTest::populate_uniform_inheritance_links(unsigned n_cpts,
 		for (const Handle& Cj : cpts) {
 			if (biased_randbool(ip)) {
 				Handle InhCiCj = al(INHERITANCE_LINK, Ci, Cj);
-				al(MEMBER_LINK, InhCiCj, _texts_cpt);
+				al(MEMBER_LINK, InhCiCj, _db_cpt);
 			}
 		}
 	}
@@ -190,7 +190,7 @@ void SurprisingnessUTest::populate_uniform_list_links(unsigned n_cpts,
 			for (const Handle& Ck : cpts) {
 				if (biased_randbool(ip)) {
 					Handle ListCiCjCk = al(LIST_LINK, Ci, Cj, Ck);
-					al(MEMBER_LINK, ListCiCjCk, _texts_cpt);
+					al(MEMBER_LINK, ListCiCjCk, _db_cpt);
 				}
 			}
 		}
@@ -229,7 +229,7 @@ SurprisingnessUTest::~SurprisingnessUTest() {}
 
 void SurprisingnessUTest::setUp()
 {
-	_texts_cpt = an(CONCEPT_NODE, "texts");
+	_db_cpt = an(CONCEPT_NODE, "db");
 	_isurp_rb = an(CONCEPT_NODE, "isurp_rb");
 	X = an(VARIABLE_NODE, "$X");
 	Y = an(VARIABLE_NODE, "$Y");
@@ -378,29 +378,29 @@ void SurprisingnessUTest::test_subsmp()
 
 	// Create data base
 	populate_uniform_inheritance_links(4000, 0.1);
-	HandleSeq texts = MinerUtils::get_texts(_texts_cpt);
-	logger().debug() << "texts.size() = " << texts.size();
+	HandleSeq db = MinerUtils::get_db(_db_cpt);
+	logger().debug() << "db.size() = " << db.size();
 
-	// Subsample texts
-	HandleSeq texts_smp_1 = Surprisingness::subsmp(texts, 1000);
-	logger().debug() << "texts_smp_1.size() = " << texts_smp_1.size();
-	TS_ASSERT_EQUALS(texts_smp_1.size(), 1000);
+	// Subsample db
+	HandleSeq db_smp_1 = Surprisingness::subsmp(db, 1000);
+	logger().debug() << "db_smp_1.size() = " << db_smp_1.size();
+	TS_ASSERT_EQUALS(db_smp_1.size(), 1000);
 
-	HandleSeq texts_smp_2 = Surprisingness::subsmp(texts, 10000);
-	logger().debug() << "texts_smp_2.size() = " << texts_smp_2.size();
-	TS_ASSERT_EQUALS(texts_smp_2.size(), 10000);
+	HandleSeq db_smp_2 = Surprisingness::subsmp(db, 10000);
+	logger().debug() << "db_smp_2.size() = " << db_smp_2.size();
+	TS_ASSERT_EQUALS(db_smp_2.size(), 10000);
 
-	HandleSeq texts_smp_3 = Surprisingness::subsmp(texts, 100000);
-	logger().debug() << "texts_smp_3.size() = " << texts_smp_3.size();
-	TS_ASSERT_EQUALS(texts_smp_3.size(), 100000);
+	HandleSeq db_smp_3 = Surprisingness::subsmp(db, 100000);
+	logger().debug() << "db_smp_3.size() = " << db_smp_3.size();
+	TS_ASSERT_EQUALS(db_smp_3.size(), 100000);
 
-	HandleSeq texts_smp_4 = Surprisingness::subsmp(texts, 1000000);
-	logger().debug() << "texts_smp_4.size() = " << texts_smp_4.size();
-	TS_ASSERT_EQUALS(texts_smp_4.size(), 1000000);
+	HandleSeq db_smp_4 = Surprisingness::subsmp(db, 1000000);
+	logger().debug() << "db_smp_4.size() = " << db_smp_4.size();
+	TS_ASSERT_EQUALS(db_smp_4.size(), 1000000);
 
-	HandleSeq texts_smp_5 = Surprisingness::subsmp(texts, 10000000);
-	logger().debug() << "texts_smp_5.size() = " << texts_smp_5.size();
-	TS_ASSERT_EQUALS(texts_smp_5.size(), texts.size());
+	HandleSeq db_smp_5 = Surprisingness::subsmp(db, 10000000);
+	logger().debug() << "db_smp_5.size() = " << db_smp_5.size();
+	TS_ASSERT_EQUALS(db_smp_5.size(), db.size());
 }
 
 void SurprisingnessUTest::test_emp_prob_bs_1()
@@ -422,10 +422,10 @@ void SurprisingnessUTest::test_emp_prob_bs_1()
 	                    al(VARIABLE_LIST, X, Y),
 	                    al(INHERITANCE_LINK, X, Y));
 
-	HandleSeq texts = MinerUtils::get_texts(_texts_cpt);
-	double epr = Surprisingness::emp_prob(pattern, texts);
-	double epr_bs = Surprisingness::emp_prob_bs(pattern, texts, 10, 1000);
-	logger().debug() << "texts.size() = " << texts.size()
+	HandleSeq db = MinerUtils::get_db(_db_cpt);
+	double epr = Surprisingness::emp_prob(pattern, db);
+	double epr_bs = Surprisingness::emp_prob_bs(pattern, db, 10, 1000);
+	logger().debug() << "db.size() = " << db.size()
 	                << ", epr = " << epr
 	                << ", epr_bs = " << epr_bs;
 	TS_ASSERT_DELTA(epr, epr_bs, 0.1);
@@ -456,10 +456,10 @@ void SurprisingnessUTest::test_emp_prob_bs_2()
 	                       al(INHERITANCE_LINK, X, Y),
 	                       al(INHERITANCE_LINK, Y, Z)));
 
-	HandleSeq texts = MinerUtils::get_texts(_texts_cpt);
-	double epr = Surprisingness::emp_prob(pattern, texts);
-	double epr_bs = Surprisingness::emp_prob_bs(pattern, texts, 100, 1500);
-	logger().info() << "texts.size() = " << texts.size()
+	HandleSeq db = MinerUtils::get_db(_db_cpt);
+	double epr = Surprisingness::emp_prob(pattern, db);
+	double epr_bs = Surprisingness::emp_prob_bs(pattern, db, 100, 1500);
+	logger().info() << "db.size() = " << db.size()
 	                << ", epr = " << epr
 	                << ", epr_bs = " << epr_bs;
 	TS_ASSERT_DELTA(epr, epr_bs, 0.001);
@@ -470,7 +470,7 @@ void SurprisingnessUTest::test_nisurp_old_ugly_man()
 {
 	logger().info("BEGIN TEST: %s", __FUNCTION__);
 
-	// Define texts
+	// Define db
 	load_ugly_male_soda_drinker_corpus();
 
 	// Add
@@ -522,7 +522,7 @@ void SurprisingnessUTest::test_nisurp_old_ugly_man_soda_drinker()
 {
 	logger().info("BEGIN TEST: %s", __FUNCTION__);
 
-	// Define texts
+	// Define db
 	load_ugly_male_soda_drinker_corpus();
 
 	// Add
@@ -1240,7 +1240,7 @@ void SurprisingnessUTest::test_nisurp_ugly_man_soda_drinker()
 {
 	logger().info("BEGIN TEST: %s", __FUNCTION__);
 
-	// Define texts
+	// Define db
 	load_ugly_male_soda_drinker_corpus();
 
 	// Add

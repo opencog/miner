@@ -45,7 +45,7 @@ public:
 	 * Calculate the I-Surprisingness as defined in
 	 * https://wiki.opencog.org/w/Measuring_Surprisingness of a pattern
 	 * composed of the conjunction of components over a given
-	 * texts. Partitions are directly defined within that function.
+	 * db. Partitions are directly defined within that function.
 	 *
 	 * For instance, given
 	 *
@@ -63,7 +63,7 @@ public:
 	 *
 	 * return calculate its I-surprisingness. The components are passed
 	 * in order to take into account their support (which should
-	 * already be stored in them), and texts in passed in order to
+	 * already be stored in them), and db in passed in order to
 	 * obtain the universe count.
 	 *
 	 * Normalize determines whether the surprisingness is normalized
@@ -73,7 +73,7 @@ public:
 	 * they are encoded as lists of lists for performance reasons.
 	 */
 	static double isurp_old(const Handle& pattern,
-	                        const HandleSeq& texts,
+	                        const HandleSeq& db,
 	                        bool normalize=true);
 
 	/**
@@ -144,7 +144,7 @@ public:
 	 * components. Let's call these variable appearences X1 to Xn. So
 	 * the goal is to estimate P(X1=...=Xi= ...=Xn).  Let's denote
 	 * V(Xi) the set of values that Xi can take when its corresponding
-	 * component is matched against the database/texts alone, without
+	 * component is matched against the database alone, without
 	 * any interaction of the other components. Thus |V(Xi)| is the
 	 * number values that Xi takes in that standalone component.
 	 *
@@ -161,7 +161,7 @@ public:
 	 * so that the two variable occurences equate is bounded by the
 	 * number of values of the variable occurence of the more abstract
 	 * component. If no such relationship exists, then the number of
-	 * possible values is bounded by the size of the database/texts,
+	 * possible values is bounded by the size of the database,
 	 * which is usually higher than the actually value, and thus often
 	 * a poor basis for an estimate. By performing a purely syntactic
 	 * analysis the estimate can be greatly enhenced. Since the
@@ -331,7 +331,7 @@ public:
 	 * slow). We have not experimented with approximated counts yet.
 	 */
 	static double isurp(const Handle& pattern,
-	                    const HandleSeq& texts,
+	                    const HandleSeq& db,
 	                    bool normalize=true);
 
 	/**
@@ -460,11 +460,11 @@ public:
 
 	/**
 	 * Return the the number values associated to a given variable in a
-	 * block (subpatterns) w.r.t. to texts database.
+	 * block (subpatterns) w.r.t. to db.
 	 */
 	static unsigned value_count(const HandleSeq& block,
 	                            const Handle& var,
-	                            const HandleSeq& texts);
+	                            const HandleSeq& db);
 
 	/**
 	 * Return the probability distribution over value of var in the
@@ -472,7 +472,7 @@ public:
 	 */
 	static HandleCounter value_distribution(const HandleSeq& block,
 	                                        const Handle& var,
-	                                        const HandleSeq& texts);
+	                                        const HandleSeq& db);
 
 	/**
 	 * Perform the inner product of a collection of distributions.
@@ -495,45 +495,45 @@ public:
 	static double inner_product(const std::vector<HandleCounter>& dists);
 
 	/**
-	 * Calculate the universe count of the pattern over the given texts
+	 * Calculate the universe count of the pattern over the given db
 	 */
-	static double universe_count(const Handle& pattern, const HandleSeq& texts);
+	static double universe_count(const Handle& pattern, const HandleSeq& db);
 
 	/**
 	 * Given a pattern, a corpus and a probability, calculate the
 	 * support of that pattern.
 	 */
 	static double prob_to_support(const Handle& pattern,
-	                              const HandleSeq& texts,
+	                              const HandleSeq& db,
 	                              double prob);
 
 	/**
 	 * Calculate the empiric probability of a pattern according to a
-	 * database texts.
+	 * database db.
 	 */
-	static double emp_prob(const Handle& pattern, const HandleSeq& texts);
+	static double emp_prob(const Handle& pattern, const HandleSeq& db);
 
 	/**
 	 * Like emp_prob with memoization.
 	 */
 	static double emp_prob_mem(const Handle& pattern,
-	                           const HandleSeq& texts);
+	                           const HandleSeq& db);
 
 	/**
-	 * Like emp_prob but subsample the texts to have subsize (if texts
+	 * Like emp_prob but subsample the db to have subsize (if db
 	 * size is greater than subsize).
 	 *
 	 * TODO: memoizing support is current disabled.
 	 */
 	static double emp_prob_subsmp(const Handle& pattern,
-	                              const HandleSeq& texts,
+	                              const HandleSeq& db,
 	                              unsigned subsize=UINT_MAX);
 
 	/**
-	 * Randomly subsample texts so that the resulting texts has size
+	 * Randomly subsample db so that the resulting db has size
 	 * subsize.
 	 */
-	static HandleSeq subsmp(const HandleSeq& texts, unsigned subsize);
+	static HandleSeq subsmp(const HandleSeq& db, unsigned subsize);
 
 	/**
 	 * Like emp_prob but uses bootstrapping for more efficiency. nbs is
@@ -543,7 +543,7 @@ public:
 	 * TODO: memoizing support is current disabled.
 	 */
 	static double emp_prob_bs(const Handle& pattern,
-	                          const HandleSeq& texts,
+	                          const HandleSeq& db,
 	                          unsigned n_resample,
 	                          unsigned subsize);
 
@@ -551,25 +551,25 @@ public:
 	 * Calculate the empirical probability of the given pattern,
 	 * possibly boostrapping if necessary. The heuristic to determine
 	 * whether the booststrapping should take place, and how, is
-	 * calculated based on the pattern, the texts size and the
+	 * calculated based on the pattern, the db size and the
 	 * probability estimate of the pattern.
 	 *
 	 * pbs stands for possibly boostrapping.
 	 */
 	static double emp_prob_pbs(const Handle& pattern,
-	                           const HandleSeq& texts,
+	                           const HandleSeq& db,
 	                           double prob_estimate);
 
 	/**
 	 * Like emp_prob_pbs with memoization.
 	 */
 	static double emp_prob_pbs_mem(const Handle& pattern,
-	                               const HandleSeq& texts,
+	                               const HandleSeq& db,
 	                               double prob_estimate);
 
 	/**
 	 * Determine the number of samples and the subsample size given a
-	 * text corpus. The goal here to subsample so that the support does
+	 * database. The goal here to subsample so that the support does
 	 * not exceed the corpus size. The upper bound of the support grows
 	 * exponentially with the number conjuncts and polynomially (with
 	 * maximum degree the number of conjuncts) with the size of the
@@ -603,7 +603,7 @@ public:
 	 * alpha = support_estimate / ts^nc
 	 */
 	static unsigned subsmp_size(const Handle& pattern,
-	                            const HandleSeq& texts,
+	                            const HandleSeq& db,
 	                            double support_estimate);
 
 	/**
@@ -615,7 +615,7 @@ public:
 	 */
 	static double ji_prob(const HandleSeqSeq& partition,
 	                      const Handle& pattern,
-	                      const HandleSeq& texts);
+	                      const HandleSeq& db);
 
 	/**
 	 * Return true iff the given variable has the same position (same
@@ -832,7 +832,7 @@ public:
 	 */
 	static double eq_prob(const HandleSeqSeq& partition,
 	                      const Handle& pattern,
-	                      const HandleSeq& texts);
+	                      const HandleSeq& db);
 
 	/**
 	 * Alternate implementation of eq_prob. Takes into syntactical
@@ -841,7 +841,7 @@ public:
 	 */
 	static double eq_prob_alt(const HandleSeqSeq& partition,
 	                          const Handle& pattern,
-	                          const HandleSeq& texts);
+	                          const HandleSeq& db);
 
 	/**
 	 * Key of the empirical probability value

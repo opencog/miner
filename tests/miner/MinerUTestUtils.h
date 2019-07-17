@@ -36,11 +36,11 @@ public:
 	/**
 	 * Add
 	 *
-	 * (Concept "texts")
+	 * (Concept "db")
 	 *
 	 * to as.
 	 */
-	static Handle add_texts_cpt(AtomSpace& as);
+	static Handle add_db_cpt(AtomSpace& as);
 
 	/**
 	 * Add
@@ -76,7 +76,7 @@ public:
 	 *   (Predicate "minsup")
 	 *   (List
 	 *     pattern
-	 *     (Concept "texts")
+	 *     (Concept "db")
 	 *     minsup))
 	 *
 	 * to as.
@@ -99,7 +99,7 @@ public:
 	 *
 	 * (Evaluation
 	 *   (Predicate <mode>)
-	 *   (List pattern (Concept "texts")))
+	 *   (List pattern (Concept "db")))
 	 *
 	 * to as.
 	 */
@@ -112,7 +112,7 @@ public:
 	 *
 	 * (Evaluation
 	 *   (Predicate "minsup")
-	 *   (List pattern (Concept "texts") minsup))
+	 *   (List pattern (Concept "db") minsup))
 	 *
 	 * return pattern.
 	 *
@@ -174,7 +174,7 @@ public:
 	static Handle ure_pm(AtomSpace& as,
 	                     SchemeEval& scm,
 	                     const Handle& pm_rb,
-	                     const AtomSpace& texts_as,
+	                     const AtomSpace& db_as,
 	                     int minsup,
 	                     int max_iter=-1,
 	                     Handle initpat=Handle::UNDEFINED,
@@ -184,7 +184,7 @@ public:
 	static Handle ure_pm(AtomSpace& as,
 	                     SchemeEval& scm,
 	                     const Handle& pm_rb,
-	                     const HandleSeq& texts, int minsup,
+	                     const HandleSeq& db, int minsup,
 	                     int max_iter=-1,
 	                     Handle initpat=Handle::UNDEFINED,
 	                     bool incremental_expansion=false,
@@ -194,12 +194,12 @@ public:
 	/**
 	 * Configure the C++ Miner and run it.
 	 */
-	static HandleTree cpp_pm(const AtomSpace& texts_as,
+	static HandleTree cpp_pm(const AtomSpace& db_as,
 	                         int minsup=1,
 	                         int conjuncts=1,
 	                         const Handle& initpat=Handle::UNDEFINED,
 	                         int maxdepth=-1);
-	static HandleTree cpp_pm(const HandleSeq& texts,
+	static HandleTree cpp_pm(const HandleSeq& db,
 	                         int minsup=1,
 	                         int conjuncts=1,
 	                         const Handle& initpat=Handle::UNDEFINED,
