@@ -17,16 +17,17 @@ additional twist that patterns are Atomese programs.
 
 Let us recall the important terms
 
-* *Text tree*: a tree (or hypergraph) that is part of the data set to
-  be mined. Can be imply called *tree*. Generally speaking any atom of
-  an atomspace.
+* *Data tree*: a tree (or hypergraph) that is part of the database to
+  be mined. Can simply be called *tree*. Generally speaking any atom
+  of an atomspace.
+* *Database*: a collection of data trees.
 * *Pattern tree*: a tree representing a pattern, that is capturing a
-  collection of text trees. Can be simply called *pattern*.
-* *Frequency*: number of text trees and subtrees matching a given
-  pattern.
-* *Support*: similar to frequency.
+  collection of data trees. Can be simply called *pattern*.
+* *Frequency*: number of data trees matching a given pattern divided
+  by the size of the database.
+* *Support*: number of data trees matching a given pattern.
 * *Minimum support*: parameter of the mining algorithm to discard
-  patterns with frequency below that value.
+  patterns with support below that value.
 * *A priori property*: assumption that allows to systematically prune
   the search space. In its least abstract form, it expresses the fact
   that if a pattern tree has a certain frequency `f` then a
@@ -38,9 +39,9 @@ Algorithm
 
 Patterm mining operates by searching the space of pattern trees,
 typically starting from the most abstract pattern, the one that
-encompass all text trees, construct specializations of it, retain
-those that have enough support (frequency equal to or above the
-minimum support), then recursively specialize those, and so on.
+encompass all data trees, construct specializations of it, retain
+those that have enough support (support equal to or above the minimum
+support), then recursively specialize those, and so on.
 
 ### Pattern Trees in Atomese
 
@@ -48,12 +49,18 @@ Here pattern trees are Atomese programs. So for instance the most
 abstract pattern, called Top, is the following program
 
 ```scheme
-(Lambda (Variable "$X") (Variable "$X"))
+(Lambda
+  (Variable "$X")
+  (Present
+    (Variable "$X")))
 ```
 
-that is the identity. When passed to the pattern matcher it becomes a
-pattern (see https:://wiki.opencog.org/w/GetLink#Overview), resulting
-here in a program that matches all atoms in the AtomSpace.
+that is the identity. `Present` is an atomese construct that indicates
+that its argument is a pattern present in the atomspace (or a given
+database depending on the context). When passed to the pattern matcher
+it becomes a pattern (see
+https:://wiki.opencog.org/w/GetLink#Overview), resulting here in a
+program that matches all atoms in the AtomSpace.
 
 As another example, a pattern matching only `Inheritance` links would
 look like
@@ -62,9 +69,10 @@ look like
   (VariableList
     (Variable "$X")
     (Variable "$Y"))
-  (Inheritance
-    (Variable "$X")
-    (Variable "$Y")))
+  (Present
+    (Inheritance
+      (Variable "$X")
+      (Variable "$Y"))))
 ```
 
 Or, slightly more specialized, a pattern matching only `Inheritance`
@@ -72,14 +80,15 @@ links with same first and second argument would look like
 ```scheme
 (Lambda
   (Variable "$X")
-  (Inheritance
-    (Variable "$X")
-    (Variable "$X")))
+  (Present
+    (Inheritance
+      (Variable "$X")
+      (Variable "$X"))))
 ```
 
 ### Algorithm Sketch
 
-Given a collection of text trees `T`, a minum support `ms` and an
+Given a collection of data trees `T`, a minimum support `ms` and an
 initial collection of patterns `C` (containing at least the identity
 pattern, Top), the pattern mining algorithm works as follows
 
@@ -95,10 +104,10 @@ Let us now detail each step
 
 #### Step 2: Extract Valuation Set
 
-The valuation set of a pattern `P` over a collection of text trees `T`
+The valuation set of a pattern `P` over a collection of data trees `T`
 is a set of mappings from the variables of `P` to subtrees (values) of
-text trees of `T` such that substituting these variables by their
-associated values produce matching text trees (or in order words text
+data trees of `T` such that substituting these variables by their
+associated values produce matching data trees (or in order words data
 trees in the satisfying set of the pattern).
 
 For instance if `P` is
@@ -107,9 +116,10 @@ For instance if `P` is
   (VariableList
     (Variable "$X")
     (Variable "$Y"))
- (Inheritance
-    (Variable "$X")
-    (Variable "$Y")))
+  (Present
+    (Inheritance
+      (Variable "$X")
+      (Variable "$Y"))))
 ```
 
 and `T` is
@@ -167,9 +177,10 @@ are
   (VariableLink
     (Variable "$Z")
     (Variable "$W"))
-  (Implication
-    (Variable "$Z")
-    (Variable "$W")))
+  (Present
+    (Implication
+      (Variable "$Z")
+      (Variable "$W"))))
 ```
 
 For example for the valuation set `V` defined above over variable
@@ -205,9 +216,10 @@ its shallow abstraction over its single variable `(Variable "$X")` is
   (VariableList
     (Variable "$Z")
     (Variable "$W"))
-  (Implication
-    (Variable "$Z")
-    (Variable "$W")))
+  (Present
+    (Implication
+      (Variable "$Z")
+      (Variable "$W"))))
 ```
 because it corresponds to a pattern matching its value.
 
@@ -250,19 +262,22 @@ Calculus) `(Variable "$X")` by `(Concept "A")`, `(Concept "D")` and
 ```scheme
 (Lambda
   (Variable "$Y")
-  (Inheritance
-    (Concept "A")
-    (Variable "$Y")))
+  (Present
+    (Inheritance
+      (Concept "A")
+      (Variable "$Y"))))
 (Lambda
   (Variable "$Y")
-  (Inheritance
-    (Concept "D")
-    (Variable "$Y")))
+  (Present
+    (Inheritance
+      (Concept "D")
+      (Variable "$Y"))))
 (Lambda
   (Variable "$Y")
-  (Inheritance
-    (Variable "$Y")
-    (Variable "$Y")))
+  (Present
+    (Inheritance
+      (Variable "$Y")
+      (Variable "$Y"))))
 ```
 
 while keeping the variable `$Y` untouched.
@@ -294,19 +309,22 @@ to substitute (or beta-reduce, as defined in the Lambda Calculus)
 ```scheme
 (Lambda
   (Variable "$X")
-  (Inheritance
-    (Variable "$X")
-    (Concept "B")))
+  (Present
+    (Inheritance
+      (Variable "$X")
+      (Concept "B"))))
 (Lambda
   (Variable "$X")
-  (Inheritance
-    (Variable "$X")
-    (Concept "C")))
+  (Present
+    (Inheritance
+      (Variable "$X")
+      (Concept "C"))))
 (Lambda
   (Variable "$X")
-  (Inheritance
-    (Variable "$X")
-    (Concept "D")))
+  (Present
+    (Inheritance
+      (Variable "$X")
+      (Concept "D"))))
 ```
 
 while keeping the variable `$X` untouched.
@@ -316,15 +334,16 @@ See https://wiki.opencog.org/w/PutLink for more information about `PutLink`.
 #### Step 5: Add Resulting Specializations with Enough Support
 
 Given all specializations (6 in total in this iteration example), we
-now need to calculate the frequency of each of them against `T`, and
+now need to calculate the support of each of them against `T`, and
 only the one reaching the minimum support can be added back to the
 population of patterns `C`. Out of these 6 only one has enough support
 ```scheme
 (Lambda
   (Variable "$Y")
-  (Inheritance
-    (Concept "A")
-    (Variable "$Y")))
+  (Present
+    (Inheritance
+      (Concept "A")
+      (Variable "$Y"))))
 ```
 
 The others can be safely discarded because, according to the a priori
@@ -350,11 +369,12 @@ instance. For instance given patterns
 ```scheme
 (Lambda
   (Variable "$X")
-  (Evaluation
-    (Predicate "eat")
-    (List
-      (Variable "$X")
-      (Concept "mexican-food"))))
+  (Present
+    (Evaluation
+      (Predicate "eat")
+      (List
+        (Variable "$X")
+        (Concept "mexican-food")))))
 ```
 
 and
@@ -362,9 +382,10 @@ and
 ```scheme
 (Lambda
   (Variable "$X")
-  (Inheritance
-    (Variable "$X")
-    (Concept "cat")))
+  (Present
+    (Inheritance
+      (Variable "$X")
+      (Concept "cat"))))
 ```
 
 one can consider their conjunction, using `(Variable "$X")` as
@@ -373,7 +394,7 @@ connector
 ```scheme
 (Lambda
   (Variable "$X")
-  (And
+  (Present
     (Evaluation
       (Predicate "eat")
       (List
@@ -384,10 +405,9 @@ connector
       (Concept "cat"))))
 ```
 
-Here `And` has a special treatment. Indeed in the pattern matcher if
-the pattern body begins with `And` it is interpreted as a logical
-statement, not a litteral to match. Thus when given this pattern to
-the pattern matcher it will match all atoms representing cats eating
+Here `Present` has 2 clauses, and the pattern corresponds to a
+conjunction of these 2 clauses. Thus when given this pattern to the
+pattern matcher it will match all atoms representing cats eating
 mexican-food.
 
 The incremental conjunction expansion heuristic allows to combine
@@ -406,9 +426,10 @@ specialization. For instance the conjunction of the following patterns
   (VariableList
     (Variable "$X")
     (Variable "$Y"))
-  (Inheritance
-    (Variable "$X")
-    (Variable "$Y")))
+  (Present
+    (Inheritance
+      (Variable "$X")
+      (Variable "$Y"))))
 ```
 
 ```scheme
@@ -416,9 +437,10 @@ specialization. For instance the conjunction of the following patterns
   (VariableList
     (Variable "$Y")
     (Variable "$Z"))
-  (Inheritance
-    (Variable "$Y")
-    (Variable "$Z")))
+  (Present
+    (Inheritance
+      (Variable "$Y")
+      (Variable "$Z"))))
 ```
 
 using `(Variable "$Y")` as connector, result into
@@ -428,7 +450,7 @@ using `(Variable "$Y")` as connector, result into
   (VariableList
     (Variable "$X")
     (Variable "$Z"))
-  (And
+  (Present
     (Inheritance
       (Variable "$X")
       (Variable "$Y"))
@@ -437,7 +459,7 @@ using `(Variable "$Y")` as connector, result into
       (Variable "$Z"))))
 ```
 
-Given the following text corpus
+Given the following database
 
 ```
 (Inheritance
@@ -507,7 +529,7 @@ following target to prove
 minsup(P, T, ms)
 ```
 where `P` is typically an abstract pattern, possibly the Top pattern,
-`T` the texts in consideration, `ms` the value of minimum support
+`T` the database in consideration, `ms` the value of minimum support
 parameter, and `minsup` a predicate asserting that `P` has minimum
 support `ms`.
 
@@ -523,7 +545,7 @@ meaning that if `Ps` has enough support and is a specialization of
 `P`, then `P` has enough support. And a second rule to evaluate by
 direct calculation if some pattern has enough support
 ```
-ms <= freq(P, T)
+ms <= support(P, T)
 |-
 minsup(P, T, ms)
 ```
@@ -559,7 +581,7 @@ for the a priori property as it is built into the rule.
 In principle we would end up with 2 rules
 
 1. Shallow abstraction rule, to produce all shallow abstractions of
-   given pattern, texts and minimum support, over all its variables.
+   given pattern, database and minimum support, over all its variables.
 2. Specialization rule, to produce specializations by composition a
    pattern with its shallow abstractions.
 
@@ -598,17 +620,17 @@ the `miner` module
 (use-modules (opencog miner))
 ```
 
-Then, simply call `cog-mine` on your text set with a given minimum
+Then, simply call `cog-mine` on your database with a given minimum
 support
 ```scheme
-(cog-mine texts #:minsup ms)
+(cog-mine db #:minsup ms)
 ```
-where `texts` is either
+where `db` is either
 1. a Scheme list of atoms
 2. an Atomese List or Set of atoms
 3. an atomspace (use `(cog-atomspace)` to get the current one)
-4. a concept node such that all its members are texts
-and `ms` is a Scheme number or an Atomese `NumberNode`.
+4. a concept node such that all its members are data trees and `ms` is
+   a Scheme number or an Atomese `NumberNode`.
 
 `cog-mine` automatically configures the rule engine, calls it, returns
 its results and removes the atoms that were temporarily created. The
@@ -637,14 +659,13 @@ following runs the pattern miner with a minimum support of 10, a
 maximum number of 2 conjuncts and 3 variables.
 
 ```scheme
-(cog-mine (Concept "texts")
+(cog-mine (Concept "db")
           #:minsup 10
           #:max-conjuncts 2
           #:max-variables 2)
 ```
 
-where `(Concept "texts")` contains (via using `MemberLink`) the text
-corpus.
+where `(Concept "db")` contains (via using `MemberLink`) the data trees.
 
 Beware that the search space will explode as a result of increasing
 the number of conjuncts. To minimize the combinatorial explosion the
