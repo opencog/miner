@@ -530,6 +530,32 @@ TruthValuePtr Surprisingness::ji_tv_est(const HandleSeqSeq& partition,
 	return createSimpleTruthValue(rp, rc);
 }
 
+TruthValuePtr Surprisingness::ji_tv_est(const Handle& pattern,
+                                        const HandleSeq& db)
+{
+	// Calculate the truth value estimate of each partition based on
+	// independent assumption of between each partition block, taking
+	// into account the linkage probability.
+	std::vector<TruthValuePtr> etvs;
+	for (const HandleSeqSeq& partition : partitions_without_pattern(pattern)) {
+		TruthValuePtr etv = ji_tv_est(partition, pattern, db);
+		etvs.push_back(etv);
+	}
+	return avrg_tv(etvs);
+}
+
+TruthValuePtr Surprisingness::ji_tv_est_mem(const Handle& pattern,
+                                            const HandleSeq& db)
+{
+	TruthValuePtr jte = get_ji_tv_est(pattern);
+	if (jte) {
+		return jte;
+	}
+	jte = ji_tv_est(pattern, db);
+	set_ji_tv_est(pattern, jte);
+	return jte;
+}
+
 bool Surprisingness::has_same_index(const Handle& l_pat,
                                     const Handle& r_pat,
                                     const Handle& var)
@@ -776,15 +802,15 @@ double Surprisingness::eq_prob(const HandleSeqSeq& partition,
 	return p;
 }
 
-const Handle& Surprisingness::emp_prob_key()
+const Handle& Surprisingness::emp_tv_key()
 {
-	static Handle epk(createNode(NODE, "*-EmpiricalProbabilityKey-*"));
-	return epk;
+	static Handle etvk(createNode(NODE, "*-EmpiricalTruthValueKey-*"));
+	return etvk;
 }
 
 TruthValuePtr Surprisingness::get_emp_tv(const Handle& pattern)
 {
-	ValuePtr val = pattern->getValue(emp_prob_key());
+	ValuePtr val = pattern->getValue(emp_tv_key());
 	if (val)
 		return TruthValueCast(val);
 	return nullptr;
@@ -792,13 +818,32 @@ TruthValuePtr Surprisingness::get_emp_tv(const Handle& pattern)
 
 void Surprisingness::set_emp_tv(const Handle& pattern, TruthValuePtr etv)
 {
-	pattern->setValue(emp_prob_key(), ValueCast(etv));
+	pattern->setValue(emp_tv_key(), ValueCast(etv));
 }
 
 void Surprisingness::set_emp_prob(const Handle& pattern, double ep)
 {
 	TruthValuePtr etv = createSimpleTruthValue(ep, 1.0);
 	set_emp_tv(pattern, etv);
+}
+
+const Handle& Surprisingness::ji_tv_est_key()
+{
+	static Handle jtek(createNode(NODE, "*-JointIndependentTruthValueEstimateKey-*"));
+	return jtek;
+}
+
+TruthValuePtr Surprisingness::get_ji_tv_est(const Handle& pattern)
+{
+	ValuePtr val = pattern->getValue(ji_tv_est_key());
+	if (val)
+		return TruthValueCast(val);
+	return nullptr;
+}
+
+void Surprisingness::set_ji_tv_est(const Handle& pattern, TruthValuePtr jte)
+{
+	pattern->setValue(ji_tv_est_key(), ValueCast(jte));
 }
 
 double Surprisingness::jsd(const TruthValuePtr l_tv, const TruthValuePtr r_tv)

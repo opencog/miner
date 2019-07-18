@@ -679,6 +679,19 @@ public:
 	                               const HandleSeq& db);
 
 	/**
+	 * Like above but doesn't take a partition. Instead all partitions
+	 * are considered, and resulting TV is averaged.
+	 */
+	static TruthValuePtr ji_tv_est(const Handle& pattern,
+	                               const HandleSeq& db);
+
+	/**
+	 * Like above but the result is memoized.
+	 */
+	static TruthValuePtr ji_tv_est_mem(const Handle& pattern,
+	                                   const HandleSeq& db);
+
+	/**
 	 * Return true iff the given variable has the same position (same
 	 * index) in the variable declarations of both patterns.
 	 */
@@ -905,16 +918,28 @@ public:
 	                          const HandleSeq& db);
 
 	/**
-	 * Key of the empirical probability value
+	 * Key of the empirical truth value
 	 */
-	static const Handle& emp_prob_key();
+	static const Handle& emp_tv_key();
 
 	/**
-	 * Get/set the empirical probability of the given pattern.
+	 * Get/set the empirical truth value of the given pattern.
 	 */
 	static TruthValuePtr get_emp_tv(const Handle& pattern);
 	static void set_emp_tv(const Handle& pattern, TruthValuePtr etv);
 	static void set_emp_prob(const Handle& pattern, double ep);
+
+	/**
+	 * Key of the joint-independent truth value estimate
+	 */
+	static const Handle& ji_tv_est_key();
+
+	/**
+	 * Get/set the joint-independent truth value estimate of the given
+	 * pattern.
+	 */
+	static TruthValuePtr get_ji_tv_est(const Handle& pattern);
+	static void set_ji_tv_est(const Handle& pattern, TruthValuePtr etv);
 
 	/**
 	 * Given 2 TVs, typically representing the empirical probability
