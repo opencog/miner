@@ -41,6 +41,12 @@ typedef Counter<HandleSeq, unsigned> HandleSeqUCounter;
 
 class Surprisingness {
 public:
+	// TODO: We could reframe isurp_old and isurp to use the same
+	// inference tree decomposition as in the JSD case, using standard
+	// deviation or such to determine the interval of the estimate!
+	// This does implies to implement a dedicated truth value estimate
+	// rule to make sure we can retrieve the interval thought.
+
 	/**
 	 * Calculate the I-Surprisingness as defined in
 	 * https://wiki.opencog.org/w/Measuring_Surprisingness of a pattern
@@ -620,7 +626,7 @@ public:
 	 * exponentially with the number conjuncts and polynomially (with
 	 * maximum degree the number of conjuncts) with the size of the
 	 * corpus. We try first to estimate how fast the support grows
-	 * using the support estimate obtained by ji_prob to find what
+	 * using the support estimate obtained by ji_prob_est to find what
 	 * corpus size should be so that the support is roughly equal to
 	 * the corpus size (because we can assume that the user at least
 	 * tolerates an amount of resources in space and time that is
@@ -655,13 +661,22 @@ public:
 	/**
 	 * Calculate probability estimate of a pattern given a partition,
 	 * assuming all blocks are independent, but takes into account the
-	 * joint variables (ji in ji_prob stands for joint-independent).
-	 *
-	 * An atomspace is provided to memoize the support of subpatterns.
+	 * joint variables (ji_prob_est stands for joint-independent
+	 * probability estimate).
 	 */
-	static double ji_prob(const HandleSeqSeq& partition,
-	                      const Handle& pattern,
-	                      const HandleSeq& db);
+	static double ji_prob_est(const HandleSeqSeq& partition,
+	                          const Handle& pattern,
+	                          const HandleSeq& db);
+
+	/**
+	 * Calculate truth value estimate of a pattern given a partition,
+	 * assuming all blocks are independent, but takes into account the
+	 * joint variables (ji_tv_est stands for joint independent truth
+	 * value estimate).
+	 */
+	static TruthValuePtr ji_tv_est(const HandleSeqSeq& partition,
+	                               const Handle& pattern,
+	                               const HandleSeq& db);
 
 	/**
 	 * Return true iff the given variable has the same position (same

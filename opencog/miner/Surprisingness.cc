@@ -100,7 +100,7 @@ double Surprisingness::isurp(const Handle& pattern,
 	// into account the linkage probability.
 	std::vector<double> estimates;
 	for (const HandleSeqSeq& partition : partitions_without_pattern(pattern)) {
-		double jip = ji_prob(partition, pattern, db);
+		double jip = ji_prob_est(partition, pattern, db);
 		estimates.push_back(jip);
 	}
 	auto mmp = std::minmax_element(estimates.begin(), estimates.end());
@@ -477,9 +477,9 @@ unsigned Surprisingness::subsmp_size(const Handle& pattern,
 	return std::max((unsigned)res, std::min(5000U, (unsigned)ts));
 }
 
-double Surprisingness::ji_prob(const HandleSeqSeq& partition,
-                               const Handle& pattern,
-                               const HandleSeq& db)
+double Surprisingness::ji_prob_est(const HandleSeqSeq& partition,
+                                   const Handle& pattern,
+                                   const HandleSeq& db)
 {
 	// Generate subpatterns from blocks (add them in the atomspace to
 	// memoize support calculation)
@@ -500,6 +500,34 @@ double Surprisingness::ji_prob(const HandleSeqSeq& partition,
 	p *= eq_p;
 
 	return p;
+}
+
+TruthValuePtr Surprisingness::ji_tv_est(const HandleSeqSeq& partition,
+                                        const Handle& pattern,
+                                        const HandleSeq& db)
+{
+	// Generate subpatterns from blocks (add them in the atomspace to
+	// memoize support calculation)
+	HandleSeq subpatterns = add_subpatterns(partition, pattern,
+	                                        *pattern->getAtomSpace());
+
+	// Calculate the product of the probability over subpatterns
+	// without considering joint variables
+	double rp = 1.0;
+	double rc = 1.0;
+	for (const Handle& subpattern : subpatterns) {
+		TruthValuePtr etv = emp_tv_mem(subpattern, db);
+		rp *= etv->get_mean();
+		// TODO: this is too conservative, find something better
+		rc = std::min(rc, etv->get_confidence());
+	}
+
+	// Calculate the probability that all joint variables take the same
+	// value
+	double eq_p = eq_prob(partition, pattern, db);
+	rp *= eq_p;
+
+	return createSimpleTruthValue(rp, rc);
 }
 
 bool Surprisingness::has_same_index(const Handle& l_pat,
