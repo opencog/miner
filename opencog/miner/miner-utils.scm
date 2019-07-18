@@ -212,15 +212,20 @@
 
 (define* (configure-surprisingness surp-rbs mode max-conjuncts)
   ;; Load I-Surprisingess rules
-  ;; (load-from-path (mk-full-rule-path "is-surprisingness.scm"))
-  (let* ((base-rule-file "i-surprisingness.scm")
-         (namify (lambda (i) (string-append (symbol->string mode) "-"
+  ;; (load-from-path (mk-full-rule-path "i-surprisingness.scm"))
+  (let* ((namify (lambda (i) (string-append (symbol->string mode) "-"
                                             (number->string i)
                                             "ary-rule")))
          (aliasify (lambda (i) (DefinedSchema (namify i))))
+         (rule-gen (cond ((or (eq? mode 'isurp-old)
+                              (eq? mode 'nisurp-old)
+                              (eq? mode 'isurp)
+                              (eq? mode 'nisurp))
+                          (lambda (i) (gen-i-surprisingness-rule mode i)))
+                         ((eq? mode 'jsdsurp) jsd-surprisingness-rule)))
          (definify (lambda (i) (DefineLink
                                  (aliasify i)
-                                 (gen-i-surprisingness-rule mode i))))
+                                 (rule-gen i))))
          (rulify (lambda (i) (definify i) (aliasify i)))
          (rules (map rulify (cdr (iota-plus-one max-conjuncts)))))
     (ure-add-rules surp-rbs rules)))

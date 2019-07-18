@@ -98,7 +98,6 @@
         (let* ((pat-isurp conclusion)
                (pat-minsup (car premises))
                (pat (get-pattern pat-minsup))
-               (cnjs-bodies (cog-outgoing-set (get-body pat)))
                (db (get-db pat-minsup))
 
                ;; Calculate I-Surprisingness of pat
