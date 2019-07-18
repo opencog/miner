@@ -846,7 +846,7 @@ void Surprisingness::set_ji_tv_est(const Handle& pattern, TruthValuePtr jte)
 	pattern->setValue(ji_tv_est_key(), ValueCast(jte));
 }
 
-double Surprisingness::jsd(const TruthValuePtr l_tv, const TruthValuePtr r_tv)
+double Surprisingness::jsd(TruthValuePtr l_tv, TruthValuePtr r_tv)
 {
 	static int bins = 100;
 	std::vector<double>

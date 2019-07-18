@@ -121,6 +121,11 @@ protected:
 	 */
 	TruthValuePtr do_ji_tv_est(Handle pattern, Handle db);
 
+	/**
+	 * Calculate the Jensen-Shannon distance between 2 truth values
+	 */
+	double do_jsd(TruthValuePtr ltv, TruthValuePtr rtv);
+
 public:
 	MinerSCM();
 };
@@ -169,6 +174,9 @@ void MinerSCM::init(void)
 
 	define_scheme_primitive("cog-ji-tv-est",
 		&MinerSCM::do_ji_tv_est, this, "miner");
+
+	define_scheme_primitive("cog-jsd",
+		&MinerSCM::do_jsd, this, "miner");
 }
 
 Handle MinerSCM::do_shallow_abstract(Handle pattern,
@@ -303,6 +311,11 @@ TruthValuePtr MinerSCM::do_ji_tv_est(Handle pattern, Handle db)
 	HandleSeq db_seq = MinerUtils::get_db(db);
 
 	return Surprisingness::ji_tv_est_mem(pattern, db_seq);
+}
+
+double MinerSCM::do_jsd(TruthValuePtr ltv, TruthValuePtr rtv)
+{
+	return Surprisingness::jsd(ltv, rtv);
 }
 
 extern "C" {

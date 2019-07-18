@@ -946,7 +946,7 @@ public:
 	 * and the probability estimate of a pattern, calculate the
 	 * Jensen-Shannon distance between them.
 	 */
-	static double jsd(const TruthValuePtr l_tv, const TruthValuePtr r_tv);
+	static double jsd(TruthValuePtr l_tv, TruthValuePtr r_tv);
 
 	/**
 	 * Given 2 cdfs (cummulative distribution functions) return their
