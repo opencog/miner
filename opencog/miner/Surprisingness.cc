@@ -116,17 +116,6 @@ double Surprisingness::isurp(const Handle& pattern,
 	return std::min(normalize ? dst / maxprb : dst, 1.0);
 }
 
-Handle Surprisingness::isurp_key()
-{
-	static Handle isurp_key = createNode(NODE, "*-I-SurprisingnessValueKey-*");
-	return isurp_key;
-}
-
-double Surprisingness::get_isurp_value(const Handle& pattern)
-{
-	return FloatValueCast(pattern->getValue(isurp_key()))->value().front();
-}
-
 double Surprisingness::dst_from_interval(double l, double u, double v)
 {
 	return (u < v ? v - u : (v < l ? l - v : 0.0));
