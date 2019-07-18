@@ -111,6 +111,16 @@ protected:
 	double do_isurp(Handle pattern, Handle db);
 	double do_nisurp(Handle pattern, Handle db);
 
+	/**
+	 * Calculate the empirical truth value of pattern
+	 */
+	TruthValuePtr do_emp_tv(Handle pattern, Handle db);
+
+	/**
+	 * Calculate the joint independent truth value estimate of pattern
+	 */
+	TruthValuePtr do_ji_tv_est(Handle pattern, Handle db);
+
 public:
 	MinerSCM();
 };
@@ -153,6 +163,12 @@ void MinerSCM::init(void)
 
 	define_scheme_primitive("cog-nisurp",
 		&MinerSCM::do_nisurp, this, "miner");
+
+	define_scheme_primitive("cog-emp-tv",
+		&MinerSCM::do_emp_tv, this, "miner");
+
+	define_scheme_primitive("cog-ji-tv-est",
+		&MinerSCM::do_ji_tv_est, this, "miner");
 }
 
 Handle MinerSCM::do_shallow_abstract(Handle pattern,
@@ -161,7 +177,7 @@ Handle MinerSCM::do_shallow_abstract(Handle pattern,
 {
 	AtomSpace *as = SchemeSmob::ss_get_env_as("cog-shallow-abstract");
 
-	// Fetch all db
+	// Fetch data trees
 	HandleSeq db_seq = MinerUtils::get_db(db);
 
 	// Fetch the minimum support
@@ -198,7 +214,7 @@ Handle MinerSCM::do_shallow_specialize(Handle pattern,
 {
 	AtomSpace *as = SchemeSmob::ss_get_env_as("cog-shallow-specialize");
 
-	// Fetch all db
+	// Fetch data trees
 	HandleSeq db_seq = MinerUtils::get_db(db);
 
 	// Get minimum support and maximum number of variables
@@ -213,7 +229,7 @@ Handle MinerSCM::do_shallow_specialize(Handle pattern,
 
 bool MinerSCM::do_enough_support(Handle pattern, Handle db, Handle ms_h)
 {
-	// Fetch all db
+	// Fetch data trees
 	HandleSeq db_seq = MinerUtils::get_db(db);
 
 	// Fetch the minimum support
@@ -227,7 +243,7 @@ Handle MinerSCM::do_expand_conjunction(Handle cnjtion, Handle pattern,
 {
 	AtomSpace *as = SchemeSmob::ss_get_env_as("cog-expand-conjunction");
 
-	// Fetch all db
+	// Fetch data trees
 	HandleSeq db_seq = MinerUtils::get_db(db);
 
 	// Get minimum support and maximum variables
@@ -241,7 +257,7 @@ Handle MinerSCM::do_expand_conjunction(Handle cnjtion, Handle pattern,
 
 double MinerSCM::do_isurp_old(Handle pattern, Handle db)
 {
-	// Fetch all db
+	// Fetch data trees
 	HandleSeq db_seq = MinerUtils::get_db(db);
 
 	return Surprisingness::isurp_old(pattern, db_seq, false);
@@ -249,7 +265,7 @@ double MinerSCM::do_isurp_old(Handle pattern, Handle db)
 
 double MinerSCM::do_nisurp_old(Handle pattern, Handle db)
 {
-	// Fetch all db
+	// Fetch data trees
 	HandleSeq db_seq = MinerUtils::get_db(db);
 
 	return Surprisingness::isurp_old(pattern, db_seq, true);
@@ -257,7 +273,7 @@ double MinerSCM::do_nisurp_old(Handle pattern, Handle db)
 
 double MinerSCM::do_isurp(Handle pattern, Handle db)
 {
-	// Fetch all db
+	// Fetch data trees
 	HandleSeq db_seq = MinerUtils::get_db(db);
 
 	return Surprisingness::isurp(pattern, db_seq, false);
@@ -265,10 +281,28 @@ double MinerSCM::do_isurp(Handle pattern, Handle db)
 
 double MinerSCM::do_nisurp(Handle pattern, Handle db)
 {
-	// Fetch all db
+	// Fetch data trees
 	HandleSeq db_seq = MinerUtils::get_db(db);
 
 	return Surprisingness::isurp(pattern, db_seq, true);
+}
+
+TruthValuePtr MinerSCM::do_emp_tv(Handle pattern, Handle db)
+{
+	// Fetch data trees
+	HandleSeq db_seq = MinerUtils::get_db(db);
+
+	// Calculate its estimate first to optimize empirical calculation
+	TruthValuePtr jte = Surprisingness::ji_tv_est_mem(pattern, db_seq);
+	return Surprisingness::emp_tv_pbs_mem(pattern, db_seq, jte->get_mean());
+}
+
+TruthValuePtr MinerSCM::do_ji_tv_est(Handle pattern, Handle db)
+{
+	// Fetch data trees
+	HandleSeq db_seq = MinerUtils::get_db(db);
+
+	return Surprisingness::ji_tv_est_mem(pattern, db_seq);
 }
 
 extern "C" {
