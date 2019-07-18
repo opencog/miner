@@ -43,7 +43,7 @@
 ;; gen-conjunction-expansion-rule is inaccessible
 (load-from-path (mk-full-rule-path "conjunction-expansion.scm"))
 
-;; Load here because otherwise, when loaded within configure-isurp,
+;; Load here because otherwise, when loaded within configure-surp,
 ;; gen-i-surprisingness-rule is inaccessible
 (load-from-path (mk-full-rule-path "i-surprisingness.scm"))
 
@@ -210,7 +210,7 @@
                             #:max-conjuncts max-conjuncts
                             #:max-variables max-variables))
 
-(define* (configure-isurp isurp-rbs mode max-conjuncts)
+(define* (configure-surprisingness surp-rbs mode max-conjuncts)
   ;; Load I-Surprisingess rules
   ;; (load-from-path (mk-full-rule-path "is-surprisingness.scm"))
   (let* ((base-rule-file "i-surprisingness.scm")
@@ -223,15 +223,15 @@
                                  (gen-i-surprisingness-rule mode i))))
          (rulify (lambda (i) (definify i) (aliasify i)))
          (rules (map rulify (cdr (iota-plus-one max-conjuncts)))))
-    (ure-add-rules isurp-rbs rules)))
+    (ure-add-rules surp-rbs rules)))
 
 (define (pattern-var)
   (Variable "$pattern"))
 
-(define (isurp-target mode db-cpt)
-  (isurp-eval mode (pattern-var) db-cpt))
+(define (surp-target mode db-cpt)
+  (surp-eval mode (pattern-var) db-cpt))
 
-(define (isurp-vardecl)
+(define (surp-vardecl)
   (TypedVariable (pattern-var) (Type "LambdaLink")))
 
 (define* (configure-miner pm-rbs
@@ -318,7 +318,7 @@
 "
   (cog-set-tv! (minsup-eval pattern db ms) (stv 1 1)))
 
-(define (isurp-eval mode pattern db)
+(define (surp-eval mode pattern db)
 "
   Construct
 
@@ -328,7 +328,7 @@
       pattern
       db
 
-  where mode can be 'isurp-old, 'nisurp-old, 'isurp, 'nisurp.
+  where mode can be 'isurp-old, 'nisurp-old, 'isurp, 'nisurp, 'jsdsurp.
 "
   (Evaluation
     (Predicate (symbol->string mode))
@@ -595,22 +595,22 @@
               ;; Run surprisingness
               (let*
                   ;; Configure surprisingness backward chainer
-                  ((isurp-rbs (random-surprisingness-rbs-cpt))
-                   (target (isurp-target surprisingness db-cpt))
-                   (vardecl (isurp-vardecl))
-                   (cfg-s (configure-isurp isurp-rbs
-                                           surprisingness
-                                           max-conjuncts))
+                  ((surp-rbs (random-surprisingness-rbs-cpt))
+                   (target (surp-target surprisingness db-cpt))
+                   (vardecl (surp-vardecl))
+                   (cfg-s (configure-surprisingness surp-rbs
+                                                    surprisingness
+                                                    max-conjuncts))
 
                    ;; Run surprisingness in a backward way
-                   (isurp-res (cog-bc isurp-rbs target #:vardecl vardecl))
-                   (isurp-res-lst (cog-outgoing-set isurp-res))
-                   (isurp-res-sort-lst (desc-sort-by-tv-strength isurp-res-lst))
+                   (surp-res (cog-bc surp-rbs target #:vardecl vardecl))
+                   (surp-res-lst (cog-outgoing-set surp-res))
+                   (surp-res-sort-lst (desc-sort-by-tv-strength surp-res-lst))
 
                    ;; Copy the results to the parent atomspace
-                   (parent-isurp-res (cog-cp parent-as isurp-res-sort-lst)))
+                   (parent-surp-res (cog-cp parent-as surp-res-sort-lst)))
                 (cog-set-atomspace! parent-as)
-                parent-isurp-res))))))
+                parent-surp-res))))))
 
 (define (export-miner-utils)
   (export
@@ -622,11 +622,11 @@
     configure-mandatory-rules
     configure-optional-rules
     configure-rules
-    configure-isurp
+    configure-surprisingness
     configure-miner
     minsup-eval
     minsup-eval-true
-    isurp-eval
+    surp-eval
     get-members
     get-cardinality
     fetch-patterns

@@ -65,17 +65,14 @@ private:
 	// Pattern miner rule base
 	Handle pm_rb;
 
-	// I-Surprisingness rule base
-	Handle isurp_rb;
+	// Surprisingness rule base
+	Handle surp_rb;
 
 	// Concept holding the db
 	Handle db_cpt;
 
 	// minsup predicate
 	Handle minsup_prd;
-
-	// I-Surprisingness predicate
-	Handle isurp_prd;
 
 	// Top abstraction (Lambda X X)
 	Handle top;
@@ -284,10 +281,9 @@ void MinerUTest::setUp()
 	G = an(CONCEPT_NODE, "G");
 	H = an(CONCEPT_NODE, "H");
 	pm_rb = an(CONCEPT_NODE, "pm-rbs");
-	isurp_rb = an(CONCEPT_NODE, "isurp-rbs");
+	surp_rb = an(CONCEPT_NODE, "surp-rbs");
 	db_cpt = an(CONCEPT_NODE, "db");
 	minsup_prd = an(PREDICATE_NODE, "minsup");
-	isurp_prd = an(PREDICATE_NODE, "isurp");
 	top = MinerUtils::mk_pattern(X, {X});
 
 	// Load URE-based pattern miner
@@ -1363,17 +1359,17 @@ void MinerUTest::test_SodaDrinker_incremental()
 
 	// Test I-Surprisingness
 	std::string mode("nisurp-old");
-	HandleSeq isurp_results = MinerUTestUtils::ure_isurp(_as, _scm, isurp_rb,
-	                                                     mode, max_conjuncts);
+	HandleSeq surp_results = MinerUTestUtils::ure_surp(_as, _scm, surp_rb,
+	                                                   mode, max_conjuncts);
 
 	// We get the second, because due to the old I-Surprisingness not
 	// accounting for linkage, the ugly male soda drinker comes second
 	// not first.
-	Handle isurp_result = isurp_results[1];
+	Handle surp_result = surp_results[1];
 
-	logger().debug() << "isurp_results = " << oc_to_string(isurp_results);
+	logger().debug() << "surp_results = " << oc_to_string(surp_results);
 
-	TS_ASSERT(content_eq(expected, MinerUTestUtils::get_pattern(isurp_result)));
+	TS_ASSERT(content_eq(expected, MinerUTestUtils::get_pattern(surp_result)));
 }
 
 void MinerUTest::xtest_lojban()

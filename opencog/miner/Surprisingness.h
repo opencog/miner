@@ -43,7 +43,7 @@ class Surprisingness {
 public:
 	// TODO: We could reframe isurp_old and isurp to use the same
 	// inference tree decomposition as in the JSD case, using standard
-	// deviation or such to determine the interval of the estimate!
+	// deviation or such to determine the interval of the estimate.
 	// This does implies to implement a dedicated truth value estimate
 	// rule to make sure we can retrieve the interval thought.
 

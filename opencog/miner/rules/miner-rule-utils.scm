@@ -6,7 +6,7 @@
 ;; Given an atom created with minsup-eval, get the pattern, db and
 ;; ms
 ;;
-;; get-pattern and get-db also work for isurp constructs
+;; get-pattern and get-db also work for surp constructs
 (define (get-pattern minsup-f)
   (cog-outgoing-atom (gdr minsup-f) 0))
 (define (get-db minsup-f)
@@ -24,6 +24,27 @@
     (List
       shabs-list
       minsup-g)))
+
+(define (emp-eval pattern db)
+  (Evaluation
+    (Predicate "emp")
+    (List
+     pattern
+     db)))
+
+(define (est-eval pattern db)
+  (Evaluation
+    (Predicate "est")
+    (List
+     pattern
+     db)))
+
+(define (jsd-eval pattern db)
+  (Evaluation
+    (Predicate "jsd")
+    (List
+     pattern
+     db)))
 
 (define (unary-conjunction? body)
   (let ((body-type (cog-type body)))

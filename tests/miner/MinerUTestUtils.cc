@@ -45,7 +45,7 @@ Handle MinerUTestUtils::add_minsup_prd(AtomSpace& as)
 	return an(PREDICATE_NODE, "minsup");
 }
 
-Handle MinerUTestUtils::add_isurp_prd(AtomSpace& as, const std::string& mode)
+Handle MinerUTestUtils::add_surp_prd(AtomSpace& as, const std::string& mode)
 {
 	return an(PREDICATE_NODE, mode);
 }
@@ -83,16 +83,16 @@ Handle MinerUTestUtils::add_minsup_evals(AtomSpace& as,
 	return al(SET_LINK, minsup_evals);
 }
 
-Handle MinerUTestUtils::add_isurp_eval(AtomSpace& as,
+Handle MinerUTestUtils::add_surp_eval(AtomSpace& as,
                                        const std::string& mode,
                                        const Handle& pattern)
 {
-	Handle isurp_eval_h = al(EVALUATION_LINK,
-	                         add_isurp_prd(as, mode),
-	                         al(LIST_LINK,
-	                            pattern,
-	                            add_db_cpt(as)));
-	return isurp_eval_h;
+	Handle surp_eval_h = al(EVALUATION_LINK,
+	                        add_surp_prd(as, mode),
+	                        al(LIST_LINK,
+	                           pattern,
+	                           add_db_cpt(as)));
+	return surp_eval_h;
 }
 
 Handle MinerUTestUtils::get_pattern(const Handle& minsup_eval)
@@ -301,37 +301,37 @@ void MinerUTestUtils::configure_optional_rules(SchemeEval& scm,
 	logger().debug() << "MinerUTest::configure_optional_rules() rs = " << rs;
 }
 
-void MinerUTestUtils::configure_ISurprisingness(SchemeEval& scm,
-                                                const Handle& isurp_rb,
-                                                const std::string& mode,
-                                                unsigned max_conjuncts)
+void MinerUTestUtils::configure_surprisingness(SchemeEval& scm,
+                                               const Handle& surp_rb,
+                                               const std::string& mode,
+                                               unsigned max_conjuncts)
 {
-	std::string call = "(configure-isurp (Concept \""
-		+ isurp_rb->get_name() + "\") ";
+	std::string call = "(configure-surprisingness (Concept \""
+		+ surp_rb->get_name() + "\") ";
 	call += std::string("'") + mode + " ";
 	call += std::to_string(max_conjuncts);
 	call += ")";
 	std::string rs = scm.eval(call);
-	logger().debug() << "MinerUTest::configure_ISurprisingness() rs = " << rs;
+	logger().debug() << "MinerUTest::configure_surprisingness() rs = " << rs;
 }
 
-HandleSeq MinerUTestUtils::ure_isurp(AtomSpace& as,
-                                     SchemeEval& scm,
-                                     const Handle& isurp_rb,
-                                     const std::string& mode,
-                                     unsigned max_conjuncts)
+HandleSeq MinerUTestUtils::ure_surp(AtomSpace& as,
+                                    SchemeEval& scm,
+                                    const Handle& surp_rb,
+                                    const std::string& mode,
+                                    unsigned max_conjuncts)
 {
-	configure_ISurprisingness(scm, isurp_rb, mode, max_conjuncts);
+	configure_surprisingness(scm, surp_rb, mode, max_conjuncts);
 	Handle X = an(VARIABLE_NODE, "$X"),
-		target = add_isurp_eval(as, mode, X),
+		target = add_surp_eval(as, mode, X),
 		vardecl = al(TYPED_VARIABLE_LINK, X, an(TYPE_NODE, "LambdaLink"));
-	BackwardChainer bc(as, isurp_rb, target, vardecl);
+	BackwardChainer bc(as, surp_rb, target, vardecl);
 	bc.do_chain();
-	Handle isurp_results = bc.get_results();
-	HandleSeq isurp_results_seq = isurp_results->getOutgoingSet();
+	Handle surp_results = bc.get_results();
+	HandleSeq surp_results_seq = surp_results->getOutgoingSet();
 	// Sort according to surprisingness
-	boost::sort(isurp_results_seq, [](const Handle& lh, const Handle& rh) {
+	boost::sort(surp_results_seq, [](const Handle& lh, const Handle& rh) {
 			return lh->getTruthValue()->get_mean() > rh->getTruthValue()->get_mean();
 		});
-	return isurp_results_seq;
+	return surp_results_seq;
 }

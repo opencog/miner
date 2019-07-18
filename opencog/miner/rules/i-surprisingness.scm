@@ -68,7 +68,7 @@
                     (Present
                       (map Unquote cnj-bodies)))))
              (f-minsup (minsup-eval f db ms))
-             (f-isurp (isurp-eval mode f db)))
+             (f-isurp (surp-eval mode f db)))
         (Bind
           (VariableList
             typed-f-vardecl
