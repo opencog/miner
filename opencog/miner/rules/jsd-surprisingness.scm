@@ -86,5 +86,5 @@
              (jsd-e (list-ref premises 1))
              (pattern (get-pattern minsup-e))
              (db (get-db pat-minsup))
-             (surp (cog-mean jsd-e))
-        (cog-set-tv! jsdsurp-e (stv surp 1))))))
+             (surp (cog-mean jsd-e)))
+        (cog-set-tv! jsdsurp-e (stv surp 1)))))

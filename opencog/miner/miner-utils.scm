@@ -43,9 +43,15 @@
 ;; gen-conjunction-expansion-rule is inaccessible
 (load-from-path (mk-full-rule-path "conjunction-expansion.scm"))
 
-;; Load here because otherwise, when loaded within configure-surp,
-;; gen-i-surprisingness-rule is inaccessible
+;; Load here because otherwise, when loaded within
+;; configure-surprisingness, gen-i-surprisingness-rule is
+;; inaccessible.
 (load-from-path (mk-full-rule-path "i-surprisingness.scm"))
+
+;; Load here because otherwise, when loaded within
+;; configure-surprisingness, gen-jsd-surprisingness-rule is
+;; inaccessible.
+(load-from-path (mk-full-rule-path "jsd-surprisingness.scm"))
 
 (define (iota-plus-one x)
 "
