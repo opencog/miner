@@ -973,6 +973,20 @@ public:
 	static std::vector<double> avrg_cdf(const std::vector<double>& l_cdf,
 	                                    const std::vector<double>& r_cdf);
 
+
+	/**
+	 * Method to convert confidence to count and vice versa of a simple
+	 * truth value. Should probably be moved to SimpleTruthValue.
+	 */
+	static count_t confidence_to_count(confidence_t cfd);
+	static confidence_t count_to_confidence(count_t cnt);
+
+	/**
+	 * Display cdf.
+	 *
+	 * TODO: maybe move to BetaDistribution class
+	 */
+	static std::string cdf_to_string(const std::vector<double>& cdf);
 };
 
 /**

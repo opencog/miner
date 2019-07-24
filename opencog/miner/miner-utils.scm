@@ -33,25 +33,26 @@
   (let ((rule-path "opencog/miner/rules/"))
     (string-append rule-path brf)))
 
-;; Load here because otherwise, when loaded within
-;; configure-shallow-specialization-rule,
-;; gen-shallow-specialization-rule is inaccessible
+;; Load here otherwise gen-shallow-specialization-rule is inaccessible
 (load-from-path (mk-full-rule-path "shallow-specialization.scm"))
 
-;; Load here because otherwise, when loaded within
-;; configure-conjunction-expansion-rules,
-;; gen-conjunction-expansion-rule is inaccessible
+;; Load here otherwise gen-conjunction-expansion-rule is inaccessible
 (load-from-path (mk-full-rule-path "conjunction-expansion.scm"))
 
-;; Load here because otherwise, when loaded within
-;; configure-surprisingness, gen-i-surprisingness-rule is
-;; inaccessible.
+;; Load here otherwise gen-i-surprisingness-rule is inaccessible
 (load-from-path (mk-full-rule-path "i-surprisingness.scm"))
 
-;; Load here because otherwise, when loaded within
-;; configure-surprisingness, gen-jsd-surprisingness-rule is
-;; inaccessible.
+;; Load here otherwise gen-jsd-surprisingness-rule is inaccessible
 (load-from-path (mk-full-rule-path "jsd-surprisingness.scm"))
+
+;; Load here otherwise gen-emp-rule is inaccessible
+(load-from-path (mk-full-rule-path "emp.scm"))
+
+;; Load here otherwise gen-est-rule is inaccessible
+(load-from-path (mk-full-rule-path "est.scm"))
+
+;; Load here otherwise gen-jsd-rule is inaccessible
+(load-from-path (mk-full-rule-path "jsd.scm"))
 
 (define (iota-plus-one x)
 "
@@ -217,8 +218,7 @@
                             #:max-variables max-variables))
 
 (define* (configure-surprisingness surp-rbs mode max-conjuncts)
-  ;; Load I-Surprisingess rules
-  ;; (load-from-path (mk-full-rule-path "i-surprisingness.scm"))
+  ;; Add surprisingness rules
   (let* ((namify (lambda (i) (string-append (symbol->string mode) "-"
                                             (number->string i)
                                             "ary-rule")))
@@ -228,13 +228,23 @@
                               (eq? mode 'isurp)
                               (eq? mode 'nisurp))
                           (lambda (i) (gen-i-surprisingness-rule mode i)))
-                         ((eq? mode 'jsdsurp) jsd-surprisingness-rule)))
+                         ((eq? mode 'jsdsurp) gen-jsd-surprisingness-rule)))
          (definify (lambda (i) (DefineLink
                                  (aliasify i)
                                  (rule-gen i))))
          (rulify (lambda (i) (definify i) (aliasify i)))
          (rules (map rulify (cdr (iota-plus-one max-conjuncts)))))
-    (ure-add-rules surp-rbs rules)))
+    (ure-add-rules surp-rbs rules))
+
+  ;; In case of jsdsurp we also need emp, est and jsd rules
+  (if (eq? mode 'jsdsurp)
+      (let* ((emp-alias (DefinedSchema "emp-rule"))
+             (est-alias (DefinedSchema "est-rule"))
+             (jsd-alias (DefinedSchema "jsd-rule"))
+             (emp-def (Define emp-alias (gen-emp-rule)))
+             (est-def (Define est-alias (gen-est-rule)))
+             (jsd-def (Define jsd-alias (gen-jsd-rule))))
+        (ure-add-rules surp-rbs (list emp-alias est-alias jsd-alias)))))
 
 (define (pattern-var)
   (Variable "$pattern"))
@@ -519,13 +529,17 @@
 
       'isurp-old:  Verbatim port of Shujing I-Surprisingness.
 
-      'nisurp-old: Verbatim port of Shujing nornalized I-Surprisingness.
+      'nisurp-old: Verbatim port of Shujing normalized I-Surprisingness.
 
       'isurp:      New implementation of I-Surprisingness that takes
                    linkage into account.
 
       'nisurp:     New implementation of normalized I-Surprisingness
                    that takes linkage into account.
+
+      'jsdsurp:    Jensen-Shannon Distance based surprisingness.
+                   The type of surprisingness is determined by the way
+                   the truth value estimate is calculated.
 
       'none:       No surprisingness measure is applied.
 
@@ -667,6 +681,10 @@
     nisurp-old-formula
     isurp-formula
     nisurp-formula
+    emp-formula
+    est-formula
+    jsd-formula
+    jsd-surprisingness-formula
     unary-conjunction
     unary-conjunction-pattern
   )

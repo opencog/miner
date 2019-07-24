@@ -67,12 +67,13 @@
             (Absent
                surp-e)
             (absolutely-true-eval minsup-e)
-            (gt-zero-configure-eval jsd-e))
+            (gt-zero-confidence-eval jsd-e))
           (ExecutionOutput
             (GroundedSchema "scm: jsd-surprisingness-formula")
             (List
-              isurp-e
-              minsup-e))))))
+              surp-e
+              minsup-e
+              jsd-e))))))
 
 ;; I-Suprisingness formula
 (define (jsd-surprisingness-formula conclusion . premises)
@@ -85,6 +86,6 @@
              (minsup-e (list-ref premises 0))
              (jsd-e (list-ref premises 1))
              (pattern (get-pattern minsup-e))
-             (db (get-db pat-minsup))
+             (db (get-db minsup-e))
              (surp (cog-mean jsd-e)))
         (cog-set-tv! jsdsurp-e (stv surp 1)))))

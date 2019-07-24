@@ -23,7 +23,7 @@
 
 (load "miner-rule-utils.scm")
 
-(define jsd-rule
+(define (gen-jsd-rule)
   (let* (;; Variables
          (pattern (Variable "$pattern"))
          (db (Variable "$db"))
@@ -39,8 +39,7 @@
   (Bind
     (VariableList
       pattern-decl
-      db-decl
-      ms-decl)
+      db-decl)
     (And
       (Present
         emp
@@ -48,7 +47,7 @@
       (gt-zero-confidence-eval emp)
       (gt-zero-confidence-eval est))
     (ExecutionOutput
-      (GroundedSchema "scm: emp-formula")
+      (GroundedSchema "scm: jsd-formula")
       (List
         (jsd-eval pattern db)
         emp

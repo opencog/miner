@@ -303,7 +303,7 @@ TruthValuePtr Surprisingness::emp_tv(const Handle& pattern, const HandleSeq& db)
 	unsigned ms = (unsigned)std::min((double)UINT_MAX, ucount);
 	double sup = MinerUtils::support(pattern, db, ms);
 	double mean = sup / ucount;
-	double conf = ucount / (ucount + SimpleTruthValue::DEFAULT_K);
+	double conf = count_to_confidence(ucount);
 	return createSimpleTruthValue(mean, conf);
 }
 
@@ -845,12 +845,22 @@ double Surprisingness::jsd(TruthValuePtr l_tv, TruthValuePtr r_tv)
 	double
 		ld = kld(l_cdf, m_cdf),
 		rd = kld(r_cdf, m_cdf);
+
+	// Debug
+	logger().debug() << "Surprisingness::jsd(l_tv=" << oc_to_string(l_tv)
+	                 << ",r_tv=" << oc_to_string(r_tv) << ")";
+	// logger().debug() << "Surprisingness::jsd l_cdf=" << cdf_to_string(l_cdf);
+	// logger().debug() << "Surprisingness::jsd r_cdf=" << cdf_to_string(r_cdf);
+	// logger().debug() << "Surprisingness::jsd m_cdf=" << cdf_to_string(m_cdf);
+	logger().debug() << "Surprisingness::jsd ld=" << ld << ", rd=" << rd << ")";
+	// ~Debug
 	return sqrt(avrg(ld, rd));
 }
 
 double Surprisingness::kld(const std::vector<double>& l_cdf,
                            const std::vector<double>& r_cdf)
 {
+	logger().debug() << "Surprisingness::kld";
 	static double epsilon = 1e-32;
 	OC_ASSERT(l_cdf.size() == r_cdf.size());
 
@@ -866,8 +876,13 @@ double Surprisingness::kld(const std::vector<double>& l_cdf,
 		// Probabilities of the right and left points
 		double lp = l_cdf[i] - last_lv;
 		double rp = r_cdf[i] - last_rv;
-		// Their relative entropy
-		kldi += epsilon < rp ? lp * std::log2(lp/rp) : 0.0;
+		// Relative entropy
+		if (epsilon < rp and epsilon < lp) {
+			double e = lp * std::log2(lp/rp);
+			kldi += e;
+			logger().debug() << "lp = " << lp << ", rp = " << rp << ", e = " << e
+			                 << ", kldi[" << i << "] = " << kldi;
+		}
 		// Remember last cummulated probabilities
 		last_lv = l_cdf[i];
 		last_rv = r_cdf[i];
@@ -917,6 +932,27 @@ std::vector<double> Surprisingness::avrg_cdf(const std::vector<double>& l_cdf,
 	boost::transform(l_cdf, r_cdf, m_cdf.begin(),
 	                 [](double l, double r) { return avrg(l, r); });
 	return m_cdf;
+}
+
+count_t Surprisingness::confidence_to_count(confidence_t cfd)
+{
+	return cfd * SimpleTruthValue::DEFAULT_K / (1.0 - cfd);
+}
+
+confidence_t Surprisingness::count_to_confidence(count_t cnt)
+{
+	return cnt / (cnt + SimpleTruthValue::DEFAULT_K);
+}
+
+std::string Surprisingness::cdf_to_string(const std::vector<double>& cdf)
+{
+	size_t i = 0;
+	std::stringstream ss;
+	ss << "size = " << cdf.size();
+	for (double v : cdf) {
+		ss << std::endl << "cdf[" << i++ << "] = " << v;
+	}
+	return ss.str();
 }
 
 std::string oc_to_string(const HandleSeqSeqSeq& hsss, const std::string& indent)

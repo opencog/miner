@@ -27,7 +27,7 @@
 
 (load "miner-rule-utils.scm")
 
-(define emp-rule
+(define (gen-est-rule)
   (let* (;; Variables
          (pattern (Variable "$pattern"))
          (db (Variable "$db"))
