@@ -9,7 +9,7 @@
 ;;     Lambda
 ;;       <f-vardecl>
 ;;       <f-body>
-;;     <texts>
+;;     <db>
 ;;     <ms>
 ;; Evaluation (stv 1 1)
 ;;   Predicate "minsup"
@@ -17,7 +17,7 @@
 ;;     Lambda
 ;;       <g-vardecl>
 ;;       <g-body>
-;;     <texts>
+;;     <db>
 ;;     <ms>
 ;; |-
 ;; Evaluation (stv 1 1)
@@ -30,7 +30,7 @@
 ;;       And
 ;;         <f-body>
 ;;         <g-body>
-;;     <texts>
+;;     <db>
 ;;     <ms>
 ;;
 ;; Where <f-body> may be a conjunction of multiple conjuncts, while
@@ -68,7 +68,7 @@
   ;; Shared variables
   (define f-vardecl (Variable "$f-vardecl"))
   (define g-vardecl (Variable "$g-vardecl"))
-  (define texts (Variable "$texts"))
+  (define db (Variable "$db"))
   (define ms (Variable "$ms"))
   (define g-body (Variable "$g-body"))
   ;; Shared types
@@ -79,11 +79,11 @@
   (define f-vardecl-decl f-vardecl)
   (define g-vardecl-decl g-vardecl)
   (define g-body-decl g-body)
-  (define texts-decl (TypedVariable texts ConceptT))
+  (define db-decl (TypedVariable db ConceptT))
   (define ms-decl (TypedVariable ms NumberT))
   ;; Shared clauses
   (define g (Quote (Lambda (Unquote g-vardecl) (Unquote g-body))))
-  (define minsup-g (minsup-eval g texts ms))
+  (define minsup-g (minsup-eval g db ms))
 
   ;; Generate rule by nary cases
   (if (<= nary 1)
@@ -96,14 +96,14 @@
              (f-body-decl f-body)
              ;; clauses
              (f (Quote (Lambda (Unquote f-vardecl) (Unquote f-body))))
-             (minsup-f (minsup-eval f texts ms)))
+             (minsup-f (minsup-eval f db ms)))
         (Bind
           (VariableList
             f-vardecl-decl
             g-vardecl-decl
             f-body-decl
             g-body-decl
-            texts-decl
+            db-decl
             ms-decl)
           (And
             (Present
@@ -125,7 +125,7 @@
             (List
               ;; Fake conclusion, since we can't statistically define its
               ;; pattern ATM
-              (minsup-eval (top) texts ms)
+              (minsup-eval (top) db ms)
               ;; Premises, wrap in Set because their order does not matter
               (Set minsup-f
                    minsup-g)))))
@@ -138,14 +138,14 @@
              ;; clauses
              (f (Quote (Lambda (Unquote f-vardecl)
                                (Present (map Unquote f-conjuncts)))))
-             (minsup-f (minsup-eval f texts ms)))
+             (minsup-f (minsup-eval f db ms)))
       (Bind
         (VariableList
           f-vardecl-decl
           g-vardecl-decl
           f-conjuncts-decls
           g-body-decl
-          texts-decl
+          db-decl
           ms-decl)
         (And
           (Present
@@ -162,7 +162,7 @@
           (List
             ;; Fake conclusion, since we can't statistically define its
             ;; pattern ATM
-            (minsup-eval (top) texts ms)
+            (minsup-eval (top) db ms)
             ;; Premises, wrap in Set because their order does not matter
             (Set minsup-f
                  minsup-g)))))))
@@ -177,14 +177,14 @@
                (minsup-g (cog-outgoing-atom minsup-fg 1))
                (f (get-pattern minsup-f))
                (g (get-pattern minsup-g))
-               (texts (get-texts minsup-f))
+               (db (get-db minsup-f))
                (ms (get-ms minsup-f))
                ;; Swap f and g to make sure the second argument of
                ;; cog-expand-conjunction is never a conjunction
                (fgs (if (unary-conjunction? (get-body g))
-                        (cog-expand-conjunction f g texts ms (Number mv))
-                        (cog-expand-conjunction g f texts ms (Number mv))))
-               (mk-minsup (lambda (fg) (minsup-eval-true fg texts ms)))
+                        (cog-expand-conjunction f g db ms (Number mv))
+                        (cog-expand-conjunction g f db ms (Number mv))))
+               (mk-minsup (lambda (fg) (minsup-eval-true fg db ms)))
                ;; cog-expand-conjunction only return patterns with
                ;; enough support
                (minsup-fgs (map mk-minsup (cog-outgoing-set fgs))))

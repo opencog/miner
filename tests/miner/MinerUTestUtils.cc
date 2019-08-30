@@ -35,9 +35,9 @@ using namespace opencog;
 #define an as.add_node
 #define al as.add_link
 
-Handle MinerUTestUtils::add_texts_cpt(AtomSpace& as)
+Handle MinerUTestUtils::add_db_cpt(AtomSpace& as)
 {
-	return an(CONCEPT_NODE, "texts");
+	return an(CONCEPT_NODE, "db");
 }
 
 Handle MinerUTestUtils::add_minsup_prd(AtomSpace& as)
@@ -45,7 +45,7 @@ Handle MinerUTestUtils::add_minsup_prd(AtomSpace& as)
 	return an(PREDICATE_NODE, "minsup");
 }
 
-Handle MinerUTestUtils::add_isurp_prd(AtomSpace& as, const std::string& mode)
+Handle MinerUTestUtils::add_surp_prd(AtomSpace& as, const std::string& mode)
 {
 	return an(PREDICATE_NODE, mode);
 }
@@ -65,7 +65,7 @@ Handle MinerUTestUtils::add_minsup_eval(AtomSpace& as,
 	                          add_minsup_prd(as),
 	                          al(LIST_LINK,
 	                             pattern,
-	                             add_texts_cpt(as),
+	                             add_db_cpt(as),
 	                             an(NUMBER_NODE, std::to_string(minsup))));
 	if (TruthValue::DEFAULT_TV() != tv)
 		minsup_eval_h->setTruthValue(tv);
@@ -83,16 +83,16 @@ Handle MinerUTestUtils::add_minsup_evals(AtomSpace& as,
 	return al(SET_LINK, minsup_evals);
 }
 
-Handle MinerUTestUtils::add_isurp_eval(AtomSpace& as,
+Handle MinerUTestUtils::add_surp_eval(AtomSpace& as,
                                        const std::string& mode,
                                        const Handle& pattern)
 {
-	Handle isurp_eval_h = al(EVALUATION_LINK,
-	                         add_isurp_prd(as, mode),
-	                         al(LIST_LINK,
-	                            pattern,
-	                            add_texts_cpt(as)));
-	return isurp_eval_h;
+	Handle surp_eval_h = al(EVALUATION_LINK,
+	                        add_surp_prd(as, mode),
+	                        al(LIST_LINK,
+	                           pattern,
+	                           add_db_cpt(as)));
+	return surp_eval_h;
 }
 
 Handle MinerUTestUtils::get_pattern(const Handle& minsup_eval)
@@ -140,7 +140,7 @@ HandleSeq MinerUTestUtils::add_variables(AtomSpace& as,
 Handle MinerUTestUtils::ure_pm(AtomSpace& as,
                                SchemeEval& scm,
                                const Handle& pm_rb,
-                               const AtomSpace& texts_as,
+                               const AtomSpace& db_as,
                                int minsup,
                                int maximum_iterations,
                                Handle initpat,
@@ -148,17 +148,17 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
                                unsigned max_conjuncts,
                                double complexity_penalty)
 {
-	HandleSeq texts;
-	texts_as.get_handles_by_type(std::inserter(texts, texts.end()),
-	                             opencog::ATOM, true);
-	return ure_pm(as, scm, pm_rb, texts, minsup, maximum_iterations, initpat,
+	HandleSeq db;
+	db_as.get_handles_by_type(std::inserter(db, db.end()),
+	                          opencog::ATOM, true);
+	return ure_pm(as, scm, pm_rb, db, minsup, maximum_iterations, initpat,
 	              incremental_expansion, max_conjuncts, complexity_penalty);
 }
 
 Handle MinerUTestUtils::ure_pm(AtomSpace& as,
                                SchemeEval& scm,
                                const Handle& pm_rb,
-                               const HandleSeq& texts,
+                               const HandleSeq& db,
                                int minsup,
                                int maximum_iterations,
                                Handle initpat,
@@ -166,9 +166,9 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
                                unsigned max_conjuncts,
                                double complexity_penalty)
 {
-	// Make (Member text (Concept "texts)) links
-	for (const Handle& text : texts)
-		al(MEMBER_LINK, text, add_texts_cpt(as));
+	// Make (Member dt (Concept "db)) links
+	for (const Handle& dt : db)
+		al(MEMBER_LINK, dt, add_db_cpt(as));
 
 	// If init is not defined then use top
 	if (not initpat)
@@ -176,7 +176,7 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
 
 	// Add the axiom that initpat has enough support, and use it as
 	// source for the forward chainer
-	bool es = MinerUtils::enough_support(initpat, texts, minsup);
+	bool es = MinerUtils::enough_support(initpat, db, minsup);
 
 	// If it doesn't have enough support return the empty solution
 	if (not es)
@@ -209,7 +209,7 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
 	return results;
 }
 
-HandleTree MinerUTestUtils::cpp_pm(const AtomSpace& texts_as,
+HandleTree MinerUTestUtils::cpp_pm(const AtomSpace& db_as,
                                    int minsup,
                                    int conjuncts,
                                    const Handle& initpat,
@@ -217,10 +217,10 @@ HandleTree MinerUTestUtils::cpp_pm(const AtomSpace& texts_as,
 {
 	MinerParameters param(minsup, conjuncts, initpat, maxdepth);
 	Miner pm(param);
-	return pm(texts_as);
+	return pm(db_as);
 }
 
-HandleTree MinerUTestUtils::cpp_pm(const HandleSeq& texts,
+HandleTree MinerUTestUtils::cpp_pm(const HandleSeq& db,
                                    int minsup,
                                    int conjuncts,
                                    const Handle& initpat,
@@ -228,7 +228,7 @@ HandleTree MinerUTestUtils::cpp_pm(const HandleSeq& texts,
 {
 	MinerParameters param(minsup, conjuncts, initpat, maxdepth);
 	Miner pm(param);
-	return pm(texts);
+	return pm(db);
 }
 
 Handle MinerUTestUtils::add_is_cpt_pattern(AtomSpace& as, const Handle& cpt)
@@ -301,37 +301,37 @@ void MinerUTestUtils::configure_optional_rules(SchemeEval& scm,
 	logger().debug() << "MinerUTest::configure_optional_rules() rs = " << rs;
 }
 
-void MinerUTestUtils::configure_ISurprisingness(SchemeEval& scm,
-                                                const Handle& isurp_rb,
-                                                const std::string& mode,
-                                                unsigned max_conjuncts)
+void MinerUTestUtils::configure_surprisingness(SchemeEval& scm,
+                                               const Handle& surp_rb,
+                                               const std::string& mode,
+                                               unsigned max_conjuncts)
 {
-	std::string call = "(configure-isurp (Concept \""
-		+ isurp_rb->get_name() + "\") ";
+	std::string call = "(configure-surprisingness (Concept \""
+		+ surp_rb->get_name() + "\") ";
 	call += std::string("'") + mode + " ";
 	call += std::to_string(max_conjuncts);
 	call += ")";
 	std::string rs = scm.eval(call);
-	logger().debug() << "MinerUTest::configure_ISurprisingness() rs = " << rs;
+	logger().debug() << "MinerUTest::configure_surprisingness() rs = " << rs;
 }
 
-HandleSeq MinerUTestUtils::ure_isurp(AtomSpace& as,
-                                     SchemeEval& scm,
-                                     const Handle& isurp_rb,
-                                     const std::string& mode,
-                                     unsigned max_conjuncts)
+HandleSeq MinerUTestUtils::ure_surp(AtomSpace& as,
+                                    SchemeEval& scm,
+                                    const Handle& surp_rb,
+                                    const std::string& mode,
+                                    unsigned max_conjuncts)
 {
-	configure_ISurprisingness(scm, isurp_rb, mode, max_conjuncts);
+	configure_surprisingness(scm, surp_rb, mode, max_conjuncts);
 	Handle X = an(VARIABLE_NODE, "$X"),
-		target = add_isurp_eval(as, mode, X),
+		target = add_surp_eval(as, mode, X),
 		vardecl = al(TYPED_VARIABLE_LINK, X, an(TYPE_NODE, "LambdaLink"));
-	BackwardChainer bc(as, isurp_rb, target, vardecl);
+	BackwardChainer bc(as, surp_rb, target, vardecl);
 	bc.do_chain();
-	Handle isurp_results = bc.get_results();
-	HandleSeq isurp_results_seq = isurp_results->getOutgoingSet();
+	Handle surp_results = bc.get_results();
+	HandleSeq surp_results_seq = surp_results->getOutgoingSet();
 	// Sort according to surprisingness
-	boost::sort(isurp_results_seq, [](const Handle& lh, const Handle& rh) {
+	boost::sort(surp_results_seq, [](const Handle& lh, const Handle& rh) {
 			return lh->getTruthValue()->get_mean() > rh->getTruthValue()->get_mean();
 		});
-	return isurp_results_seq;
+	return surp_results_seq;
 }

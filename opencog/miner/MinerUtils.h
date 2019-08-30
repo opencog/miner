@@ -118,15 +118,15 @@ public:
 	 *
 	 * For instance, with
 	 *
-	 * text = (Inheritance (Concept "a") (Concept "b"))
+	 * dt = (Inheritance (Concept "a") (Concept "b"))
 	 *
-	 * shallow_patterns(text) = (Lambda
-	 *                            (VariableList
-	 *                              (Variable "$X1")
-	 *                              (Variable "$X2"))
-	 *                            (Inheritance
-	 *                              (Variable "$X1")
-	 *                              (Variable "$X2")))
+	 * shallow_patterns(dt) = (Lambda
+	 *                          (VariableList
+	 *                            (Variable "$X1")
+	 *                            (Variable "$X2"))
+	 *                          (Inheritance
+	 *                            (Variable "$X1")
+	 *                            (Variable "$X2")))
 	 *
 	 * TODO: we may want to support types in variable declaration.
 	 */
@@ -155,9 +155,8 @@ public:
 
 	/**
 	 * Wrap a LocalQuote link around h (typically used if it is a link
-	 * of type AndLink. That is in order not to produce
-	 * multi-conjuncts patterns when in fact we want to match an
-	 * AndLink text.)
+	 * of type AndLink. That is in order not to produce multi-conjuncts
+	 * patterns when in fact we want to match an AndLink data tree.)
 	 */
 	static Handle local_quote(const Handle& h);
 
@@ -188,9 +187,9 @@ public:
 	                              const HandleMap& var2subdecl);
 
 	/**
-	 * Given a texts concept node, retrieve all its members
+	 * Given a db concept node, retrieve all its members
 	 */
-	static HandleSeq get_texts(const Handle& texts_cpt);
+	static HandleSeq get_db(const Handle& db_cpt);
 
 	/**
 	 * Return the non-negative integer held by a number node.
@@ -198,11 +197,11 @@ public:
 	static unsigned get_uint(const Handle& h);
 
 	/**
-	 * Given a pattern and a text corpus, calculate the pattern
-	 * frequency up to ms (to avoid unnecessary calculations).
+	 * Given a pattern and a db, calculate the pattern frequency up to
+	 * ms (to avoid unnecessary calculations).
 	 */
 	static unsigned support(const Handle& pattern,
-	                        const HandleSeq& texts,
+	                        const HandleSeq& db,
 	                        unsigned ms);
 
 	/**
@@ -210,39 +209,39 @@ public:
 	 * its variables depends on other clauses).
 	 */
 	static unsigned component_support(const Handle& pattern,
-	                                  const HandleSeq& texts,
+	                                  const HandleSeq& db,
 	                                  unsigned ms);
 
 	/**
 	 * Calculate if the pattern has enough support w.r.t. to the given
-	 * texts, that is whether its frequency is greater than or equal
+	 * db, that is whether its frequency is greater than or equal
 	 * to ms.
 	 */
 	static bool enough_support(const Handle& pattern,
-	                           const HandleSeq& texts,
+	                           const HandleSeq& db,
 	                           unsigned ms);
 
 	/**
 	 * Like shallow_abstract(const Valuations&, unsigned) but takes a pattern
-	 * and a texts instead, and generate the valuations of the pattern
+	 * and a db instead, and generate the valuations of the pattern
 	 * prior to calling shallow_abstract on its valuations.
 	 *
 	 * See comment on shallow_abstract(const Valuations&, unsigned) for more
 	 * details.
 	 */
 	static HandleSetSeq shallow_abstract(const Handle& pattern,
-	                                     const HandleSeq& texts,
+	                                     const HandleSeq& db,
 	                                     unsigned ms);
 
 	/**
 	 * Return all shallow specializations of pattern with support ms
-	 * according to texts.
+	 * according to db.
 	 *
 	 * mv is the maximum number of variables allowed in the resulting
 	 * patterns.
 	 */
 	static HandleSet shallow_specialize(const Handle& pattern,
-	                                    const HandleSeq& texts,
+	                                    const HandleSeq& db,
 	                                    unsigned ms,
 	                                    unsigned mv=UINT_MAX);
 
@@ -292,17 +291,17 @@ public:
 	static HandleSeq get_conjuncts(const Handle& pattern);
 
 	/**
-	 * Given a pattern and texts, return the satisfying set of the
-	 * pattern over the text.
+	 * Given a pattern and db, return the satisfying set of the pattern
+	 * over the data tree.
 	 *
 	 * TODO: ignore permutations for unordered links.
 	 *
-	 * TODO: ignore duplicates within the same text. For instance if
-	 * the pattern is
+	 * TODO: ignore duplicates within the same data tree. For instance
+	 * if the pattern is
 	 *
 	 * (Lambda (LocalQuote (And (Variable "$X") (Variable "$Y"))))
 	 *
-	 * and the texts is
+	 * and the db is
 	 *
 	 * { (And (Concept "A") (And (Concept "B") (Concept "C"))) }
 	 *
@@ -315,11 +314,11 @@ public:
 	 *
 	 * { (And (Concept "A") (And (Concept "B") (Concept "C"))) }
 	 *
-	 * Also, the pattern may match any subhypergraph of texts, not just
+	 * Also, the pattern may match any subhypergraph of db, not just
 	 * the root atoms (TODO: we probably don't want that!!!).
 	 */
 	static Handle restricted_satisfying_set(const Handle& pattern,
-	                                        const HandleSeq& texts,
+	                                        const HandleSeq& db,
 	                                        unsigned ms=UINT_MAX);
 
 	/**
@@ -351,27 +350,25 @@ public:
 
 	/**
 	 * Given a pattern return its variables. If the pattern is not a
-	 * scope link (i.e. a constant/text), then return the empty
-	 * Variables.
+	 * scope link (i.e. a data tree), then return the empty Variables.
 	 */
 	static const Variables& get_variables(const Handle& pattern);
 
 	/**
 	 * Given a pattern, return its vardecl. If the pattern is not a
-	 * scope link (i.e. a constant/text), then return the empty
-	 * vardecl.
+	 * scope link (i.e. a data tree), then return the empty vardecl.
 	 */
 	static Handle get_vardecl(const Handle& pattern);
 
 	/**
 	 * Given a pattern, return its body. If the pattern is not a scope
-	 * link (i.e. a constant/text), then return pattern itself.
+	 * link (i.e. a data tree), then return pattern itself.
 	 */
 	static const Handle& get_body(const Handle& pattern);
 
 	/**
 	 * Given a pattern, return its clause. If the pattern is not a
-	 * scope link (i.e. a constant/text), then behavior is undefined.
+	 * scope link (i.e. a data tree), then behavior is undefined.
 	 */
 	static HandleSeq get_clauses(const Handle& pattern);
 	static HandleSeq get_clauses_of_body(const Handle& body);
@@ -463,7 +460,7 @@ public:
 	 */
 	static HandleSet expand_conjunction_connect_rec(const Handle& cnjtion,
 	                                                const Handle& pattern,
-	                                                const HandleSeq& texts,
+	                                                const HandleSeq& db,
 	                                                unsigned ms,
 	                                                unsigned mv,
 	                                                const HandleMap& pv2cv=HandleMap(),
@@ -484,7 +481,7 @@ public:
 	 *   (And (Inheritance X Y) (Inheritance X Y))
 	 *
 	 * It will also only include patterns with minimum support ms
-	 * according to texts, and perform alpha-conversion when necessary.
+	 * according to db, and perform alpha-conversion when necessary.
 	 * If an expansion is cnjtion itself it will be dismissed.
 	 *
 	 * mv is the maximum number of variables allowed in the resulting
@@ -492,7 +489,7 @@ public:
 	 */
 	static HandleSet expand_conjunction(const Handle& cnjtion,
 	                                    const Handle& pattern,
-	                                    const HandleSeq& texts,
+	                                    const HandleSeq& db,
 	                                    unsigned ms,
 	                                    unsigned mv=UINT_MAX);
 
@@ -523,7 +520,7 @@ public:
 	 * memoization should not be used if ms is to be changed.
 	 */
 	static double support_mem(const Handle& pattern,
-	                          const HandleSeq& texts,
+	                          const HandleSeq& db,
 	                          unsigned ms);
 };
 

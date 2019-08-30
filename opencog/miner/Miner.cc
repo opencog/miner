@@ -73,46 +73,46 @@ MinerParameters::MinerParameters(unsigned ms, unsigned iconjuncts,
 Miner::Miner(const MinerParameters& prm)
 	: param(prm) {}
 
-HandleTree Miner::operator()(const AtomSpace& texts_as)
+HandleTree Miner::operator()(const AtomSpace& db_as)
 {
-	HandleSeq texts;
-	texts_as.get_handles_by_type(std::inserter(texts, texts.end()),
-	                             opencog::ATOM, true);
-	return operator()(texts);
+	HandleSeq db;
+	db_as.get_handles_by_type(std::inserter(db, db.end()),
+	                          opencog::ATOM, true);
+	return operator()(db);
 }
 
-HandleTree Miner::operator()(const HandleSeq& texts)
+HandleTree Miner::operator()(const HandleSeq& db)
 {
-	return specialize(param.initpat, texts, param.maxdepth);
+	return specialize(param.initpat, db, param.maxdepth);
 }
 
 HandleTree Miner::specialize(const Handle& pattern,
-                             const HandleSeq& texts,
+                             const HandleSeq& db,
                              int maxdepth)
 {
 	// TODO: decide what to choose and remove or comment
-	// return specialize_alt(pattern, texts, Valuations(pattern, texts), maxdepth);
-	return specialize(pattern, texts, Valuations(pattern, texts), maxdepth);
+	// return specialize_alt(pattern, db, Valuations(pattern, db), maxdepth);
+	return specialize(pattern, db, Valuations(pattern, db), maxdepth);
 }
 
 HandleTree Miner::specialize(const Handle& pattern,
-                             const HandleSeq& texts,
+                             const HandleSeq& db,
                              const Valuations& valuations,
                              int maxdepth)
 {
 	// One of the termination criteria has been reached
-	if (terminate(pattern, texts, valuations, maxdepth))
+	if (terminate(pattern, db, valuations, maxdepth))
 		return HandleTree();
 
 	// Produce specializations from other variables than the front
 	// one.
 	valuations.inc_focus_variable();
-	HandleTree patterns = specialize(pattern, texts, valuations, maxdepth);
+	HandleTree patterns = specialize(pattern, db, valuations, maxdepth);
 	valuations.dec_focus_variable();
 
 	// Produce specializations from shallow abstractions on the front
 	// variable, and so recusively.
-	HandleTree shabs_pats = specialize_shabs(pattern, texts, valuations,
+	HandleTree shabs_pats = specialize_shabs(pattern, db, valuations,
 	                                         maxdepth);
 
 	// Merge specializations to patterns while discarding duplicates
@@ -122,12 +122,12 @@ HandleTree Miner::specialize(const Handle& pattern,
 }
 
 HandleTree Miner::specialize_alt(const Handle& pattern,
-                                 const HandleSeq& texts,
+                                 const HandleSeq& db,
                                  const Valuations& valuations,
                                  int maxdepth)
 {
 	// One of the termination criteria has been reached
-	if (terminate(pattern, texts, valuations, maxdepth))
+	if (terminate(pattern, db, valuations, maxdepth))
 		return HandleTree();
 
 	HandleTree patterns;
@@ -141,7 +141,7 @@ HandleTree Miner::specialize_alt(const Handle& pattern,
 		for (const Handle& shapat : shabs[i]) {
 			// Compose pattern with shapat to obtain a specialization,
 			// and recursively specialize the result
-			HandleTree npats = specialize_shapat(pattern, texts,
+			HandleTree npats = specialize_shapat(pattern, db,
 			                                     vars.varseq[i], shapat,
 			                                     maxdepth);
 
@@ -153,7 +153,7 @@ HandleTree Miner::specialize_alt(const Handle& pattern,
 }
 
 bool Miner::terminate(const Handle& pattern,
-                      const HandleSeq& texts,
+                      const HandleSeq& db,
                       const Valuations& valuations,
                       int maxdepth) const
 {
@@ -165,11 +165,11 @@ bool Miner::terminate(const Handle& pattern,
 		// There is no more variable to specialize from
 		valuations.no_focus() or
 		// The pattern doesn't have enough support
-		not MinerUtils::enough_support(pattern, texts, param.minsup);
+		not MinerUtils::enough_support(pattern, db, param.minsup);
 }
 
 HandleTree Miner::specialize_shabs(const Handle& pattern,
-                                   const HandleSeq& texts,
+                                   const HandleSeq& db,
                                    const Valuations& valuations,
                                    int maxdepth)
 {
@@ -192,7 +192,7 @@ HandleTree Miner::specialize_shabs(const Handle& pattern,
 		// Specialize pattern by composing it with shapat, and
 		// specialize the result recursively
 		HandleTree npats
-			= specialize_shapat(pattern, texts, var, shapat, maxdepth);
+			= specialize_shapat(pattern, db, var, shapat, maxdepth);
 
 		// Insert specializations
 		patterns = merge_patterns({patterns, npats});
@@ -201,7 +201,7 @@ HandleTree Miner::specialize_shabs(const Handle& pattern,
 }
 
 HandleTree Miner::specialize_shapat(const Handle& pattern,
-                                    const HandleSeq& texts,
+                                    const HandleSeq& db,
                                     const Handle& var,
                                     const Handle& shapat,
                                     int maxdepth)
@@ -215,11 +215,11 @@ HandleTree Miner::specialize_shapat(const Handle& pattern,
 
 	// That specialization doesn't have enough support, skip it
 	// and its specializations.
-	if (not MinerUtils::enough_support(npat, texts, param.minsup))
+	if (not MinerUtils::enough_support(npat, db, param.minsup))
 		return HandleTree();
 
 	// Specialize npat from all variables (with new valuations)
-	HandleTree nvapats = specialize(npat, texts, maxdepth - 1);
+	HandleTree nvapats = specialize(npat, db, maxdepth - 1);
 
 	// Return npat and its children
 	return HandleTree(npat, {nvapats});

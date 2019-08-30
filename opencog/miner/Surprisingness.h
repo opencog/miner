@@ -28,6 +28,7 @@
 #include <opencog/atoms/core/LambdaLink.h>
 #include <opencog/atomspace/AtomSpace.h>
 #include <opencog/unify/Unify.h>
+#include <opencog/ure/BetaDistribution.h>
 
 namespace opencog
 {
@@ -41,11 +42,17 @@ typedef Counter<HandleSeq, unsigned> HandleSeqUCounter;
 
 class Surprisingness {
 public:
+	// TODO: We could reframe isurp_old and isurp to use the same
+	// inference tree decomposition as in the JSD case, using standard
+	// deviation or such to determine the interval of the estimate.
+	// This does implies to implement a dedicated truth value estimate
+	// rule to make sure we can retrieve the interval thought.
+
 	/**
 	 * Calculate the I-Surprisingness as defined in
 	 * https://wiki.opencog.org/w/Measuring_Surprisingness of a pattern
 	 * composed of the conjunction of components over a given
-	 * texts. Partitions are directly defined within that function.
+	 * db. Partitions are directly defined within that function.
 	 *
 	 * For instance, given
 	 *
@@ -63,7 +70,7 @@ public:
 	 *
 	 * return calculate its I-surprisingness. The components are passed
 	 * in order to take into account their support (which should
-	 * already be stored in them), and texts in passed in order to
+	 * already be stored in them), and db in passed in order to
 	 * obtain the universe count.
 	 *
 	 * Normalize determines whether the surprisingness is normalized
@@ -73,7 +80,7 @@ public:
 	 * they are encoded as lists of lists for performance reasons.
 	 */
 	static double isurp_old(const Handle& pattern,
-	                        const HandleSeq& texts,
+	                        const HandleSeq& db,
 	                        bool normalize=true);
 
 	/**
@@ -144,7 +151,7 @@ public:
 	 * components. Let's call these variable appearences X1 to Xn. So
 	 * the goal is to estimate P(X1=...=Xi= ...=Xn).  Let's denote
 	 * V(Xi) the set of values that Xi can take when its corresponding
-	 * component is matched against the database/texts alone, without
+	 * component is matched against the database alone, without
 	 * any interaction of the other components. Thus |V(Xi)| is the
 	 * number values that Xi takes in that standalone component.
 	 *
@@ -161,7 +168,7 @@ public:
 	 * so that the two variable occurences equate is bounded by the
 	 * number of values of the variable occurence of the more abstract
 	 * component. If no such relationship exists, then the number of
-	 * possible values is bounded by the size of the database/texts,
+	 * possible values is bounded by the size of the database,
 	 * which is usually higher than the actually value, and thus often
 	 * a poor basis for an estimate. By performing a purely syntactic
 	 * analysis the estimate can be greatly enhenced. Since the
@@ -331,19 +338,8 @@ public:
 	 * slow). We have not experimented with approximated counts yet.
 	 */
 	static double isurp(const Handle& pattern,
-	                    const HandleSeq& texts,
+	                    const HandleSeq& db,
 	                    bool normalize=true);
-
-	/**
-	 * Return (Node "*-I-SurprisingnessValueKey-*")
-	 */
-	static Handle isurp_key();
-
-	/**
-	 * Retrieve the I-Surprisingness value of the given pattern
-	 * associated to (Node "*-I-SurprisingnessValueKey-*").
-	 */
-	static double get_isurp_value(const Handle& pattern);
 
 	/**
 	 * Return the distance between a value and an interval
@@ -460,11 +456,11 @@ public:
 
 	/**
 	 * Return the the number values associated to a given variable in a
-	 * block (subpatterns) w.r.t. to texts database.
+	 * block (subpatterns) w.r.t. to db.
 	 */
 	static unsigned value_count(const HandleSeq& block,
 	                            const Handle& var,
-	                            const HandleSeq& texts);
+	                            const HandleSeq& db);
 
 	/**
 	 * Return the probability distribution over value of var in the
@@ -472,7 +468,7 @@ public:
 	 */
 	static HandleCounter value_distribution(const HandleSeq& block,
 	                                        const Handle& var,
-	                                        const HandleSeq& texts);
+	                                        const HandleSeq& db);
 
 	/**
 	 * Perform the inner product of a collection of distributions.
@@ -495,55 +491,45 @@ public:
 	static double inner_product(const std::vector<HandleCounter>& dists);
 
 	/**
-	 * Calculate the universe count of the pattern over the given texts
+	 * Calculate the universe count of the pattern over the given db
 	 */
-	static double universe_count(const Handle& pattern, const HandleSeq& texts);
+	static double universe_count(const Handle& pattern, const HandleSeq& db);
 
 	/**
 	 * Given a pattern, a corpus and a probability, calculate the
 	 * support of that pattern.
 	 */
 	static double prob_to_support(const Handle& pattern,
-	                              const HandleSeq& texts,
+	                              const HandleSeq& db,
 	                              double prob);
 
 	/**
 	 * Calculate the empiric probability of a pattern according to a
-	 * database texts.
+	 * database db.
 	 */
-	static double emp_prob(const Handle& pattern, const HandleSeq& texts);
+	static double emp_prob(const Handle& pattern, const HandleSeq& db);
 
 	/**
 	 * Like emp_prob with memoization.
 	 */
 	static double emp_prob_mem(const Handle& pattern,
-	                           const HandleSeq& texts);
+	                           const HandleSeq& db);
 
 	/**
-	 * Like emp_prob but subsample the texts to have subsize (if texts
+	 * Like emp_prob but subsample the db to have subsize (if db
 	 * size is greater than subsize).
-	 *
-	 * TODO: memoizing support is current disabled.
 	 */
 	static double emp_prob_subsmp(const Handle& pattern,
-	                              const HandleSeq& texts,
+	                              const HandleSeq& db,
 	                              unsigned subsize=UINT_MAX);
 
 	/**
-	 * Randomly subsample texts so that the resulting texts has size
-	 * subsize.
-	 */
-	static HandleSeq subsmp(const HandleSeq& texts, unsigned subsize);
-
-	/**
-	 * Like emp_prob but uses bootstrapping for more efficiency. nbs is
-	 * the number of subsamplings taking place, and subsize is the size
-	 * of each subsample.
-	 *
-	 * TODO: memoizing support is current disabled.
+	 * Like emp_prob but uses bootstrapping for more
+	 * efficiency. n_resample is the number of subsamplings taking
+	 * place, and subsize is the size of each subsample.
 	 */
 	static double emp_prob_bs(const Handle& pattern,
-	                          const HandleSeq& texts,
+	                          const HandleSeq& db,
 	                          unsigned n_resample,
 	                          unsigned subsize);
 
@@ -551,30 +537,86 @@ public:
 	 * Calculate the empirical probability of the given pattern,
 	 * possibly boostrapping if necessary. The heuristic to determine
 	 * whether the booststrapping should take place, and how, is
-	 * calculated based on the pattern, the texts size and the
+	 * calculated based on the pattern, the db size and the
 	 * probability estimate of the pattern.
 	 *
 	 * pbs stands for possibly boostrapping.
 	 */
 	static double emp_prob_pbs(const Handle& pattern,
-	                           const HandleSeq& texts,
+	                           const HandleSeq& db,
 	                           double prob_estimate);
 
 	/**
 	 * Like emp_prob_pbs with memoization.
 	 */
 	static double emp_prob_pbs_mem(const Handle& pattern,
-	                               const HandleSeq& texts,
+	                               const HandleSeq& db,
 	                               double prob_estimate);
 
 	/**
+	 * Calculate the empiric truth value of a pattern according to a
+	 * database db.
+	 */
+	static TruthValuePtr emp_tv(const Handle& pattern, const HandleSeq& db);
+
+	/**
+	 * Like emp_tv with memoization.
+	 */
+	static TruthValuePtr emp_tv_mem(const Handle& pattern,
+	                                const HandleSeq& db);
+
+	/**
+	 * Like emp_tv but subsample the db to have subsize (if db
+	 * size is greater than subsize).
+	 */
+	static TruthValuePtr emp_tv_subsmp(const Handle& pattern,
+	                                   const HandleSeq& db,
+	                                   unsigned subsize=UINT_MAX);
+
+	/**
+	 * Like emp_tv but uses bootstrapping for more
+	 * efficiency. n_resample is the number of subsamplings taking
+	 * place, and subsize is the size of each subsample.
+	 */
+	static TruthValuePtr emp_tv_bs(const Handle& pattern,
+	                               const HandleSeq& db,
+	                               unsigned n_resample,
+	                               unsigned subsize);
+
+	/**
+	 * Calculate the empirical truth value of the given pattern,
+	 * possibly bootstrapping if necessary. The heuristic to determine
+	 * whether the bootstrapping should take place, and how, is
+	 * calculated based on the pattern, the db size and the probability
+	 * estimate of the pattern.
+	 *
+	 * pbs stands for possibly bootstrapping.
+	 */
+	static TruthValuePtr emp_tv_pbs(const Handle& pattern,
+	                                const HandleSeq& db,
+	                                double prob_estimate);
+
+	/**
+	 * Like emp_tv_pbs with memoization.
+	 */
+	static TruthValuePtr emp_tv_pbs_mem(const Handle& pattern,
+	                                    const HandleSeq& db,
+	                                    double prob_estimate);
+
+	/**
+	 * Randomly subsample db so that the resulting db has size
+	 * subsize.
+	 */
+	static HandleSeq subsmp(const HandleSeq& db, unsigned subsize);
+
+	/**
 	 * Determine the number of samples and the subsample size given a
-	 * text corpus. The goal here to subsample so that the support does
+	 * database. The goal here to subsample so that the support does
 	 * not exceed the corpus size. The upper bound of the support grows
 	 * exponentially with the number conjuncts and polynomially (with
 	 * maximum degree the number of conjuncts) with the size of the
 	 * corpus. We try first to estimate how fast the support grows
-	 * using the support estimate obtained by ji_prob to find what
+	 * using the support estimate obtained by ji_prob_est to find what
 	 * corpus size should be so that the support is roughly equal to
 	 * the corpus size (because we can assume that the user at least
 	 * tolerates an amount of resources in space and time that is
@@ -603,19 +645,41 @@ public:
 	 * alpha = support_estimate / ts^nc
 	 */
 	static unsigned subsmp_size(const Handle& pattern,
-	                            const HandleSeq& texts,
+	                            const HandleSeq& db,
 	                            double support_estimate);
 
 	/**
 	 * Calculate probability estimate of a pattern given a partition,
 	 * assuming all blocks are independent, but takes into account the
-	 * joint variables (ji in ji_prob stands for joint-independent).
-	 *
-	 * An atomspace is provided to memoize the support of subpatterns.
+	 * joint variables (ji_prob_est stands for joint-independent
+	 * probability estimate).
 	 */
-	static double ji_prob(const HandleSeqSeq& partition,
-	                      const Handle& pattern,
-	                      const HandleSeq& texts);
+	static double ji_prob_est(const HandleSeqSeq& partition,
+	                          const Handle& pattern,
+	                          const HandleSeq& db);
+
+	/**
+	 * Calculate truth value estimate of a pattern given a partition,
+	 * assuming all blocks are independent, but takes into account the
+	 * joint variables (ji_tv_est stands for joint independent truth
+	 * value estimate).
+	 */
+	static TruthValuePtr ji_tv_est(const HandleSeqSeq& partition,
+	                               const Handle& pattern,
+	                               const HandleSeq& db);
+
+	/**
+	 * Like above but doesn't take a partition. Instead all partitions
+	 * are considered, and resulting TV is averaged.
+	 */
+	static TruthValuePtr ji_tv_est(const Handle& pattern,
+	                               const HandleSeq& db);
+
+	/**
+	 * Like above but the result is memoized.
+	 */
+	static TruthValuePtr ji_tv_est_mem(const Handle& pattern,
+	                                   const HandleSeq& db);
 
 	/**
 	 * Return true iff the given variable has the same position (same
@@ -832,7 +896,7 @@ public:
 	 */
 	static double eq_prob(const HandleSeqSeq& partition,
 	                      const Handle& pattern,
-	                      const HandleSeq& texts);
+	                      const HandleSeq& db);
 
 	/**
 	 * Alternate implementation of eq_prob. Takes into syntactical
@@ -841,25 +905,38 @@ public:
 	 */
 	static double eq_prob_alt(const HandleSeqSeq& partition,
 	                          const Handle& pattern,
-	                          const HandleSeq& texts);
+	                          const HandleSeq& db);
 
 	/**
-	 * Key of the empirical probability value
+	 * Key of the empirical truth value
 	 */
-	static const Handle& emp_prob_key();
+	static const Handle& emp_tv_key();
 
 	/**
-	 * Get/set the empirical probability of the given pattern.
+	 * Get/set the empirical truth value of the given pattern.
 	 */
-	static TruthValuePtr get_emp_prob(const Handle& pattern);
-	static void set_emp_prob(const Handle& pattern, double emp_prob);
+	static TruthValuePtr get_emp_tv(const Handle& pattern);
+	static void set_emp_tv(const Handle& pattern, TruthValuePtr etv);
+	static void set_emp_prob(const Handle& pattern, double ep);
+
+	/**
+	 * Key of the joint-independent truth value estimate
+	 */
+	static const Handle& ji_tv_est_key();
+
+	/**
+	 * Get/set the joint-independent truth value estimate of the given
+	 * pattern.
+	 */
+	static TruthValuePtr get_ji_tv_est(const Handle& pattern);
+	static void set_ji_tv_est(const Handle& pattern, TruthValuePtr etv);
 
 	/**
 	 * Given 2 TVs, typically representing the empirical probability
 	 * and the probability estimate of a pattern, calculate the
 	 * Jensen-Shannon distance between them.
 	 */
-	static double jsd(const TruthValuePtr l_tv, const TruthValuePtr r_tv);
+	static double jsd(TruthValuePtr l_tv, TruthValuePtr r_tv);
 
 	/**
 	 * Given 2 cdfs (cummulative distribution functions) return their
@@ -874,11 +951,42 @@ public:
 	                  const std::vector<double>& r_cdf);
 
 	/**
+	 * Calculate the average of 2 values, that is (l+r)/2
+	 */
+	static double avrg(double l, double r);
+
+	/**
+	 * Calculate the average of n values, that is (sum vs)/|vs|
+	 */
+	static double avrg(std::vector<double>& vs);
+
+	/**
+	 * Given a sequence of truth values, return the truth value
+	 * representing their average. Note that this process looses
+	 * information as the returned truth value is a simple truth value
+	 * equivalent to a Beta distribution, thus cannot be multimodal.
+	 */
+	static TruthValuePtr avrg_tv(const TruthValueSeq& tvs);
+
+	/**
 	 * Given 2 cdfs, return their average, that is (cdf1 + cdf2)/2.
 	 */
 	static std::vector<double> avrg_cdf(const std::vector<double>& l_cdf,
 	                                    const std::vector<double>& r_cdf);
 
+
+	/**
+	 * Method to convert confidence to count and vice versa of a simple
+	 * truth value. Should probably be moved to SimpleTruthValue.
+	 */
+	static count_t confidence_to_count(confidence_t cfd);
+	static confidence_t count_to_confidence(count_t cnt);
+
+	/**
+	 * Log PDF of a given beta distribution, discretized in a given
+	 * number of bins.
+	 */
+	static void log_pdf(const BetaDistribution& bd, int bins);
 };
 
 /**

@@ -13,7 +13,7 @@
 ;;         <cnj-body-1>
 ;;         ...
 ;;         <cnj-body-n>
-;;     <texts>
+;;     <db>
 ;;     <ms>
 ;; |-
 ;; Evaluation (stv 1 1)
@@ -25,7 +25,7 @@
 ;;        <cnj-body-1>
 ;;        ...
 ;;        <cnj-body-n>
-;;     <texts>
+;;     <db>
 ;;     <isurp>
 
 (load "miner-rule-utils.scm")
@@ -44,7 +44,7 @@
 (define (gen-i-surprisingness-rule mode nary)
   ;; Shared variables
   (define f-vardecl (Variable "$f-vardecl"))
-  (define texts (Variable "$texts"))
+  (define db (Variable "$db"))
   (define ms (Variable "$ms"))
   ;; Types
   (define VariableT (Type "VariableNode"))
@@ -54,7 +54,7 @@
   (define ConceptT (Type "ConceptNode"))
   ;; Typed declations
   (define typed-f-vardecl (TypedVariable f-vardecl varT))
-  (define typed-texts (TypedVariable texts ConceptT))
+  (define typed-db (TypedVariable db ConceptT))
   (define typed-ms (TypedVariable ms NumberT))
   ;; Formula
   (define formula-name (string-append "scm: " (symbol->string mode) "-formula"))
@@ -67,13 +67,13 @@
                     (Unquote f-vardecl)
                     (Present
                       (map Unquote cnj-bodies)))))
-             (f-minsup (minsup-eval f texts ms))
-             (f-isurp (isurp-eval mode f texts)))
+             (f-minsup (minsup-eval f db ms))
+             (f-isurp (surp-eval mode f db)))
         (Bind
           (VariableList
             typed-f-vardecl
             cnj-bodies
-            typed-texts
+            typed-db
             typed-ms)
           (And
             (Present
@@ -98,15 +98,14 @@
         (let* ((pat-isurp conclusion)
                (pat-minsup (car premises))
                (pat (get-pattern pat-minsup))
-               (cnjs-bodies (cog-outgoing-set (get-body pat)))
-               (texts (get-texts pat-minsup))
+               (db (get-db pat-minsup))
 
                ;; Calculate I-Surprisingness of pat
                (isurp-op (cond ((equal? mode 'isurp-old) cog-isurp-old)
                                ((equal? mode 'nisurp-old) cog-nisurp-old)
                                ((equal? mode 'isurp) cog-isurp)
                                ((equal? mode 'nisurp) cog-nisurp)))
-               (isurp (isurp-op pat texts)))
+               (isurp (isurp-op pat db)))
           (cog-set-tv! pat-isurp (stv isurp 1))))))
 
 ;; Instantiate isurp formula for the different modes

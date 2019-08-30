@@ -36,11 +36,11 @@ public:
 	/**
 	 * Add
 	 *
-	 * (Concept "texts")
+	 * (Concept "db")
 	 *
 	 * to as.
 	 */
-	static Handle add_texts_cpt(AtomSpace& as);
+	static Handle add_db_cpt(AtomSpace& as);
 
 	/**
 	 * Add
@@ -58,7 +58,7 @@ public:
 	 *
 	 * to as.
 	 */
-	static Handle add_isurp_prd(AtomSpace& as, const std::string& mode);
+	static Handle add_surp_prd(AtomSpace& as, const std::string& mode);
 
 	/**
 	 * Add
@@ -76,7 +76,7 @@ public:
 	 *   (Predicate "minsup")
 	 *   (List
 	 *     pattern
-	 *     (Concept "texts")
+	 *     (Concept "db")
 	 *     minsup))
 	 *
 	 * to as.
@@ -99,24 +99,24 @@ public:
 	 *
 	 * (Evaluation
 	 *   (Predicate <mode>)
-	 *   (List pattern (Concept "texts")))
+	 *   (List pattern (Concept "db")))
 	 *
 	 * to as.
 	 */
-	static Handle add_isurp_eval(AtomSpace& as,
-	                             const std::string& mode,
-	                             const Handle& pattern);
+	static Handle add_surp_eval(AtomSpace& as,
+	                            const std::string& mode,
+	                            const Handle& pattern);
 
 	/**
 	 * Given
 	 *
 	 * (Evaluation
 	 *   (Predicate "minsup")
-	 *   (List pattern (Concept "texts") minsup))
+	 *   (List pattern (Concept "db") minsup))
 	 *
 	 * return pattern.
 	 *
-	 * Note: also works for isurp constructs
+	 * Note: also works for surp constructs
 	 */
 	static Handle get_pattern(const Handle& minsup_eval);
 	static HandleSeq get_patterns(const HandleSeq& minsup_evals);
@@ -174,7 +174,7 @@ public:
 	static Handle ure_pm(AtomSpace& as,
 	                     SchemeEval& scm,
 	                     const Handle& pm_rb,
-	                     const AtomSpace& texts_as,
+	                     const AtomSpace& db_as,
 	                     int minsup,
 	                     int max_iter=-1,
 	                     Handle initpat=Handle::UNDEFINED,
@@ -184,7 +184,7 @@ public:
 	static Handle ure_pm(AtomSpace& as,
 	                     SchemeEval& scm,
 	                     const Handle& pm_rb,
-	                     const HandleSeq& texts, int minsup,
+	                     const HandleSeq& db, int minsup,
 	                     int max_iter=-1,
 	                     Handle initpat=Handle::UNDEFINED,
 	                     bool incremental_expansion=false,
@@ -194,12 +194,12 @@ public:
 	/**
 	 * Configure the C++ Miner and run it.
 	 */
-	static HandleTree cpp_pm(const AtomSpace& texts_as,
+	static HandleTree cpp_pm(const AtomSpace& db_as,
 	                         int minsup=1,
 	                         int conjuncts=1,
 	                         const Handle& initpat=Handle::UNDEFINED,
 	                         int maxdepth=-1);
-	static HandleTree cpp_pm(const HandleSeq& texts,
+	static HandleTree cpp_pm(const HandleSeq& db,
 	                         int minsup=1,
 	                         int conjuncts=1,
 	                         const Handle& initpat=Handle::UNDEFINED,
@@ -275,20 +275,20 @@ public:
 	                                     bool incremental_expansion,
 	                                     unsigned max_conjuncts=UINT_MAX,
 	                                     unsigned max_variables=UINT_MAX);
-	static void configure_ISurprisingness(SchemeEval& scm,
-	                                      const Handle& isurp_rb,
-	                                      const std::string& mode,
-	                                      unsigned max_conjuncts);
+	static void configure_surprisingness(SchemeEval& scm,
+	                                     const Handle& surp_rb,
+	                                     const std::string& mode,
+	                                     unsigned max_conjuncts);
 
 	/**
 	 * Run I-Surprisingness reasoning on the current atomspace and
 	 * return the result sorted by I-Surprisingness.
 	 */
-	static HandleSeq ure_isurp(AtomSpace& as,
-	                           SchemeEval& scm,
-	                           const Handle& isurp_rb,
-	                           const std::string& mode,
-	                           unsigned max_conjuncts);
+	static HandleSeq ure_surp(AtomSpace& as,
+	                          SchemeEval& scm,
+	                          const Handle& surp_rb,
+	                          const std::string& mode,
+	                          unsigned max_conjuncts);
 };
 
 } // ~namespace opencog

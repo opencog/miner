@@ -54,17 +54,17 @@
 namespace opencog {
 
 double Surprisingness::isurp_old(const Handle& pattern,
-                                 const HandleSeq& texts,
+                                 const HandleSeq& db,
                                  bool normalize)
 {
 	// Strictly speaking it should be the power but we use binomial for
 	// backward compatibility.
-	unsigned int n = texts.size(), k = MinerUtils::n_conjuncts(pattern);
+	unsigned int n = db.size(), k = MinerUtils::n_conjuncts(pattern);
 	double total_count = boost::math::binomial_coefficient<double>(n, k);
 
 	// Function calculating the probability of a pattern
 	auto prob = [&](const Handle& pattern) {
-		double sup = MinerUtils::support(pattern, texts, (unsigned)total_count);
+		double sup = MinerUtils::support(pattern, db, (unsigned)total_count);
 		return sup / total_count;
 	};
 	auto blk_prob = [&](const HandleSeq& block) {
@@ -92,7 +92,7 @@ double Surprisingness::isurp_old(const Handle& pattern,
 }
 
 double Surprisingness::isurp(const Handle& pattern,
-                             const HandleSeq& texts,
+                             const HandleSeq& db,
                              bool normalize)
 {
 	// Calculate the probability estimate of each partition based on
@@ -100,7 +100,7 @@ double Surprisingness::isurp(const Handle& pattern,
 	// into account the linkage probability.
 	std::vector<double> estimates;
 	for (const HandleSeqSeq& partition : partitions_without_pattern(pattern)) {
-		double jip = ji_prob(partition, pattern, texts);
+		double jip = ji_prob_est(partition, pattern, db);
 		estimates.push_back(jip);
 	}
 	auto mmp = std::minmax_element(estimates.begin(), estimates.end());
@@ -108,23 +108,12 @@ double Surprisingness::isurp(const Handle& pattern,
 
 	// Calculate the empirical probability of pattern, using
 	// boostrapping if necessary
-	double emp = emp_prob_pbs_mem(pattern, texts, emax);
+	double emp = emp_prob_pbs_mem(pattern, db, emax);
 
 	// Calculate the I-Surprisingness, normalized if requested.
 	double dst = dst_from_interval(emin, emax, emp);
 	double maxprb = std::max(emp, emax);
 	return std::min(normalize ? dst / maxprb : dst, 1.0);
-}
-
-Handle Surprisingness::isurp_key()
-{
-	static Handle isurp_key = createNode(NODE, "*-I-SurprisingnessValueKey-*");
-	return isurp_key;
-}
-
-double Surprisingness::get_isurp_value(const Handle& pattern)
-{
-	return FloatValueCast(pattern->getValue(isurp_key()))->value().front();
 }
 
 double Surprisingness::dst_from_interval(double l, double u, double v)
@@ -228,18 +217,18 @@ HandleSeq Surprisingness::joint_variables(const Handle& pattern,
 
 unsigned Surprisingness::value_count(const HandleSeq& block,
                                      const Handle& var,
-                                     const HandleSeq& texts)
+                                     const HandleSeq& db)
 {
-	Valuations vs(MinerUtils::mk_pattern_no_vardecl(block), texts);
+	Valuations vs(MinerUtils::mk_pattern_no_vardecl(block), db);
 	HandleUCounter values = vs.values(var);
 	return values.keys().size();
 }
 
 HandleCounter Surprisingness::value_distribution(const HandleSeq& block,
                                                  const Handle& var,
-                                                 const HandleSeq& texts)
+                                                 const HandleSeq& db)
 {
-	Valuations vs(MinerUtils::mk_pattern_no_vardecl(block), texts);
+	Valuations vs(MinerUtils::mk_pattern_no_vardecl(block), db);
 	HandleUCounter values = vs.values(var);
 	HandleCounter dist;
 	double total = values.total_count();
@@ -268,137 +257,222 @@ double Surprisingness::inner_product(const std::vector<HandleCounter>& dists)
 }
 
 double Surprisingness::universe_count(const Handle& pattern,
-                                      const HandleSeq& texts)
+                                      const HandleSeq& db)
 {
-	return std::pow((double)texts.size(), MinerUtils::n_conjuncts(pattern));
+	return std::pow((double)db.size(), MinerUtils::n_conjuncts(pattern));
 }
 
 double Surprisingness::prob_to_support(const Handle& pattern,
-                                       const HandleSeq& texts,
+                                       const HandleSeq& db,
                                        double prob)
 {
-	return prob * universe_count(pattern, texts);
+	return prob * universe_count(pattern, db);
 }
 
-double Surprisingness::emp_prob(const Handle& pattern, const HandleSeq& texts)
+double Surprisingness::emp_prob(const Handle& pattern, const HandleSeq& db)
 {
-	double ucount = universe_count(pattern, texts);
+	double ucount = universe_count(pattern, db);
 	unsigned ms = (unsigned)std::min((double)UINT_MAX, ucount);
-	double sup = MinerUtils::support(pattern, texts, ms);
+	double sup = MinerUtils::support(pattern, db, ms);
 	return sup / ucount;
 }
 
-double Surprisingness::emp_prob_mem(const Handle& pattern, const HandleSeq& texts)
+double Surprisingness::emp_prob_mem(const Handle& pattern, const HandleSeq& db)
 {
-	TruthValuePtr emp_prob_tv = get_emp_prob(pattern);
+	TruthValuePtr emp_prob_tv = get_emp_tv(pattern);
 	if (emp_prob_tv) {
 		return emp_prob_tv->get_mean();
 	}
-	double ep = emp_prob(pattern, texts);
+	double ep = emp_prob(pattern, db);
 	set_emp_prob(pattern, ep);
 	return ep;
 }
 
 double Surprisingness::emp_prob_subsmp(const Handle& pattern,
-                                       const HandleSeq& texts,
+                                       const HandleSeq& db,
                                        unsigned subsize)
 {
 	return emp_prob(pattern,
-	                subsize < texts.size() ?
-	                subsmp(texts, subsize) : texts);
+	                subsize < db.size() ?
+	                subsmp(db, subsize) : db);
 }
 
-HandleSeq Surprisingness::subsmp(const HandleSeq& texts, unsigned subsize)
+TruthValuePtr Surprisingness::emp_tv(const Handle& pattern, const HandleSeq& db)
 {
-	unsigned ts = texts.size();
-	if (ts/2 <= subsize and subsize < ts) {
-		// Subsample by randomly removing (swapping all elements to
-		// remove with the tail, then removing the tail, which is
-		// considerably faster than removing element by element).
-		HandleSeq smp_texts(texts);
-		unsigned i = ts;
-		while (subsize < i) {
-			unsigned rnd_idx = randGen().randint(i);
-			std::swap(smp_texts[rnd_idx], smp_texts[--i]);
-		}
-		smp_texts.resize(i);
-		return smp_texts;
-	} else if (0 <= subsize and subsize < ts/*/2*/) {
-		// Subsample by randomly adding
-		HandleSeq smp_texts(subsize);
-		lazy_random_selector select(ts);
-		for (size_t i = 0; i < subsize; i++)
-			smp_texts[i] = texts[select()];
-		return smp_texts;
-	} else {
-		return texts;
+	double ucount = universe_count(pattern, db);
+	unsigned ms = (unsigned)std::min((double)UINT_MAX, ucount);
+	double sup = MinerUtils::support(pattern, db, ms);
+	double mean = sup / ucount;
+	double conf = count_to_confidence(ucount);
+	// Hack alert! Lower the confidence because subsampling can
+	// introduce some erratic errors.
+	conf *= 1e-1;
+	return createSimpleTruthValue(mean, conf);
+}
+
+TruthValuePtr Surprisingness::emp_tv_mem(const Handle& pattern,
+                                         const HandleSeq& db)
+{
+	TruthValuePtr etv = get_emp_tv(pattern);
+	if (etv) {
+		return etv;
 	}
+	etv = emp_tv(pattern, db);
+	set_emp_tv(pattern, etv);
+	return etv;
+}
+
+TruthValuePtr Surprisingness::emp_tv_subsmp(const Handle& pattern,
+                                            const HandleSeq& db,
+                                            unsigned subsize)
+{
+	return emp_tv(pattern,
+	              subsize < db.size() ?
+	              subsmp(db, subsize) : db);
 }
 
 double Surprisingness::emp_prob_bs(const Handle& pattern,
-                                   const HandleSeq& texts,
+                                   const HandleSeq& db,
                                    unsigned n_resample,
                                    unsigned subsize)
 {
-	if (subsize < texts.size()) {
+	if (subsize < db.size()) {
 		std::vector<double> essprobs;
 		dorepeat(n_resample)
-			essprobs.push_back(emp_prob_subsmp(pattern, texts, subsize));
-		return boost::accumulate(essprobs, 0.0) / essprobs.size();
+			essprobs.push_back(emp_prob_subsmp(pattern, db, subsize));
+		return avrg(essprobs);
 	} else {
-		return emp_prob(pattern, texts);
+		return emp_prob(pattern, db);
 	}
 }
 
 double Surprisingness::emp_prob_pbs(const Handle& pattern,
-                                    const HandleSeq& texts,
+                                    const HandleSeq& db,
                                     double prob_estimate)
 {
 	// Calculate an estimate of the support of the pattern to decide
-	// whether we should subsample the texts corpus. Indeed some
+	// whether we should subsample the db corpus. Indeed some
 	// pattern have intractably large support.
-	double support_estimate = prob_to_support(pattern, texts, prob_estimate);
+	double support_estimate = prob_to_support(pattern, db, prob_estimate);
 
-	// If the support estimate is above the texts size then we
+	// If the support estimate is above the db size then we
 	// subsample
-	if (texts.size() < support_estimate) {
+	if (db.size() < support_estimate) {
 		// Calculate the empiric probability of pattern
-		unsigned subsize = subsmp_size(pattern, texts, support_estimate);
+		unsigned subsize = subsmp_size(pattern, db, support_estimate);
 		unsigned n_resampling = 10;  // TODO: move this hardwired contant
 		                             // to a user parameter
-		return emp_prob_bs(pattern, texts, n_resampling, subsize);
+		return emp_prob_bs(pattern, db, n_resampling, subsize);
 	} else {
-		return emp_prob(pattern, texts);
+		return emp_prob(pattern, db);
 	}
 }
 
 double Surprisingness::emp_prob_pbs_mem(const Handle& pattern,
-                                        const HandleSeq& texts,
+                                        const HandleSeq& db,
                                         double prob_estimate)
 {
-	TruthValuePtr emp_prob_tv = get_emp_prob(pattern);
-	if (emp_prob_tv) {
-		return emp_prob_tv->get_mean();
+	TruthValuePtr etv = get_emp_tv(pattern);
+	if (etv) {
+		return etv->get_mean();
 	}
-	double ep = emp_prob_pbs(pattern, texts, prob_estimate);
+	double ep = emp_prob_pbs(pattern, db, prob_estimate);
 	set_emp_prob(pattern, ep);
 	return ep;
 }
 
+TruthValuePtr Surprisingness::emp_tv_bs(const Handle& pattern,
+                                        const HandleSeq& db,
+                                        unsigned n_resample,
+                                        unsigned subsize)
+{
+	if (subsize < db.size()) {
+		TruthValueSeq esstvs;
+		dorepeat(n_resample)
+			esstvs.push_back(emp_tv_subsmp(pattern, db, subsize));
+		return avrg_tv(esstvs);
+	} else {
+		TruthValuePtr etv = emp_tv(pattern, db);
+		return etv;
+	}
+}
+
+TruthValuePtr Surprisingness::emp_tv_pbs(const Handle& pattern,
+                                         const HandleSeq& db,
+                                         double prob_estimate)
+{
+	// Calculate an estimate of the support of the pattern to decide
+	// whether we should subsample the db corpus. Indeed some
+	// pattern have intractably large support.
+	double support_estimate = prob_to_support(pattern, db, prob_estimate);
+
+	// If the support estimate is above the db size then we
+	// subsample
+	if (db.size() < support_estimate) {
+		// Calculate the empiric probability of pattern
+		unsigned subsize = subsmp_size(pattern, db, support_estimate);
+		unsigned n_resampling = 10;  // TODO: move this hardwired contant
+		                             // to a user parameter
+		return emp_tv_bs(pattern, db, n_resampling, subsize);
+	} else {
+		return emp_tv(pattern, db);
+	}
+}
+
+TruthValuePtr Surprisingness::emp_tv_pbs_mem(const Handle& pattern,
+                                             const HandleSeq& db,
+                                             double prob_estimate)
+{
+	TruthValuePtr etv = get_emp_tv(pattern);
+	if (etv) {
+		return etv;
+	}
+	etv = emp_tv_pbs(pattern, db, prob_estimate);
+	set_emp_tv(pattern, etv);
+	return etv;
+}
+
+HandleSeq Surprisingness::subsmp(const HandleSeq& db, unsigned subsize)
+{
+	unsigned ts = db.size();
+	if (ts/2 <= subsize and subsize < ts) {
+		// Subsample by randomly removing (swapping all elements to
+		// remove with the tail, then removing the tail, which is
+		// considerably faster than removing element by element).
+		HandleSeq smp_db(db);
+		unsigned i = ts;
+		while (subsize < i) {
+			unsigned rnd_idx = randGen().randint(i);
+			std::swap(smp_db[rnd_idx], smp_db[--i]);
+		}
+		smp_db.resize(i);
+		return smp_db;
+	} else if (0 <= subsize and subsize < ts/*/2*/) {
+		// Subsample by randomly adding
+		HandleSeq smp_db(subsize);
+		lazy_random_selector select(ts);
+		for (size_t i = 0; i < subsize; i++)
+			smp_db[i] = db[select()];
+		return smp_db;
+	} else {
+		return db;
+	}
+}
+
 unsigned Surprisingness::subsmp_size(const Handle& pattern,
-                                     const HandleSeq& texts,
+                                     const HandleSeq& db,
                                      double support_estimate)
 {
-	double ts = texts.size();
+	double ts = db.size();
 	double nc = MinerUtils::n_conjuncts(pattern);
 	double alpha = (double)support_estimate / std::pow(ts, nc);
 	double res = std::pow(ts / (10*alpha), 1.0/nc);
 	return std::max((unsigned)res, std::min(5000U, (unsigned)ts));
 }
 
-double Surprisingness::ji_prob(const HandleSeqSeq& partition,
-                               const Handle& pattern,
-                               const HandleSeq& texts)
+double Surprisingness::ji_prob_est(const HandleSeqSeq& partition,
+                                   const Handle& pattern,
+                                   const HandleSeq& db)
 {
 	// Generate subpatterns from blocks (add them in the atomspace to
 	// memoize support calculation)
@@ -409,16 +483,75 @@ double Surprisingness::ji_prob(const HandleSeqSeq& partition,
 	// without considering joint variables
 	double p = 1.0;
 	for (const Handle& subpattern : subpatterns) {
-		double empr = emp_prob_mem(subpattern, texts);
+		double empr = emp_prob_mem(subpattern, db);
 		p *= empr;
 	}
 
 	// Calculate the probability that all joint variables take the same
 	// value
-	double eq_p = eq_prob(partition, pattern, texts);
+	double eq_p = eq_prob(partition, pattern, db);
 	p *= eq_p;
 
 	return p;
+}
+
+TruthValuePtr Surprisingness::ji_tv_est(const HandleSeqSeq& partition,
+                                        const Handle& pattern,
+                                        const HandleSeq& db)
+{
+	// Generate subpatterns from blocks (add them in the atomspace to
+	// memoize support calculation)
+	HandleSeq subpatterns = add_subpatterns(partition, pattern,
+	                                        *pattern->getAtomSpace());
+
+	// Calculate the product of the probability over subpatterns
+	// without considering joint variables
+	double rp = 1.0;
+	double rc = 1.0;
+	TruthValueSeq etvs;
+	for (const Handle& subpattern : subpatterns) {
+		TruthValuePtr etv = emp_tv_mem(subpattern, db);
+		etvs.push_back(etv);
+	}
+	TruthValuePtr prod_etv = avrg_tv(etvs);
+	rp = prod_etv->get_mean();
+	rc = prod_etv->get_confidence();
+
+	// Calculate the probability that all joint variables take the same
+	// value
+	double eq_p = eq_prob(partition, pattern, db);
+	rp *= eq_p;
+	// Hack alert! Lower the confidence because it is an estimate
+	// after all.
+	rc *= 1e-1;
+
+	return createSimpleTruthValue(rp, rc);
+}
+
+TruthValuePtr Surprisingness::ji_tv_est(const Handle& pattern,
+                                        const HandleSeq& db)
+{
+	// Calculate the truth value estimate of each partition based on
+	// independent assumption of between each partition block, taking
+	// into account the linkage probability.
+	TruthValueSeq etvs;
+	for (const HandleSeqSeq& partition : partitions_without_pattern(pattern)) {
+		TruthValuePtr etv = ji_tv_est(partition, pattern, db);
+		etvs.push_back(etv);
+	}
+	return avrg_tv(etvs);
+}
+
+TruthValuePtr Surprisingness::ji_tv_est_mem(const Handle& pattern,
+                                            const HandleSeq& db)
+{
+	TruthValuePtr jte = get_ji_tv_est(pattern);
+	if (jte) {
+		return jte;
+	}
+	jte = ji_tv_est(pattern, db);
+	set_ji_tv_est(pattern, jte);
+	return jte;
 }
 
 bool Surprisingness::has_same_index(const Handle& l_pat,
@@ -628,7 +761,7 @@ HandleSeqUCounter Surprisingness::group_eq(const HandleSeqSeq& partition,
 
 double Surprisingness::eq_prob(const HandleSeqSeq& partition,
                                const Handle& pattern,
-                               const HandleSeq& texts)
+                               const HandleSeq& db)
 {
 	double p = 1.0;
 	// Calculate the probability of a variable taking the same value
@@ -658,51 +791,77 @@ double Surprisingness::eq_prob(const HandleSeqSeq& partition,
 					break;
 				else i--;
 
-			double c = texts.size();
+			double c = db.size();
 			if (0 <= i)
-				c = value_count(var_partition[i], var, texts);
+				c = value_count(var_partition[i], var, db);
 			p /= c;
 		}
 	}
 	return p;
 }
 
-const Handle& Surprisingness::emp_prob_key()
+const Handle& Surprisingness::emp_tv_key()
 {
-	static Handle epk(createNode(NODE, "*-EmpiricalProbabilityKey-*"));
-	return epk;
+	static Handle etvk(createNode(NODE, "*-EmpiricalTruthValueKey-*"));
+	return etvk;
 }
 
-TruthValuePtr Surprisingness::get_emp_prob(const Handle& pattern)
+TruthValuePtr Surprisingness::get_emp_tv(const Handle& pattern)
 {
-	ValuePtr val = pattern->getValue(emp_prob_key());
+	ValuePtr val = pattern->getValue(emp_tv_key());
 	if (val)
 		return TruthValueCast(val);
 	return nullptr;
 }
 
-void Surprisingness::set_emp_prob(const Handle& pattern,
-                                  double emp_prob)
+void Surprisingness::set_emp_tv(const Handle& pattern, TruthValuePtr etv)
 {
-	TruthValuePtr emp_prob_tv = createSimpleTruthValue(emp_prob, 1.0);
-	pattern->setValue(emp_prob_key(), ValueCast(emp_prob_tv));
+	pattern->setValue(emp_tv_key(), ValueCast(etv));
 }
 
-double avrg(double l, double r)
+void Surprisingness::set_emp_prob(const Handle& pattern, double ep)
 {
-	return (l + r) / 2.0;
+	TruthValuePtr etv = createSimpleTruthValue(ep, 1.0);
+	set_emp_tv(pattern, etv);
 }
 
-double Surprisingness::jsd(const TruthValuePtr l_tv, const TruthValuePtr r_tv)
+const Handle& Surprisingness::ji_tv_est_key()
+{
+	static Handle jtek(createNode(NODE, "*-JointIndependentTruthValueEstimateKey-*"));
+	return jtek;
+}
+
+TruthValuePtr Surprisingness::get_ji_tv_est(const Handle& pattern)
+{
+	ValuePtr val = pattern->getValue(ji_tv_est_key());
+	if (val)
+		return TruthValueCast(val);
+	return nullptr;
+}
+
+void Surprisingness::set_ji_tv_est(const Handle& pattern, TruthValuePtr jte)
+{
+	pattern->setValue(ji_tv_est_key(), ValueCast(jte));
+}
+
+double Surprisingness::jsd(TruthValuePtr l_tv, TruthValuePtr r_tv)
 {
 	static int bins = 100;
+	BetaDistribution l_bd(l_tv);
+	BetaDistribution r_bd(r_tv);
 	std::vector<double>
-		l_cdf = BetaDistribution(l_tv).cdf(bins),
-		r_cdf = BetaDistribution(r_tv).cdf(bins),
+		l_cdf = l_bd.cdf(bins),
+		r_cdf = r_bd.cdf(bins),
 		m_cdf = avrg_cdf(l_cdf, r_cdf);
 	double
 		ld = kld(l_cdf, m_cdf),
 		rd = kld(r_cdf, m_cdf);
+
+	// logger().debug() << "CSV representation of the pdf of the left TV. ";
+	// log_pdf(l_bd, bins);
+	// logger().debug() << "CSV representation of the pdf of the right TV. ";
+	// log_pdf(r_bd, bins);
+
 	return sqrt(avrg(ld, rd));
 }
 
@@ -724,8 +883,11 @@ double Surprisingness::kld(const std::vector<double>& l_cdf,
 		// Probabilities of the right and left points
 		double lp = l_cdf[i] - last_lv;
 		double rp = r_cdf[i] - last_rv;
-		// Their relative entropy
-		kldi += epsilon < rp ? lp * std::log2(lp/rp) : 0.0;
+		// Relative entropy
+		if (epsilon < rp and epsilon < lp) {
+			double e = lp * std::log2(lp/rp);
+			kldi += e;
+		}
 		// Remember last cummulated probabilities
 		last_lv = l_cdf[i];
 		last_rv = r_cdf[i];
@@ -733,13 +895,68 @@ double Surprisingness::kld(const std::vector<double>& l_cdf,
 	return kldi;
 }
 
+double Surprisingness::avrg(double l, double r)
+{
+	return (l + r) / 2.0;
+}
+
+double Surprisingness::avrg(std::vector<double>& vs)
+{
+	return boost::accumulate(vs, 0.0) / vs.size();
+}
+
+TruthValuePtr Surprisingness::avrg_tv(const TruthValueSeq& tvs)
+{
+	// Calculate the TV means and variances
+	std::vector<BetaDistribution> dists;
+	std::vector<double> means, variances;
+	boost::transform(tvs, std::back_inserter(dists), mk_beta_distribution);
+	boost::transform(dists, std::back_inserter(means),
+	                 [](const BetaDistribution& bd) { return bd.mean(); });
+	boost::transform(tvs, std::back_inserter(variances),
+	                 [](const BetaDistribution& bd) { return bd.variance(); });
+
+	// For now the mixed TV remains a SimpleTV, thus a
+	// beta-distribution. The mean and variance is calculated
+	// according to
+	// https://en.wikipedia.org/wiki/Mixture_distribution#Moments
+	double mean = avrg(means);
+	std::vector<double> relative_variances(variances);
+	for (std::size_t i = 0; i < relative_variances.size(); i++)
+		relative_variances[i] += sq(means[i] - mean);
+	double variance = avrg(relative_variances);
+
+	return mk_stv(mean, variance);
+}
+
 std::vector<double> Surprisingness::avrg_cdf(const std::vector<double>& l_cdf,
                                              const std::vector<double>& r_cdf)
 {
 	OC_ASSERT(l_cdf.size() == r_cdf.size());
 	std::vector<double> m_cdf(l_cdf.size());
-	boost::transform(l_cdf, r_cdf, m_cdf.begin(), avrg);
+	boost::transform(l_cdf, r_cdf, m_cdf.begin(),
+	                 [](double l, double r) { return avrg(l, r); });
 	return m_cdf;
+}
+
+count_t Surprisingness::confidence_to_count(confidence_t cfd)
+{
+	return cfd * SimpleTruthValue::DEFAULT_K / (1.0 - cfd);
+}
+
+confidence_t Surprisingness::count_to_confidence(count_t cnt)
+{
+	return cnt / (cnt + SimpleTruthValue::DEFAULT_K);
+}
+
+void Surprisingness::log_pdf(const BetaDistribution& bd, int bins)
+{
+	logger().debug() << "Paste the following in a file 'pdf.csv':" << std::endl
+	                 << "# probability,density" << std::endl
+	                 << bd.pdf_csv(bins);
+	logger().debug() << "Then use the following gnuplot commands to plot it:" << std::endl
+	                 << "set datafile separator comma" << std::endl
+	                 << "plot 'pdf.csv' using 1:2;";
 }
 
 std::string oc_to_string(const HandleSeqSeqSeq& hsss, const std::string& indent)

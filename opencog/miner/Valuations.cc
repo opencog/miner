@@ -155,7 +155,7 @@ std::string SCValuations::to_string(const std::string& indent) const
 // Valuations //
 ////////////////
 
-Valuations::Valuations(const Handle& pattern, const HandleSeq& texts)
+Valuations::Valuations(const Handle& pattern, const HandleSeq& db)
 	: ValuationsBase(MinerUtils::get_variables(pattern))
 {
 	// Useless clauses (like redundant, constants, and more) are
@@ -164,7 +164,7 @@ Valuations::Valuations(const Handle& pattern, const HandleSeq& texts)
 	Handle reduced_pattern = MinerUtils::remove_useless_clauses(pattern);
 	for (const Handle& cp : MinerUtils::get_component_patterns(reduced_pattern))
 	{
-		Handle satset = MinerUtils::restricted_satisfying_set(cp, texts);
+		Handle satset = MinerUtils::restricted_satisfying_set(cp, db);
 		scvs.insert(SCValuations(MinerUtils::get_variables(cp), satset));
 	}
 	setup_size();

@@ -37,18 +37,18 @@
          ;; statements, as they usually represent rules rather than
          ;; data.
          (scope? (lambda (x) (cog-subtype? 'ScopeLink (cog-type x))))
-         (texts
+         (db
           (filter (lambda (x) (not (scope? x))) (cog-get-all-roots)))
           ;; (filter scope? (cog-get-all-roots)))
           ;; (cog-get-all-roots))
 
-         ;; Build texts concept
-         (texts-cpt (fill-texts-cpt (Concept "sumo-texts") texts))
+         ;; Build db concept
+         (db-cpt (fill-db-cpt (Concept "sumo-db") db))
 
          ;; Run pattern miner
          (msg-1 (cog-logger-info "Run pattern miner over ~a" kb))
          ;; (results '())
-         (results (cog-mine texts-cpt
+         (results (cog-mine db-cpt
                             #:minsup ms
                             #:maximum-iterations mi
                             #:incremental-expansion #t

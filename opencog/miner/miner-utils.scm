@@ -33,19 +33,26 @@
   (let ((rule-path "opencog/miner/rules/"))
     (string-append rule-path brf)))
 
-;; Load here because otherwise, when loaded within
-;; configure-shallow-specialization-rule,
-;; gen-shallow-specialization-rule is inaccessible
+;; Load here otherwise gen-shallow-specialization-rule is inaccessible
 (load-from-path (mk-full-rule-path "shallow-specialization.scm"))
 
-;; Load here because otherwise, when loaded within
-;; configure-conjunction-expansion-rules,
-;; gen-conjunction-expansion-rule is inaccessible
+;; Load here otherwise gen-conjunction-expansion-rule is inaccessible
 (load-from-path (mk-full-rule-path "conjunction-expansion.scm"))
 
-;; Load here because otherwise, when loaded within configure-isurp,
-;; gen-i-surprisingness-rule is inaccessible
+;; Load here otherwise gen-i-surprisingness-rule is inaccessible
 (load-from-path (mk-full-rule-path "i-surprisingness.scm"))
+
+;; Load here otherwise gen-jsd-surprisingness-rule is inaccessible
+(load-from-path (mk-full-rule-path "jsd-surprisingness.scm"))
+
+;; Load here otherwise gen-emp-rule is inaccessible
+(load-from-path (mk-full-rule-path "emp.scm"))
+
+;; Load here otherwise gen-est-rule is inaccessible
+(load-from-path (mk-full-rule-path "est.scm"))
+
+;; Load here otherwise gen-jsd-rule is inaccessible
+(load-from-path (mk-full-rule-path "jsd.scm"))
 
 (define (iota-plus-one x)
 "
@@ -76,11 +83,11 @@
   (let ((top-arg (Variable "$top-arg")))
     (Lambda top-arg (Present top-arg))))
 
-(define (random-texts-cpt)
+(define (random-db-cpt)
 "
-  Create a random Concept node for adding text members
+  Create a random Concept node for adding data tree members
 "
-  (random-node 'ConceptNode 16 "texts-"))
+  (random-node 'ConceptNode 16 "db-"))
 
 (define (random-miner-rbs-cpt)
 "
@@ -94,38 +101,38 @@
 "
   (random-node 'ConceptNode 16 "surprisingness-rbs-"))
 
-(define (fill-texts-cpt texts-cpt texts)
+(define (fill-db-cpt db-cpt db)
 "
-  Usage: (fill-texts-cpt texts-cpt texts)
+  Usage: (fill-db-cpt db-cpt db)
 
-  For each element text of texts create
+  For each element dt of db create
 
   MemberLink
-    text
-    texts-cpt
+    dt
+    db-cpt
 
-  texts can be
+  db can be
   1. a Scheme list
   2. an Atomese List or Set
   3. an AtomSpace
 
   Once all memberships have been added to the current atomspace,
-  texts-cpt is returned.
+  db-cpt is returned.
 "
   (define (is-List-Set a)
-    (and (cog-atom? texts)
-         (or (eq? (cog-type? texts) 'ListLink)
-             (eq? (cog-type? texts) 'SetLink))))
-  (let* ((texts-lst (cond ;; Scheme list
-                          ((list? texts) texts)
-                          ;; Atomese List or Set
-                          ((is-List-Set texts) (cog-outgoing-set texts))
-                          ;; AtomSpace
-                          ;; TODO: bug!!! should use the given atomspace
-                          ((cog-atomspace? texts) (cog-get-atoms 'Atom #t))))
-         (mk-member (lambda (text) (Member text texts-cpt))))
-    (for-each mk-member texts-lst))
-  texts-cpt)
+    (and (cog-atom? db)
+         (or (eq? (cog-type? db) 'ListLink)
+             (eq? (cog-type? db) 'SetLink))))
+  (let* ((db-lst (cond ;; Scheme list
+                       ((list? db) db)
+                       ;; Atomese List or Set
+                       ((is-List-Set db) (cog-outgoing-set db))
+                       ;; AtomSpace
+                       ;; TODO: bug!!! should use the given atomspace
+                       ((cog-atomspace? db) (cog-get-atoms 'Atom #t))))
+         (mk-member (lambda (dt) (Member dt db-cpt))))
+    (for-each mk-member db-lst))
+  db-cpt)
 
 (define (configure-mandatory-rules pm-rbs)
   ;; Maybe remove, nothing is mandatory anymore
@@ -210,28 +217,42 @@
                             #:max-conjuncts max-conjuncts
                             #:max-variables max-variables))
 
-(define* (configure-isurp isurp-rbs mode max-conjuncts)
-  ;; Load I-Surprisingess rules
-  ;; (load-from-path (mk-full-rule-path "is-surprisingness.scm"))
-  (let* ((base-rule-file "i-surprisingness.scm")
-         (namify (lambda (i) (string-append (symbol->string mode) "-"
+(define* (configure-surprisingness surp-rbs mode max-conjuncts)
+  ;; Add surprisingness rules
+  (let* ((namify (lambda (i) (string-append (symbol->string mode) "-"
                                             (number->string i)
                                             "ary-rule")))
          (aliasify (lambda (i) (DefinedSchema (namify i))))
+         (rule-gen (cond ((or (eq? mode 'isurp-old)
+                              (eq? mode 'nisurp-old)
+                              (eq? mode 'isurp)
+                              (eq? mode 'nisurp))
+                          (lambda (i) (gen-i-surprisingness-rule mode i)))
+                         ((eq? mode 'jsdsurp) gen-jsd-surprisingness-rule)))
          (definify (lambda (i) (DefineLink
                                  (aliasify i)
-                                 (gen-i-surprisingness-rule mode i))))
+                                 (rule-gen i))))
          (rulify (lambda (i) (definify i) (aliasify i)))
          (rules (map rulify (cdr (iota-plus-one max-conjuncts)))))
-    (ure-add-rules isurp-rbs rules)))
+    (ure-add-rules surp-rbs rules))
+
+  ;; In case of jsdsurp we also need emp, est and jsd rules
+  (if (eq? mode 'jsdsurp)
+      (let* ((emp-alias (DefinedSchema "emp-rule"))
+             (est-alias (DefinedSchema "est-rule"))
+             (jsd-alias (DefinedSchema "jsd-rule"))
+             (emp-def (Define emp-alias (gen-emp-rule)))
+             (est-def (Define est-alias (gen-est-rule)))
+             (jsd-def (Define jsd-alias (gen-jsd-rule))))
+        (ure-add-rules surp-rbs (list emp-alias est-alias jsd-alias)))))
 
 (define (pattern-var)
   (Variable "$pattern"))
 
-(define (isurp-target mode texts-cpt)
-  (isurp-eval mode (pattern-var) texts-cpt))
+(define (surp-target mode db-cpt)
+  (surp-eval mode (pattern-var) db-cpt))
 
-(define (isurp-vardecl)
+(define (surp-vardecl)
   (TypedVariable (pattern-var) (Type "LambdaLink")))
 
 (define* (configure-miner pm-rbs
@@ -294,7 +315,7 @@
   (ure-set-fc-retry-exhausted-sources pm-rbs (and incremental-expansion
                                                   (< 1 max-conjuncts))))
 
-(define (minsup-eval pattern texts ms)
+(define (minsup-eval pattern db ms)
 "
   Construct
 
@@ -302,23 +323,23 @@
     Predicate \"minsup\"
     List
       pattern
-      texts
+      db
       ms
 "
   (Evaluation
      (Predicate "minsup")
      (List
         pattern
-        texts
+        db
         (if (number? ms) (Number ms) ms))))
 
-(define (minsup-eval-true pattern texts ms)
+(define (minsup-eval-true pattern db ms)
 "
   Like minsup-eval and add (stv 1 1) on the EvaluationLink
 "
-  (cog-set-tv! (minsup-eval pattern texts ms) (stv 1 1)))
+  (cog-set-tv! (minsup-eval pattern db ms) (stv 1 1)))
 
-(define (isurp-eval mode pattern texts)
+(define (surp-eval mode pattern db)
 "
   Construct
 
@@ -326,15 +347,15 @@
     Predicate \"mode\"
     List
       pattern
-      texts
+      db
 
-  where mode can be 'isurp-old, 'nisurp-old, 'isurp, 'nisurp.
+  where mode can be 'isurp-old, 'nisurp-old, 'isurp, 'nisurp, 'jsdsurp.
 "
   (Evaluation
     (Predicate (symbol->string mode))
     (List
       pattern
-      texts)))
+      db)))
 
 (define (get-members C)
 "
@@ -351,23 +372,23 @@
 "
   (length (get-members C)))
 
-(define (size-ge texts ms)
-  (let* ((result (>= (get-cardinality texts) (cog-number ms))))
+(define (size-ge db ms)
+  (let* ((result (>= (get-cardinality db) (cog-number ms))))
     (bool->tv result)))
 
-(define (texts->atomspace texts)
+(define (db->atomspace db)
 "
-  Create an atomspace with all members of concept texts in it.
+  Create an atomspace with all members of concept db in it.
 "
-  (let* ((members (get-members texts))
-         (texts-as (cog-new-atomspace)))
-    (cog-cp texts-as members)
-    texts-as))
+  (let* ((members (get-members db))
+         (db-as (cog-new-atomspace)))
+    (cog-cp db-as members)
+    db-as))
 
 (define (pattern->bindlink pattern)
 "
   Turn a pattern into a BindLink for subsequent pattern
-  matching texts.
+  matching db.
 "
   (if (= (cog-arity pattern) 2)
       ;; With variable declaration
@@ -378,7 +399,7 @@
       (let* ((body (gar pattern)))
         (Bind body body)))) ; to deal with unordered links
 
-(define (fetch-patterns texts ms)
+(define (fetch-patterns db ms)
 "
   Fetch all patterns with enough support, thus found in the following
   hypergraphs
@@ -387,11 +408,11 @@
     Predicate \"minsup\"
     List
       <pattern>
-      texts
+      db
       ms
 "
   (let* ((patvar (Variable "$patvar"))
-         (target (minsup-eval patvar texts ms))
+         (target (minsup-eval patvar db ms))
          (vardecl (TypedVariable patvar (Type "LambdaLink")))
          (precond (absolutely-true-eval target))
          (gl (Get vardecl (And (Present target) precond))))
@@ -421,7 +442,7 @@
 (define* (cog-miner . args)
   (display ("The command you are looking for is cog-mine.")))
 
-(define* (cog-mine texts
+(define* (cog-mine db
                    #:key
                    (minsup 10)
                    (initpat (top))
@@ -432,11 +453,11 @@
                    (max-variables 3)
                    (surprisingness 'isurp))
 "
-  Mine patterns in texts (text trees, a.k.a. grounded hypergraphs) with minimum
+  Mine patterns in db (data trees, a.k.a. grounded hypergraphs) with minimum
   support ms, optionally using mi iterations and starting from the initial
   pattern initpat.
 
-  Usage: (cog-mine texts
+  Usage: (cog-mine db
                    #:minsup ms
                    #:initpat ip
                    #:maximum-iterations mi
@@ -446,7 +467,7 @@
                    #:max-variables mv
                    #:surprisingness su)
 
-  texts: Collection of texts to mine. It can be given in 3 forms
+  db: Collection of data trees to mine. It can be given in 3 forms
 
          1. Scheme list of atoms
 
@@ -457,19 +478,19 @@
             (List t1 ... tn)
             (Set t1 ... tn)
 
-         3. A concept with all the texts in it
+         3. A concept with all the data trees in it
 
-            (Concept texts-name)
+            (Concept db-name)
 
             such that
 
             (Member
               t1
-              (Concept texts-name))
+              (Concept db-name))
             ...
             (Member
               tn
-              (Concept texts-name))
+              (Concept db-name))
 
   ms: [optional, default=10] Minimum support. All patterns with frequency below
       ms are discarded. Can be a Scheme number or an Atomese number node.
@@ -508,13 +529,17 @@
 
       'isurp-old:  Verbatim port of Shujing I-Surprisingness.
 
-      'nisurp-old: Verbatim port of Shujing nornalized I-Surprisingness.
+      'nisurp-old: Verbatim port of Shujing normalized I-Surprisingness.
 
       'isurp:      New implementation of I-Surprisingness that takes
                    linkage into account.
 
       'nisurp:     New implementation of normalized I-Surprisingness
                    that takes linkage into account.
+
+      'jsdsurp:    Jensen-Shannon Distance based surprisingness.
+                   The type of surprisingness is determined by the way
+                   the truth value estimate is calculated.
 
       'none:       No surprisingness measure is applied.
 
@@ -549,17 +574,17 @@
   (let* (;; Create a temporary child atomspace for the URE
          (tmp-as (cog-new-atomspace (cog-atomspace)))
          (parent-as (cog-set-atomspace! tmp-as))
-         (texts-concept? (and (cog-atom? texts)
-                              (eq? (cog-type texts) 'ConceptNode)))
-         (texts-cpt (if (not texts-concept?)
-                        ;; Construct a temporary concept containing
-                        ;; the texts
-                        (fill-texts-cpt (random-texts-cpt) texts)
-                        ;; Otherwise texts is already a concept
-                        texts))
+         (db-concept? (and (cog-atom? db)
+                           (eq? (cog-type db) 'ConceptNode)))
+         (db-cpt (if (not db-concept?)
+                     ;; Construct a temporary concept containing
+                     ;; the db
+                     (fill-db-cpt (random-db-cpt) db)
+                     ;; Otherwise db is already a concept
+                     db))
          (ms-nn (if (number? minsup) (Number minsup) minsup))
          ;; Check that the initial pattern has enough support
-         (es (cog-enough-support? initpat texts-cpt ms-nn)))
+         (es (cog-enough-support? initpat db-cpt ms-nn)))
     (if (not es)
         ;; The initial pattern doesn't have enough support, thus the
         ;; solution set is empty.
@@ -570,7 +595,7 @@
         ;; The initial pattern has enough support, let's configure the
         ;; rule engine and run the pattern mining query
         (let* (;; Configure pattern miner forward chainer
-               (source (minsup-eval-true initpat texts-cpt minsup))
+               (source (minsup-eval-true initpat db-cpt minsup))
                (miner-rbs (random-miner-rbs-cpt))
                (cfg-m (configure-miner miner-rbs
                                        #:maximum-iterations maximum-iterations
@@ -582,7 +607,7 @@
                ;; Run pattern miner in a forward way
                (results (cog-fc miner-rbs source))
                ;; Fetch all relevant results
-               (patterns (fetch-patterns texts-cpt minsup))
+               (patterns (fetch-patterns db-cpt minsup))
                (patterns-lst (cog-outgoing-set patterns)))
 
           (if (equal? surprisingness 'none)
@@ -595,38 +620,38 @@
               ;; Run surprisingness
               (let*
                   ;; Configure surprisingness backward chainer
-                  ((isurp-rbs (random-surprisingness-rbs-cpt))
-                   (target (isurp-target surprisingness texts-cpt))
-                   (vardecl (isurp-vardecl))
-                   (cfg-s (configure-isurp isurp-rbs
-                                           surprisingness
-                                           max-conjuncts))
+                  ((surp-rbs (random-surprisingness-rbs-cpt))
+                   (target (surp-target surprisingness db-cpt))
+                   (vardecl (surp-vardecl))
+                   (cfg-s (configure-surprisingness surp-rbs
+                                                    surprisingness
+                                                    max-conjuncts))
 
                    ;; Run surprisingness in a backward way
-                   (isurp-res (cog-bc isurp-rbs target #:vardecl vardecl))
-                   (isurp-res-lst (cog-outgoing-set isurp-res))
-                   (isurp-res-sort-lst (desc-sort-by-tv-strength isurp-res-lst))
+                   (surp-res (cog-bc surp-rbs target #:vardecl vardecl))
+                   (surp-res-lst (cog-outgoing-set surp-res))
+                   (surp-res-sort-lst (desc-sort-by-tv-strength surp-res-lst))
 
                    ;; Copy the results to the parent atomspace
-                   (parent-isurp-res (cog-cp parent-as isurp-res-sort-lst)))
+                   (parent-surp-res (cog-cp parent-as surp-res-sort-lst)))
                 (cog-set-atomspace! parent-as)
-                parent-isurp-res))))))
+                parent-surp-res))))))
 
 (define (export-miner-utils)
   (export
     iota-plus-one
     top
-    random-texts-cpt
+    random-db-cpt
     random-miner-rbs-cpt
-    fill-texts-cpt
+    fill-db-cpt
     configure-mandatory-rules
     configure-optional-rules
     configure-rules
-    configure-isurp
+    configure-surprisingness
     configure-miner
     minsup-eval
     minsup-eval-true
-    isurp-eval
+    surp-eval
     get-members
     get-cardinality
     fetch-patterns
@@ -656,6 +681,10 @@
     nisurp-old-formula
     isurp-formula
     nisurp-formula
+    emp-formula
+    est-formula
+    jsd-formula
+    jsd-surprisingness-formula
     unary-conjunction
     unary-conjunction-pattern
   )
