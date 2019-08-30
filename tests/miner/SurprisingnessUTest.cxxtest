@@ -136,6 +136,9 @@ public:
 
 	// Test jsdsurp surprisingness without joint variables on synthetic data
 	void test_jsdsurp_no_linkage_synthetic();
+
+	// Test jsdsurp surprisingness on ugly max soda drinker
+	void test_jsdsurp_ugly_man_soda_drinker();
 };
 
 HandleSeq SurprisingnessUTest::ure_surp(const std::string& mode, unsigned max_conjuncts)
@@ -1489,6 +1492,80 @@ void SurprisingnessUTest::test_jsdsurp_no_linkage_synthetic()
 	// nisurp measure, however bootstrapping introduces inaccuracies
 	// thus the last delta.
 	TS_ASSERT_DELTA(0.0, expected->getTruthValue()->get_mean(), 0.8);
+}
+
+// Test normalized I-Surprisingess for the ugly male soda drinker
+void SurprisingnessUTest::test_jsdsurp_ugly_man_soda_drinker()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
+	// Define db
+	load_ugly_male_soda_drinker_corpus();
+
+	// Add
+	//
+	// Lambda
+	//   X
+	//   Present
+	//     Inheritance
+	//       X
+	//       Concept "man"
+	//     Inheritance
+	//       X
+	//       Concept "soda drinker"
+	//     Inheritance
+	//       X
+	//       Concept "ugly"
+	//
+	// and its conjuncts.
+	Handle ugly_pattern = MinerUTestUtils::add_ugly_pattern(_as),
+		man_pattern = MinerUTestUtils::add_man_pattern(_as),
+		soda_drinker_pattern = MinerUTestUtils::add_soda_drinker_pattern(_as),
+		umsd_pattern = MinerUTestUtils::add_ugly_man_soda_drinker_pattern(_as);
+	// Wrap pattern and its conjuncts in minsup predicates
+	MinerUTestUtils::add_minsup_eval(_as, umsd_pattern, 5, TruthValue::TRUE_TV());
+
+	// Add
+	//
+	// Another pattern involving a subtler linkage
+	// LambdaLink
+	//   X Y Z W
+	//   PresentLink
+	//     InheritanceLink
+	//       X
+	//       Y
+	//     InheritanceLink
+	//       Z
+	//       Y
+	//     InheritanceLink
+	//       W
+	//       Y
+	Handle linkage_pattern = al(LAMBDA_LINK,
+	                            al(VARIABLE_LIST, X, Y, Z, W),
+	                            al(PRESENT_LINK,
+	                               al(INHERITANCE_LINK, X, Y),
+	                               al(INHERITANCE_LINK, Z, Y),
+	                               al(INHERITANCE_LINK, W, Y)));
+	// Wrap pattern and its conjuncts in minsup predicates
+	MinerUTestUtils::add_minsup_eval(_as, linkage_pattern, 5, TruthValue::TRUE_TV());
+
+	// Test I-Surprisingness
+	std::string mode("jsdsurp");
+	unsigned max_conjuncts = 3;
+	HandleSeq surp_results = ure_surp(mode, max_conjuncts);
+	Handle expected = MinerUTestUtils::add_surp_eval(_as, mode, umsd_pattern);
+
+	logger().debug() << "surp_results = " << oc_to_string(surp_results);
+
+	TS_ASSERT(not surp_results.empty());
+
+	Handle surp_front = surp_results.front();
+
+	logger().debug() << "expected = " << oc_to_string(expected);
+	logger().debug() << "surp_front = " << oc_to_string(surp_front);
+
+	TS_ASSERT(content_eq(expected, surp_front));
+	TS_ASSERT_DELTA(0.92, expected->getTruthValue()->get_mean(), 1e-2);
 }
 
 #undef al
