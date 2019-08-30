@@ -51,9 +51,12 @@
         minsup-pattern)))))
 
 (define (emp-formula conclusion . premises)
+  ;; (cog-logger-debug "emp-formula conclusion = ~a, premises = ~a"
+  ;;                   conclusion premises)
   (if (= (length premises) 1)
       (let* ((minsup-pattern (car premises))
              (pattern (get-pattern minsup-pattern))
              (db (get-db minsup-pattern))
              (emp-tv (cog-emp-tv pattern db)))
+        ;; (cog-logger-debug "emp-tv = ~a" emp-tv)
         (cog-set-tv! conclusion emp-tv))))

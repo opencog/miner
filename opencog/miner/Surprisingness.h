@@ -28,6 +28,7 @@
 #include <opencog/atoms/core/LambdaLink.h>
 #include <opencog/atomspace/AtomSpace.h>
 #include <opencog/unify/Unify.h>
+#include <opencog/ure/BetaDistribution.h>
 
 namespace opencog
 {
@@ -965,7 +966,7 @@ public:
 	 * information as the returned truth value is a simple truth value
 	 * equivalent to a Beta distribution, thus cannot be multimodal.
 	 */
-	static TruthValuePtr avrg_tv(const std::vector<TruthValuePtr>& tvs);
+	static TruthValuePtr avrg_tv(const TruthValueSeq& tvs);
 
 	/**
 	 * Given 2 cdfs, return their average, that is (cdf1 + cdf2)/2.
@@ -982,11 +983,10 @@ public:
 	static confidence_t count_to_confidence(count_t cnt);
 
 	/**
-	 * Display cdf.
-	 *
-	 * TODO: maybe move to BetaDistribution class
+	 * Log PDF of a given beta distribution, discretized in a given
+	 * number of bins.
 	 */
-	static std::string cdf_to_string(const std::vector<double>& cdf);
+	static void log_pdf(const BetaDistribution& bd, int bins);
 };
 
 /**

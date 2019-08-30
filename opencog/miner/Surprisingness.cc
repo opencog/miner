@@ -304,6 +304,9 @@ TruthValuePtr Surprisingness::emp_tv(const Handle& pattern, const HandleSeq& db)
 	double sup = MinerUtils::support(pattern, db, ms);
 	double mean = sup / ucount;
 	double conf = count_to_confidence(ucount);
+	// Hack alert! Lower the confidence because subsampling can
+	// introduce some erratic errors.
+	conf *= 1e-1;
 	return createSimpleTruthValue(mean, conf);
 }
 
@@ -384,12 +387,13 @@ TruthValuePtr Surprisingness::emp_tv_bs(const Handle& pattern,
                                         unsigned subsize)
 {
 	if (subsize < db.size()) {
-		std::vector<TruthValuePtr> esstvs;
+		TruthValueSeq esstvs;
 		dorepeat(n_resample)
 			esstvs.push_back(emp_tv_subsmp(pattern, db, subsize));
 		return avrg_tv(esstvs);
 	} else {
-		return emp_tv(pattern, db);
+		TruthValuePtr etv = emp_tv(pattern, db);
+		return etv;
 	}
 }
 
@@ -504,17 +508,22 @@ TruthValuePtr Surprisingness::ji_tv_est(const HandleSeqSeq& partition,
 	// without considering joint variables
 	double rp = 1.0;
 	double rc = 1.0;
+	TruthValueSeq etvs;
 	for (const Handle& subpattern : subpatterns) {
 		TruthValuePtr etv = emp_tv_mem(subpattern, db);
-		rp *= etv->get_mean();
-		// TODO: this is too conservative, find something better
-		rc = std::min(rc, etv->get_confidence());
+		etvs.push_back(etv);
 	}
+	TruthValuePtr prod_etv = avrg_tv(etvs);
+	rp = prod_etv->get_mean();
+	rc = prod_etv->get_confidence();
 
 	// Calculate the probability that all joint variables take the same
 	// value
 	double eq_p = eq_prob(partition, pattern, db);
 	rp *= eq_p;
+	// Hack alert! Lower the confidence because it is an estimate
+	// after all.
+	rc *= 1e-1;
 
 	return createSimpleTruthValue(rp, rc);
 }
@@ -525,7 +534,7 @@ TruthValuePtr Surprisingness::ji_tv_est(const Handle& pattern,
 	// Calculate the truth value estimate of each partition based on
 	// independent assumption of between each partition block, taking
 	// into account the linkage probability.
-	std::vector<TruthValuePtr> etvs;
+	TruthValueSeq etvs;
 	for (const HandleSeqSeq& partition : partitions_without_pattern(pattern)) {
 		TruthValuePtr etv = ji_tv_est(partition, pattern, db);
 		etvs.push_back(etv);
@@ -838,29 +847,27 @@ void Surprisingness::set_ji_tv_est(const Handle& pattern, TruthValuePtr jte)
 double Surprisingness::jsd(TruthValuePtr l_tv, TruthValuePtr r_tv)
 {
 	static int bins = 100;
+	BetaDistribution l_bd(l_tv);
+	BetaDistribution r_bd(r_tv);
 	std::vector<double>
-		l_cdf = BetaDistribution(l_tv).cdf(bins),
-		r_cdf = BetaDistribution(r_tv).cdf(bins),
+		l_cdf = l_bd.cdf(bins),
+		r_cdf = r_bd.cdf(bins),
 		m_cdf = avrg_cdf(l_cdf, r_cdf);
 	double
 		ld = kld(l_cdf, m_cdf),
 		rd = kld(r_cdf, m_cdf);
 
-	// Debug
-	logger().debug() << "Surprisingness::jsd(l_tv=" << oc_to_string(l_tv)
-	                 << ",r_tv=" << oc_to_string(r_tv) << ")";
-	// logger().debug() << "Surprisingness::jsd l_cdf=" << cdf_to_string(l_cdf);
-	// logger().debug() << "Surprisingness::jsd r_cdf=" << cdf_to_string(r_cdf);
-	// logger().debug() << "Surprisingness::jsd m_cdf=" << cdf_to_string(m_cdf);
-	logger().debug() << "Surprisingness::jsd ld=" << ld << ", rd=" << rd << ")";
-	// ~Debug
+	// logger().debug() << "CSV representation of the pdf of the left TV. ";
+	// log_pdf(l_bd, bins);
+	// logger().debug() << "CSV representation of the pdf of the right TV. ";
+	// log_pdf(r_bd, bins);
+
 	return sqrt(avrg(ld, rd));
 }
 
 double Surprisingness::kld(const std::vector<double>& l_cdf,
                            const std::vector<double>& r_cdf)
 {
-	logger().debug() << "Surprisingness::kld";
 	static double epsilon = 1e-32;
 	OC_ASSERT(l_cdf.size() == r_cdf.size());
 
@@ -880,8 +887,6 @@ double Surprisingness::kld(const std::vector<double>& l_cdf,
 		if (epsilon < rp and epsilon < lp) {
 			double e = lp * std::log2(lp/rp);
 			kldi += e;
-			logger().debug() << "lp = " << lp << ", rp = " << rp << ", e = " << e
-			                 << ", kldi[" << i << "] = " << kldi;
 		}
 		// Remember last cummulated probabilities
 		last_lv = l_cdf[i];
@@ -900,7 +905,7 @@ double Surprisingness::avrg(std::vector<double>& vs)
 	return boost::accumulate(vs, 0.0) / vs.size();
 }
 
-TruthValuePtr Surprisingness::avrg_tv(const std::vector<TruthValuePtr>& tvs)
+TruthValuePtr Surprisingness::avrg_tv(const TruthValueSeq& tvs)
 {
 	// Calculate the TV means and variances
 	std::vector<BetaDistribution> dists;
@@ -944,15 +949,14 @@ confidence_t Surprisingness::count_to_confidence(count_t cnt)
 	return cnt / (cnt + SimpleTruthValue::DEFAULT_K);
 }
 
-std::string Surprisingness::cdf_to_string(const std::vector<double>& cdf)
+void Surprisingness::log_pdf(const BetaDistribution& bd, int bins)
 {
-	size_t i = 0;
-	std::stringstream ss;
-	ss << "size = " << cdf.size();
-	for (double v : cdf) {
-		ss << std::endl << "cdf[" << i++ << "] = " << v;
-	}
-	return ss.str();
+	logger().debug() << "Paste the following in a file 'pdf.csv':" << std::endl
+	                 << "# probability,density" << std::endl
+	                 << bd.pdf_csv(bins);
+	logger().debug() << "Then use the following gnuplot commands to plot it:" << std::endl
+	                 << "set datafile separator comma" << std::endl
+	                 << "plot 'pdf.csv' using 1:2;";
 }
 
 std::string oc_to_string(const HandleSeqSeqSeq& hsss, const std::string& indent)
