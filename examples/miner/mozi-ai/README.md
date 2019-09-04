@@ -18,6 +18,7 @@ cd build
 cmake ..
 make -j4
 sudo make install
+sudo ldconfig /usr/local/lib/opencog
 ```
 
 A `bioscience` module containing atom type definitions such as
