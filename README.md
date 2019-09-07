@@ -1,6 +1,6 @@
 # Miner
 
-[![CircleCI](https://circleci.com/gh/opencog/miner.svg?style=svg)](https://circleci.com/gh/opencog/miner)
+[![CircleCI](https://circleci.com/gh/singnet/miner.svg?style=svg)](https://circleci.com/gh/singnet/miner)
 
 The miner (or pattern miner) is a frequent and surprise subhypergraph
 pattern miner for the AtomSpace. It is built on top of the URE to take
