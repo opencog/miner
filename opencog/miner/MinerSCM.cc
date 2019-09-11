@@ -95,7 +95,8 @@ protected:
 	 * pattern cannot be a conjunction itself.
 	 */
 	Handle do_expand_conjunction(Handle cnjtion, Handle pattern,
-	                             Handle db, Handle ms, Handle mv);
+	                             Handle db, Handle ms, Handle mv,
+	                             bool enforce_specialization);
 
 	/**
 	 * Calculate the I-Surprisingness of the pattern (and its
@@ -247,7 +248,8 @@ bool MinerSCM::do_enough_support(Handle pattern, Handle db, Handle ms_h)
 }
 
 Handle MinerSCM::do_expand_conjunction(Handle cnjtion, Handle pattern,
-                                       Handle db, Handle ms_h, Handle mv_h)
+                                       Handle db, Handle ms_h, Handle mv_h,
+                                       bool enforce_specialization)
 {
 	AtomSpace *as = SchemeSmob::ss_get_env_as("cog-expand-conjunction");
 
@@ -259,7 +261,8 @@ Handle MinerSCM::do_expand_conjunction(Handle cnjtion, Handle pattern,
 	unsigned mv = MinerUtils::get_uint(mv_h);
 
 	HandleSet results = MinerUtils::expand_conjunction(cnjtion, pattern,
-	                                                   db_seq, ms, mv);
+	                                                   db_seq, ms, mv,
+	                                                   enforce_specialization);
 	return as->add_link(SET_LINK, HandleSeq(results.begin(), results.end()));
 }
 

@@ -178,7 +178,7 @@ public:
 	                     int minsup,
 	                     int max_iter=-1,
 	                     Handle initpat=Handle::UNDEFINED,
-	                     bool incremental_expansion=false,
+	                     bool conjunction_expansion=false,
 	                     unsigned max_conjuncts=UINT_MAX,
 	                     double complexity_penalty=0.0);
 	static Handle ure_pm(AtomSpace& as,
@@ -187,7 +187,7 @@ public:
 	                     const HandleSeq& db, int minsup,
 	                     int max_iter=-1,
 	                     Handle initpat=Handle::UNDEFINED,
-	                     bool incremental_expansion=false,
+	                     bool conjunction_expansion=false,
 	                     unsigned max_conjuncts=UINT_MAX,
 	                     double complexity_penalty=0.0);
 
@@ -272,7 +272,7 @@ public:
 
 	static void configure_mandatory_rules(SchemeEval& scm);
 	static void configure_optional_rules(SchemeEval& scm,
-	                                     bool incremental_expansion,
+	                                     bool conjunction_expansion,
 	                                     unsigned max_conjuncts=UINT_MAX,
 	                                     unsigned max_variables=UINT_MAX);
 	static void configure_surprisingness(SchemeEval& scm,

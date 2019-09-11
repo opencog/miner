@@ -154,24 +154,27 @@
     (ure-add-rule pm-rbs rule-alias rule-tv)))
 
 (define (configure-conjunction-expansion-rules pm-rbs
-                                               incremental-expansion
+                                               conjunction-expansion
+                                               enforce-specialization
                                                max-conjuncts
                                                max-variables)
   (define mv (min 9 max-variables))
 
-  (if (and incremental-expansion (< 1 max-conjuncts))
+  (if (and conjunction-expansion (< 1 max-conjuncts))
       ;; (load-from-path (mk-full-rule-path "conjunction-expansion.scm"))
       (let* ((namify (lambda (i)
                        (string-append "conjunction-expansion-"
+                                      (if enforce-specialization
+                                          "specialization-" "")
                                       (if (< 0 i)
-                                          (string-append (number->string i) "ary-"))
+                                          (string-append (number->string i) "ary-") "")
                                       "mv-" (number->string mv)
                                       "-rule")))
              (aliasify (lambda (i) (DefinedSchema (namify i))))
              (definify (lambda (i)
                          (DefineLink
                            (aliasify i)
-                           (gen-conjunction-expansion-rule i mv))))
+                           (gen-conjunction-expansion-rule i mv enforce-specialization))))
              (conf 1)    ; TODO: make this use configurable
              ;; The more arity the expansion the lower its
              ;; priority. Makes sure it's priority is also below that
@@ -190,30 +193,32 @@
 
 (define* (configure-optional-rules pm-rbs
                                    #:key
-                                   (incremental-expansion #t)
+                                   (conjunction-expansion #t)
+                                   (enforce-specialization #t)
                                    (max-conjuncts 3)
                                    (max-variables 3))
 
   ;; Load shallow specialization, either unary, if
-  ;; incremental-expansion is enabled, or not
+  ;; conjunction-expansion is enabled, or not
   (configure-shallow-specialization-rule pm-rbs
-                                         incremental-expansion
+                                         conjunction-expansion
                                          max-variables)
 
   ;; Load conjunction-expansion and associate to pm-rbs
   (configure-conjunction-expansion-rules pm-rbs
-                                         incremental-expansion
+                                         conjunction-expansion
+                                         enforce-specialization
                                          max-conjuncts
                                          max-variables))
 
 (define* (configure-rules pm-rbs
                           #:key
-                          (incremental-expansion #t)
+                          (conjunction-expansion #t)
                           (max-conjuncts 3)
                           (max-variables 3))
   (configure-mandatory-rules pm-rbs)
   (configure-optional-rules pm-rbs
-                            #:incremental-expansion incremental-expansion
+                            #:conjunction-expansion conjunction-expansion
                             #:max-conjuncts max-conjuncts
                             #:max-variables max-variables))
 
@@ -259,7 +264,8 @@
                           #:key
                           (maximum-iterations 1000)
                           (complexity-penalty 1)
-                          (incremental-expansion #t)
+                          (conjunction-expansion #t)
+                          (enforce-specialization #t)
                           (max-conjuncts 3)
                           (max-variables 3))
 "
@@ -270,7 +276,8 @@
   Usage: (configure-miner pm-rbs
                           #:maximum-iterations mi
                           #:complexity-penalty cp
-                          #:incremental-expansion ie
+                          #:conjunction-expansion ce
+                          #:enforce-specialization es
                           #:max-conjuncts mc)
                           #:max-variables mv)
 
@@ -286,11 +293,16 @@
       A negative value means more depth. Possible range is (-inf, +inf)
       but it's rarely necessary in practice to go outside of [-10, 10].
 
-  ie: [optional, default=#t] Flag whether to use the conjunctions expansion
+  ce: [optional, default=#t] Flag whether to use the conjunction expansion
       heuristic rules. It will only expand conjunctions with enough support
       with patterns with enough support.
 
-  mc: [optional, default=3] In case ie is set to #t, and thus incremental
+  es: [optional, default=#t] Flag whether specialization is enforced.
+      Some rules such as conjunction expansion can create abstractions
+      due to having more variables, this flag enforces that only
+      specializations will be created.
+
+  mc: [optional, default=3] In case ce is set to #t, and thus incremental
       conjunction expansion is enabled, that option allows to limit the number
       of conjuncts to mc. If negative then the number of conjuncts can grow
       unlimited (not recommended unless you know what you're doing). As of
@@ -302,7 +314,8 @@
 "
   ;; Load and associate rules to pm-rbs
   (configure-rules pm-rbs
-                   #:incremental-expansion incremental-expansion
+                   #:conjunction-expansion conjunction-expansion
+                   #:enforce-specialization enforce-specialization
                    #:max-conjuncts max-conjuncts
                    #:max-variables max-variables)
 
@@ -310,9 +323,9 @@
   (ure-set-maximum-iterations pm-rbs maximum-iterations)
   (ure-set-complexity-penalty pm-rbs complexity-penalty)
 
-  ;; If there is no incremental expansion then each rule is
+  ;; If there is no conjunction expansion then each rule is
   ;; deterministic, thus no need to retry exhausted sources
-  (ure-set-fc-retry-exhausted-sources pm-rbs (and incremental-expansion
+  (ure-set-fc-retry-exhausted-sources pm-rbs (and conjunction-expansion
                                                   (< 1 max-conjuncts))))
 
 (define (minsup-eval pattern db ms)
@@ -448,7 +461,8 @@
                    (initpat (top))
                    (maximum-iterations 1000)
                    (complexity-penalty 1)
-                   (incremental-expansion #t)
+                   (conjunction-expansion #t)
+                   (enforce-specialization #t)
                    (max-conjuncts 3)
                    (max-variables 3)
                    (surprisingness 'isurp))
@@ -462,7 +476,8 @@
                    #:initpat ip
                    #:maximum-iterations mi
                    #:complexity-penalty cp
-                   #:incremental-expansion ie
+                   #:conjunction-expansion ce
+                   #:enforce-specializtion es
                    #:max-conjuncts mc
                    #:max-variables mv
                    #:surprisingness su)
@@ -508,9 +523,14 @@
       A negative value means more depth. Possible range is (-inf, +inf)
       but it's rarely necessary in practice to go outside of [-10, 10].
 
-  ie: [optional, default=#t] Flag whether to use the conjunctions expansion
+  ce: [optional, default=#t] Flag whether to use the conjunctions expansion
       heuristic rules. It will only expand conjunctions with enough support
       with patterns with enough support.
+
+  es: [optional, default=#t] Flag whether specialization is enforced.
+      Some rules such as conjunction expansion can create abstractions
+      due to having more variables, this flag enforces that only
+      specializations will be created.
 
   mc: [optional, default=3] In case tv is set to a positive strength and
       confidence, and thus incremental conjunction expansion is enabled, that
@@ -569,7 +589,7 @@
 
   4. If your pattern is a conjunction of multiple clauses, you can
      enable incremental conjunction expansion, see the
-     #:incremental-expansion option.
+     #:conjunction-expansion option.
 "
   (let* (;; Create a temporary child atomspace for the URE
          (tmp-as (cog-new-atomspace (cog-atomspace)))
@@ -600,7 +620,8 @@
                (cfg-m (configure-miner miner-rbs
                                        #:maximum-iterations maximum-iterations
                                        #:complexity-penalty complexity-penalty
-                                       #:incremental-expansion incremental-expansion
+                                       #:conjunction-expansion conjunction-expansion
+                                       #:enforce-specialization enforce-specialization
                                        #:max-conjuncts max-conjuncts
                                        #:max-variables max-variables))
 
@@ -677,6 +698,15 @@
     conjunction-expansion-mv-7-formula
     conjunction-expansion-mv-8-formula
     conjunction-expansion-mv-9-formula
+    conjunction-expansion-specialization-mv-1-formula
+    conjunction-expansion-specialization-mv-2-formula
+    conjunction-expansion-specialization-mv-3-formula
+    conjunction-expansion-specialization-mv-4-formula
+    conjunction-expansion-specialization-mv-5-formula
+    conjunction-expansion-specialization-mv-6-formula
+    conjunction-expansion-specialization-mv-7-formula
+    conjunction-expansion-specialization-mv-8-formula
+    conjunction-expansion-specialization-mv-9-formula
     isurp-old-formula
     nisurp-old-formula
     isurp-formula

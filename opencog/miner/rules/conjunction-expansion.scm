@@ -48,7 +48,11 @@
 ;;   <f-body>
 ;;   <g-body>
 ;;
-;; are flattened.
+;; are flattened. Also the resulting variable list may not include all
+;; the variables, that is in practice all variable specializations are
+;; considered. There is a also a flag specialization to discard any
+;; extra variable as to enforce that the conjunction expansion is not
+;; creating abstractions.
 
 (load "miner-rule-utils.scm")
 
@@ -64,7 +68,10 @@
 ;;             conjunction to nary.
 ;;
 ;; * mv is the maximum of variables allowed in the resulting patterns.
-(define (gen-conjunction-expansion-rule nary mv)
+;;
+;; * enforce-specialization is a flag to enforce specialization by not
+;;                          allowing extra variables in the expansion.
+(define (gen-conjunction-expansion-rule nary mv enforce-specialization)
   ;; Shared variables
   (define f-vardecl (Variable "$f-vardecl"))
   (define g-vardecl (Variable "$g-vardecl"))
@@ -84,6 +91,13 @@
   ;; Shared clauses
   (define g (Quote (Lambda (Unquote g-vardecl) (Unquote g-body))))
   (define minsup-g (minsup-eval g db ms))
+  ;; Formula
+  (define formula-name (string-append "scm: conjunction-expansion-"
+                                      (if enforce-specialization
+                                          "specialization-" "")
+                                      "mv-" (number->string mv)
+                                      "-formula"))
+  (define formula (GroundedSchema formula-name))
 
   ;; Generate rule by nary cases
   (if (<= nary 1)
@@ -94,7 +108,7 @@
              (f-body (Variable "$f-body"))
              ;; Vardecls
              (f-body-decl f-body)
-             ;; clauses
+             ;; Clauses
              (f (Quote (Lambda (Unquote f-vardecl) (Unquote f-body))))
              (minsup-f (minsup-eval f db ms)))
         (Bind
@@ -119,14 +133,13 @@
                 (unary-conjunction-eval f-body)
                 '()))
           (ExecutionOutput
-            (GroundedSchema (string-append "scm: conjunction-expansion-mv-"
-                                           (number->string mv)
-                                           "-formula"))
+            formula
             (List
-              ;; Fake conclusion, since we can't statistically define its
+              ;; Fake conclusion, since we can't statically define its
               ;; pattern ATM
               (minsup-eval (top) db ms)
-              ;; Premises, wrap in Set because their order does not matter
+              ;; Premises, wrap in Set because their order
+              ;; does not matter
               (Set minsup-f
                    minsup-g)))))
 
@@ -156,19 +169,18 @@
           (not-equal-top g)
           (unary-conjunction-eval g-body))
         (ExecutionOutput
-          (GroundedSchema (string-append "scm: conjunction-expansion-mv-"
-                                         (number->string mv)
-                                         "-formula"))
+          formula
           (List
-            ;; Fake conclusion, since we can't statistically define its
+            ;; Fake conclusion, since we can't statically define its
             ;; pattern ATM
             (minsup-eval (top) db ms)
-            ;; Premises, wrap in Set because their order does not matter
+            ;; Premises, wrap in Set because their order
+            ;; does not matter
             (Set minsup-f
                  minsup-g)))))))
 
 ;; Conjunction expansion formula
-(define (gen-conjunction-expansion-formula mv)
+(define (gen-conjunction-expansion-formula mv enforce-specialization)
   (lambda (conclusion . premises)
     ;; (cog-logger-debug "conjunction-expansion-formula mv = ~a, conclusion = ~a, premises = ~a" mv conclusion premises)
     (if (= (length premises) 1)
@@ -179,11 +191,13 @@
                (g (get-pattern minsup-g))
                (db (get-db minsup-f))
                (ms (get-ms minsup-f))
+               (mv-nn (Number mv))
+               (es enforce-specialization)
                ;; Swap f and g to make sure the second argument of
                ;; cog-expand-conjunction is never a conjunction
                (fgs (if (unary-conjunction? (get-body g))
-                        (cog-expand-conjunction f g db ms (Number mv))
-                        (cog-expand-conjunction g f db ms (Number mv))))
+                        (cog-expand-conjunction f g db ms mv-nn es)
+                        (cog-expand-conjunction g f db ms mv-nn es)))
                (mk-minsup (lambda (fg) (minsup-eval-true fg db ms)))
                ;; cog-expand-conjunction only return patterns with
                ;; enough support
@@ -192,12 +206,25 @@
 
 ;; Instantiate conjunction expansion formulae for different maximum
 ;; number of variables
-(define conjunction-expansion-mv-1-formula (gen-conjunction-expansion-formula 1))
-(define conjunction-expansion-mv-2-formula (gen-conjunction-expansion-formula 2))
-(define conjunction-expansion-mv-3-formula (gen-conjunction-expansion-formula 3))
-(define conjunction-expansion-mv-4-formula (gen-conjunction-expansion-formula 4))
-(define conjunction-expansion-mv-5-formula (gen-conjunction-expansion-formula 5))
-(define conjunction-expansion-mv-6-formula (gen-conjunction-expansion-formula 6))
-(define conjunction-expansion-mv-7-formula (gen-conjunction-expansion-formula 7))
-(define conjunction-expansion-mv-8-formula (gen-conjunction-expansion-formula 8))
-(define conjunction-expansion-mv-9-formula (gen-conjunction-expansion-formula 9))
+(define (gen-formula a) (gen-conjunction-expansion-formula a #f))
+(define conjunction-expansion-mv-1-formula (gen-formula 1))
+(define conjunction-expansion-mv-2-formula (gen-formula 2))
+(define conjunction-expansion-mv-3-formula (gen-formula 3))
+(define conjunction-expansion-mv-4-formula (gen-formula 4))
+(define conjunction-expansion-mv-5-formula (gen-formula 5))
+(define conjunction-expansion-mv-6-formula (gen-formula 6))
+(define conjunction-expansion-mv-7-formula (gen-formula 7))
+(define conjunction-expansion-mv-8-formula (gen-formula 8))
+(define conjunction-expansion-mv-9-formula (gen-formula 9))
+
+;; Same as above but with enforced specialization
+(define (gen-spec-formula a) (gen-conjunction-expansion-formula a #t))
+(define conjunction-expansion-specialization-mv-1-formula (gen-spec-formula 1))
+(define conjunction-expansion-specialization-mv-2-formula (gen-spec-formula 2))
+(define conjunction-expansion-specialization-mv-3-formula (gen-spec-formula 3))
+(define conjunction-expansion-specialization-mv-4-formula (gen-spec-formula 4))
+(define conjunction-expansion-specialization-mv-5-formula (gen-spec-formula 5))
+(define conjunction-expansion-specialization-mv-6-formula (gen-spec-formula 6))
+(define conjunction-expansion-specialization-mv-7-formula (gen-spec-formula 7))
+(define conjunction-expansion-specialization-mv-8-formula (gen-spec-formula 8))
+(define conjunction-expansion-specialization-mv-9-formula (gen-spec-formula 9))

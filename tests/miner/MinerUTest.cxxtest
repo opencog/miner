@@ -106,12 +106,12 @@ private:
 	 */
 	Handle ure_pm(const AtomSpace& db_as, int minsup,
 	              int max_iter=-1, Handle initpat=Handle::UNDEFINED,
-	              bool incremental_expansion=false,
+	              bool conjunction_expansion=false,
 	              int max_conjuncts=-1,
 	              double complexity_penalty=0.0);
 	Handle ure_pm(const HandleSeq& db, int minsup,
 	              int max_iter=-1, Handle initpat=Handle::UNDEFINED,
-	              bool incremental_expansion=false,
+	              bool conjunction_expansion=false,
 	              int max_conjuncts=-1,
 	              double complexity_penalty=0.0);
 
@@ -192,25 +192,25 @@ Handle MinerUTest::mk_nconjunct(unsigned n)
 
 Handle MinerUTest::ure_pm(const AtomSpace& db_as, int minsup,
                           int maximum_iterations, Handle initpat,
-                          bool incremental_expansion,
+                          bool conjunction_expansion,
                           int max_conjuncts,
                           double complexity_penalty)
 {
 	return MinerUTestUtils::ure_pm(_as, _scm, pm_rb, db_as, minsup,
 	                               maximum_iterations, initpat,
-	                               incremental_expansion, max_conjuncts,
+	                               conjunction_expansion, max_conjuncts,
 	                               complexity_penalty);
 }
 
 Handle MinerUTest::ure_pm(const HandleSeq& db, int minsup,
                           int maximum_iterations, Handle initpat,
-                          bool incremental_expansion,
+                          bool conjunction_expansion,
                           int max_conjuncts,
                           double complexity_penalty)
 {
 	return MinerUTestUtils::ure_pm(_as, _scm, pm_rb, db, minsup,
 	                               maximum_iterations, initpat,
-	                               incremental_expansion, max_conjuncts,
+	                               conjunction_expansion, max_conjuncts,
 	                               complexity_penalty);
 }
 
@@ -1321,14 +1321,14 @@ void MinerUTest::test_SodaDrinker_incremental()
 	// bug (the pattern is ignored by surprisingness).
 
 	// Run URE pattern miner
-	bool incremental_expansion = true;
+	bool conjunction_expansion = true;
 	int max_conjuncts = 3;
 	double complexity_penalty = 1;
 	int minsup = 5;
 	int max_iteration = 100;
 	Handle ure_results = ure_pm(_tmp_as, minsup, max_iteration,
 	                            initpat,
-	                            incremental_expansion,
+	                            conjunction_expansion,
 	                            max_conjuncts,
 	                            complexity_penalty);
 
@@ -1472,14 +1472,14 @@ void MinerUTest::test_vqa()
 	logger().debug() << "expected = " << oc_to_string(expected);
 
 	// Run URE pattern miner
-	bool incremental_expansion = true;
+	bool conjunction_expansion = true;
 	int minsup = 500;
 	int max_iteration = 20;
 	int max_conjuncts = 2;
 	double complexity_penalty = 1;
 	Handle ure_results = ure_pm(_tmp_as, minsup, max_iteration,
 	                            initpat,
-	                            incremental_expansion,
+	                            conjunction_expansion,
 	                            max_conjuncts,
 	                            complexity_penalty),
 		ure_expected = mk_minsup_eval(minsup, expected);

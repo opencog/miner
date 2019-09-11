@@ -144,7 +144,7 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
                                int minsup,
                                int maximum_iterations,
                                Handle initpat,
-                               bool incremental_expansion,
+                               bool conjunction_expansion,
                                unsigned max_conjuncts,
                                double complexity_penalty)
 {
@@ -152,7 +152,7 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
 	db_as.get_handles_by_type(std::inserter(db, db.end()),
 	                          opencog::ATOM, true);
 	return ure_pm(as, scm, pm_rb, db, minsup, maximum_iterations, initpat,
-	              incremental_expansion, max_conjuncts, complexity_penalty);
+	              conjunction_expansion, max_conjuncts, complexity_penalty);
 }
 
 Handle MinerUTestUtils::ure_pm(AtomSpace& as,
@@ -162,7 +162,7 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
                                int minsup,
                                int maximum_iterations,
                                Handle initpat,
-                               bool incremental_expansion,
+                               bool conjunction_expansion,
                                unsigned max_conjuncts,
                                double complexity_penalty)
 {
@@ -183,7 +183,7 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
 		return al(SET_LINK);
 
 	// Add incremental conjunction expansion if necessary
-	configure_optional_rules(scm, incremental_expansion, max_conjuncts);
+	configure_optional_rules(scm, conjunction_expansion, max_conjuncts);
 
 	// Otherwise prepare the source
 	TruthValuePtr tv = TruthValue::TRUE_TV();
@@ -192,7 +192,7 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
 	// Run the forward chainer from the initial pattern
 	ForwardChainer fc(as, pm_rb, source);
 	fc.get_config().set_maximum_iterations(maximum_iterations);
-	fc.get_config().set_retry_exhausted_sources(incremental_expansion);
+	fc.get_config().set_retry_exhausted_sources(conjunction_expansion);
 	fc.get_config().set_complexity_penalty(complexity_penalty);
 	fc.do_chain();
 
@@ -285,13 +285,13 @@ void MinerUTestUtils::configure_mandatory_rules(SchemeEval& scm)
 }
 
 void MinerUTestUtils::configure_optional_rules(SchemeEval& scm,
-                                               bool incremental_expansion,
+                                               bool conjunction_expansion,
                                                unsigned max_conjuncts,
                                                unsigned max_variables)
 {
 	std::string call = "(configure-optional-rules (Concept \"pm-rbs\")";
-	call += " #:incremental-expansion #";
-	call += incremental_expansion ? "t" : "f";
+	call += " #:conjunction-expansion #";
+	call += conjunction_expansion ? "t" : "f";
 	call += " #:max-conjuncts ";
 	call += std::to_string(max_conjuncts);
 	call += " #:max-variables ";
