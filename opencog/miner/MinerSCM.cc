@@ -93,10 +93,13 @@ protected:
 	 * Construct the conjunction of 2 patterns. If cnjtion is a
 	 * conjunction, then expand it with pattern. It is assumed that
 	 * pattern cannot be a conjunction itself.
+	 *
+	 * ms is the minimum support
+	 * mv is the maximum of variables
+	 * es is a flag to enforce specialization
 	 */
-	Handle do_expand_conjunction(Handle cnjtion, Handle pattern,
-	                             Handle db, Handle ms, Handle mv,
-	                             bool enforce_specialization);
+	Handle do_expand_conjunction(Handle cnjtion, Handle pattern, Handle db,
+	                             Handle ms, Handle mv, bool es);
 
 	/**
 	 * Calculate the I-Surprisingness of the pattern (and its
@@ -249,7 +252,7 @@ bool MinerSCM::do_enough_support(Handle pattern, Handle db, Handle ms_h)
 
 Handle MinerSCM::do_expand_conjunction(Handle cnjtion, Handle pattern,
                                        Handle db, Handle ms_h, Handle mv_h,
-                                       bool enforce_specialization)
+                                       bool es)
 {
 	AtomSpace *as = SchemeSmob::ss_get_env_as("cog-expand-conjunction");
 
@@ -261,8 +264,7 @@ Handle MinerSCM::do_expand_conjunction(Handle cnjtion, Handle pattern,
 	unsigned mv = MinerUtils::get_uint(mv_h);
 
 	HandleSet results = MinerUtils::expand_conjunction(cnjtion, pattern,
-	                                                   db_seq, ms, mv,
-	                                                   enforce_specialization);
+	                                                   db_seq, ms, mv, es);
 	return as->add_link(SET_LINK, HandleSeq(results.begin(), results.end()));
 }
 

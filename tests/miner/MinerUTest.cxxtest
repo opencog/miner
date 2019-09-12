@@ -107,12 +107,16 @@ private:
 	Handle ure_pm(const AtomSpace& db_as, int minsup,
 	              int max_iter=-1, Handle initpat=Handle::UNDEFINED,
 	              bool conjunction_expansion=false,
-	              int max_conjuncts=-1,
+	              unsigned max_conjuncts=UINT_MAX,
+	              unsigned max_variables=UINT_MAX,
+	              bool enforce_specialization=true,
 	              double complexity_penalty=0.0);
 	Handle ure_pm(const HandleSeq& db, int minsup,
 	              int max_iter=-1, Handle initpat=Handle::UNDEFINED,
 	              bool conjunction_expansion=false,
-	              int max_conjuncts=-1,
+	              unsigned max_conjuncts=UINT_MAX,
+	              unsigned max_variables=UINT_MAX,
+	              bool enforce_specialization=true,
 	              double complexity_penalty=0.0);
 
 	/**
@@ -158,6 +162,7 @@ public:
 	void test_ABCD();
 	void test_ABAB();
 	void test_AAAA();
+	void test_transitivity();
 	void test_evaluation();
 	void test_2conjuncts_1();
 	void test_2conjuncts_2();
@@ -193,25 +198,31 @@ Handle MinerUTest::mk_nconjunct(unsigned n)
 Handle MinerUTest::ure_pm(const AtomSpace& db_as, int minsup,
                           int maximum_iterations, Handle initpat,
                           bool conjunction_expansion,
-                          int max_conjuncts,
+                          unsigned max_conjuncts,
+                          unsigned max_variables,
+                          bool enforce_specialization,
                           double complexity_penalty)
 {
 	return MinerUTestUtils::ure_pm(_as, _scm, pm_rb, db_as, minsup,
 	                               maximum_iterations, initpat,
-	                               conjunction_expansion, max_conjuncts,
-	                               complexity_penalty);
+	                               conjunction_expansion,
+	                               max_conjuncts, max_variables,
+	                               enforce_specialization, complexity_penalty);
 }
 
 Handle MinerUTest::ure_pm(const HandleSeq& db, int minsup,
                           int maximum_iterations, Handle initpat,
                           bool conjunction_expansion,
-                          int max_conjuncts,
+                          unsigned max_conjuncts,
+                          unsigned max_variables,
+                          bool enforce_specialization,
                           double complexity_penalty)
 {
 	return MinerUTestUtils::ure_pm(_as, _scm, pm_rb, db, minsup,
 	                               maximum_iterations, initpat,
-	                               conjunction_expansion, max_conjuncts,
-	                               complexity_penalty);
+	                               conjunction_expansion,
+	                               max_conjuncts, max_variables,
+	                               enforce_specialization, complexity_penalty);
 }
 
 HandleTree MinerUTest::cpp_pm(const AtomSpace& db_as,
@@ -237,13 +248,13 @@ MinerUTest::MinerUTest() : _scm(&_as), _tmp_scm(&_tmp_as)
 	randGen().seed(0);
 
 	// Main logger
-	logger().set_level(Logger::INFO);
+	logger().set_level(Logger::DEBUG);
 	logger().set_timestamp_flag(false);
 	logger().set_sync_flag(true);
 	logger().set_print_to_stdout_flag(true);
 
 	// URE logger
-	ure_logger().set_level(Logger::INFO);
+	ure_logger().set_level(Logger::DEBUG);
 	ure_logger().set_timestamp_flag(false);
 	ure_logger().set_sync_flag(true);
 	ure_logger().set_print_to_stdout_flag(true);
@@ -666,15 +677,15 @@ void MinerUTest::test_AB_AC()
 
 	// NEXT TODO: get rid of the C++ pattern miner, as it is not used at all
 
-	// Run C++ pattern miner (using _as for testing more diverse
-	// content)
-	HandleTree cpp_results = cpp_pm(_as, 2);
-	Handle cpp_expected = MinerUtils::mk_pattern(Y, {InhAY});
+	// // Run C++ pattern miner (using _as for testing more diverse
+	// // content)
+	// HandleTree cpp_results = cpp_pm(_as, 2);
+	// Handle cpp_expected = MinerUtils::mk_pattern(Y, {InhAY});
 
-	logger().debug() << "cpp_results = " << oc_to_string(cpp_results);
-	logger().debug() << "cpp_expected = " << oc_to_string(cpp_expected);
+	// logger().debug() << "cpp_results = " << oc_to_string(cpp_results);
+	// logger().debug() << "cpp_expected = " << oc_to_string(cpp_expected);
 
-	TS_ASSERT(content_is_in(cpp_expected, cpp_results));
+	// TS_ASSERT(content_is_in(cpp_expected, cpp_results));
 
 	// Run URE pattern miner (using _as for testing more diverse
 	// content)
@@ -899,6 +910,12 @@ void MinerUTest::test_AAAA()
 	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
 
 	TS_ASSERT(is_in(ure_expected, ure_results->getOutgoingSet()));
+}
+
+void MinerUTest::test_transitivity()
+{
+	// TODO: Mine transitivity pattern using incremental conjunction
+	// expansion. Check with and without enforce_specialization
 }
 
 void MinerUTest::test_evaluation()
@@ -1322,7 +1339,9 @@ void MinerUTest::test_SodaDrinker_incremental()
 
 	// Run URE pattern miner
 	bool conjunction_expansion = true;
-	int max_conjuncts = 3;
+	unsigned max_conjuncts = 3;
+	unsigned max_variables = UINT_MAX;
+	bool enforce_specialization = true;
 	double complexity_penalty = 1;
 	int minsup = 5;
 	int max_iteration = 100;
@@ -1330,6 +1349,8 @@ void MinerUTest::test_SodaDrinker_incremental()
 	                            initpat,
 	                            conjunction_expansion,
 	                            max_conjuncts,
+	                            max_variables,
+	                            enforce_specialization,
 	                            complexity_penalty);
 
 	// The pattern of interest looks like
@@ -1475,12 +1496,16 @@ void MinerUTest::test_vqa()
 	bool conjunction_expansion = true;
 	int minsup = 500;
 	int max_iteration = 20;
-	int max_conjuncts = 2;
+	unsigned max_conjuncts = 2;
+	unsigned max_variables = UINT_MAX;
+	bool enforce_specialization = false;
 	double complexity_penalty = 1;
 	Handle ure_results = ure_pm(_tmp_as, minsup, max_iteration,
 	                            initpat,
 	                            conjunction_expansion,
 	                            max_conjuncts,
+	                            max_variables,
+	                            enforce_specialization,
 	                            complexity_penalty),
 		ure_expected = mk_minsup_eval(minsup, expected);
 

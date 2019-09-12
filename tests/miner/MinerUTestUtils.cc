@@ -146,13 +146,16 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
                                Handle initpat,
                                bool conjunction_expansion,
                                unsigned max_conjuncts,
+                               unsigned max_variables,
+                               bool enforce_specialization,
                                double complexity_penalty)
 {
 	HandleSeq db;
 	db_as.get_handles_by_type(std::inserter(db, db.end()),
 	                          opencog::ATOM, true);
 	return ure_pm(as, scm, pm_rb, db, minsup, maximum_iterations, initpat,
-	              conjunction_expansion, max_conjuncts, complexity_penalty);
+	              conjunction_expansion, max_conjuncts, max_variables,
+	              enforce_specialization, complexity_penalty);
 }
 
 Handle MinerUTestUtils::ure_pm(AtomSpace& as,
@@ -164,6 +167,8 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
                                Handle initpat,
                                bool conjunction_expansion,
                                unsigned max_conjuncts,
+                               unsigned max_variables,
+                               bool enforce_specialization,
                                double complexity_penalty)
 {
 	// Make (Member dt (Concept "db)) links
@@ -183,7 +188,8 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
 		return al(SET_LINK);
 
 	// Add incremental conjunction expansion if necessary
-	configure_optional_rules(scm, conjunction_expansion, max_conjuncts);
+	configure_optional_rules(scm, conjunction_expansion, max_conjuncts,
+	                         max_variables, enforce_specialization);
 
 	// Otherwise prepare the source
 	TruthValuePtr tv = TruthValue::TRUE_TV();
@@ -287,7 +293,8 @@ void MinerUTestUtils::configure_mandatory_rules(SchemeEval& scm)
 void MinerUTestUtils::configure_optional_rules(SchemeEval& scm,
                                                bool conjunction_expansion,
                                                unsigned max_conjuncts,
-                                               unsigned max_variables)
+                                               unsigned max_variables,
+                                               bool enforce_specialization)
 {
 	std::string call = "(configure-optional-rules (Concept \"pm-rbs\")";
 	call += " #:conjunction-expansion #";
@@ -296,6 +303,8 @@ void MinerUTestUtils::configure_optional_rules(SchemeEval& scm,
 	call += std::to_string(max_conjuncts);
 	call += " #:max-variables ";
 	call += std::to_string(max_variables);
+	call += " #:enforce-specialization ";
+	call += enforce_specialization ? "#t" : "#f";
 	call += ")";
 	std::string rs = scm.eval(call);
 	logger().debug() << "MinerUTest::configure_optional_rules() rs = " << rs;

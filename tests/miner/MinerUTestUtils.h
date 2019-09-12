@@ -180,6 +180,8 @@ public:
 	                     Handle initpat=Handle::UNDEFINED,
 	                     bool conjunction_expansion=false,
 	                     unsigned max_conjuncts=UINT_MAX,
+	                     unsigned max_variables=UINT_MAX,
+	                     bool enforce_specialization=true,
 	                     double complexity_penalty=0.0);
 	static Handle ure_pm(AtomSpace& as,
 	                     SchemeEval& scm,
@@ -189,6 +191,8 @@ public:
 	                     Handle initpat=Handle::UNDEFINED,
 	                     bool conjunction_expansion=false,
 	                     unsigned max_conjuncts=UINT_MAX,
+	                     unsigned max_variables=UINT_MAX,
+	                     bool enforce_specialization=true,
 	                     double complexity_penalty=0.0);
 
 	/**
@@ -274,7 +278,8 @@ public:
 	static void configure_optional_rules(SchemeEval& scm,
 	                                     bool conjunction_expansion,
 	                                     unsigned max_conjuncts=UINT_MAX,
-	                                     unsigned max_variables=UINT_MAX);
+	                                     unsigned max_variables=UINT_MAX,
+	                                     bool enforce_specialization=false);
 	static void configure_surprisingness(SchemeEval& scm,
 	                                     const Handle& surp_rb,
 	                                     const std::string& mode,

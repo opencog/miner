@@ -463,7 +463,7 @@ public:
 	                                                const HandleSeq& db,
 	                                                unsigned ms,
 	                                                unsigned mv,
-	                                                bool enforce_specialization,
+	                                                bool es,
 	                                                const HandleMap& pv2cv=HandleMap(),
 	                                                unsigned pvi=0);
 
@@ -488,15 +488,15 @@ public:
 	 * mv is the maximum number of variables allowed in the resulting
 	 *    patterns.
 	 *
-	 * enforce_specialization is a flag to enforce specialization by
-	 *                        discarding new variables.
+	 * es is a flag to enforce specialization by
+	 *    discarding new variables.
 	 */
 	static HandleSet expand_conjunction(const Handle& cnjtion,
 	                                    const Handle& pattern,
 	                                    const HandleSeq& db,
 	                                    unsigned ms,
 	                                    unsigned mv=UINT_MAX,
-	                                    bool enforce_specialization=true);
+	                                    bool es=true);
 
 	/**
 	 * Return an atom to serve as key to store the support value.

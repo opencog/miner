@@ -783,11 +783,11 @@ HandleSet MinerUtils::expand_conjunction_connect_rec(const Handle& cnjtion,
                                                      const HandleSeq& db,
                                                      unsigned ms,
                                                      unsigned mv,
-                                                     bool enforce_specialization,
+                                                     bool es,
                                                      const HandleMap& pv2cv,
                                                      unsigned pvi)
 {
-	// TODO: support enforce_specialization
+	// TODO: support enforce specialization
 	HandleSet patterns;
 	const Variables& cvars = get_variables(cnjtion);
 	const Variables& pvars = get_variables(pattern);
@@ -818,9 +818,8 @@ HandleSet MinerUtils::expand_conjunction_connect_rec(const Handle& cnjtion,
 				patterns.insert(npat);
 			}
 
-			HandleSet rrs = expand_conjunction_connect_rec(cnjtion, pattern,
-			                                               db, ms, mv,
-			                                               enforce_specialization,
+			HandleSet rrs = expand_conjunction_connect_rec(cnjtion, pattern, db,
+			                                               ms, mv, es,
 			                                               pv2cv_ext, pvi + 1);
 			patterns.insert(rrs.begin(), rrs.end());
 		}
@@ -833,15 +832,14 @@ HandleSet MinerUtils::expand_conjunction(const Handle& cnjtion,
                                          const HandleSeq& db,
                                          unsigned ms,
                                          unsigned mv,
-                                         bool enforce_specialization)
+                                         bool es)
 {
 	// Alpha convert pattern, if necessary, to avoid collisions between
 	// cnjtion variables and pattern variables
 	Handle apat = alpha_convert(pattern, get_variables(cnjtion));
 
 	// Consider all variable mappings from apat to cnjtion
-	return expand_conjunction_connect_rec(cnjtion, apat, db, ms, mv,
-	                                      enforce_specialization);
+	return expand_conjunction_connect_rec(cnjtion, apat, db, ms, mv, es);
 }
 
 const Handle& MinerUtils::support_key()
