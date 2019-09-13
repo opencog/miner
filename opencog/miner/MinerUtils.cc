@@ -778,13 +778,13 @@ Handle MinerUtils::expand_conjunction_connect(const Handle& cnjtion,
 	return npattern;
 }
 
-HandleSet MinerUtils::expand_conjunction_connect_rec(const Handle& cnjtion,
-                                                     const Handle& pattern,
-                                                     const HandleSeq& db,
-                                                     unsigned ms,
-                                                     unsigned mv,
-                                                     const HandleMap& pv2cv,
-                                                     unsigned pvi)
+HandleSet MinerUtils::expand_conjunction_rec(const Handle& cnjtion,
+                                             const Handle& pattern,
+                                             const HandleSeq& db,
+                                             unsigned ms,
+                                             unsigned mv,
+                                             const HandleMap& pv2cv,
+                                             unsigned pvi)
 {
 	HandleSet patterns;
 	const Variables& cvars = get_variables(cnjtion);
@@ -795,12 +795,10 @@ HandleSet MinerUtils::expand_conjunction_connect_rec(const Handle& cnjtion,
 			pv2cv_ext[pvars.varseq[pvi]] = cv;
 			Handle npat = expand_conjunction_connect(cnjtion, pattern, pv2cv_ext);
 
-			if (get_variables(npat).size() <= mv) {
-
-				// If conjuncts have been dropped then it shouldn't be
-				// considered by that rule.
-				if (n_conjuncts(npat) <= n_conjuncts(cnjtion))
-					continue;
+			// If the number of variables is too high or the number of
+			// conjuncts has dropped then it shouldn't be considered.
+			if (get_variables(npat).size() <= mv and
+			    n_conjuncts(cnjtion) < n_conjuncts(npat)) {
 
 				// Insert npat in the atomspace where cnjtion and pattern
 				// are, before memoizing its support.
@@ -816,11 +814,62 @@ HandleSet MinerUtils::expand_conjunction_connect_rec(const Handle& cnjtion,
 				patterns.insert(npat);
 			}
 
-			HandleSet rrs = expand_conjunction_connect_rec(cnjtion, pattern,
-			                                               db, ms, mv,
-			                                               pv2cv_ext, pvi + 1);
+			HandleSet rrs = expand_conjunction_rec(cnjtion, pattern, db, ms, mv,
+			                                       pv2cv_ext, pvi + 1);
 			patterns.insert(rrs.begin(), rrs.end());
 		}
+	}
+	return patterns;
+}
+
+HandleSet MinerUtils::expand_conjunction_es_rec(const Handle& cnjtion,
+                                                const Handle& pattern,
+                                                const HandleSeq& db,
+                                                unsigned ms,
+                                                const HandleMap& pv2cv,
+                                                unsigned pvi)
+{
+	const Variables& pvars = get_variables(pattern);
+
+	/////////////////
+	// Base case   //
+	/////////////////
+
+	// If pv2cv is total (thus specialization is guarantied) then we
+	// can build the conjunction.
+	if (pv2cv.size() == pvars.size()) {
+		Handle npat = expand_conjunction_connect(cnjtion, pattern, pv2cv);
+
+		// If the number of conjuncts has dropped then it shouldn't be
+		// considered.
+		if (n_conjuncts(npat) <= n_conjuncts(cnjtion))
+			return {};
+
+		// Insert npat in the atomspace where cnjtion and pattern
+		// are, before memoizing its support.
+		if (cnjtion->getAtomSpace())
+			npat = cnjtion->getAtomSpace()->add_atom(npat);
+
+		// If npat does not have enough support, it shouldn't be
+		// considered.
+		if (not enough_support(npat, db, ms))
+			return {};
+
+		return {npat};
+	}
+
+	//////////////////////
+	// Recursive case   //
+	//////////////////////
+
+	HandleSet patterns;
+	const Variables& cvars = get_variables(cnjtion);
+	for (const Handle& cv : cvars.varseq) {
+		HandleMap pv2cv_ext(pv2cv);
+		pv2cv_ext[pvars.varseq[pvi]] = cv;
+		HandleSet rrs = expand_conjunction_es_rec(cnjtion, pattern, db, ms,
+		                                          pv2cv_ext, pvi + 1);
+		patterns.insert(rrs.begin(), rrs.end());
 	}
 	return patterns;
 }
@@ -829,14 +878,17 @@ HandleSet MinerUtils::expand_conjunction(const Handle& cnjtion,
                                          const Handle& pattern,
                                          const HandleSeq& db,
                                          unsigned ms,
-                                         unsigned mv)
+                                         unsigned mv,
+                                         bool es)
 {
 	// Alpha convert pattern, if necessary, to avoid collisions between
 	// cnjtion variables and pattern variables
 	Handle apat = alpha_convert(pattern, get_variables(cnjtion));
 
 	// Consider all variable mappings from apat to cnjtion
-	return expand_conjunction_connect_rec(cnjtion, apat, db, ms, mv);
+	return es ?
+		expand_conjunction_es_rec(cnjtion, apat, db, ms)
+		: expand_conjunction_rec(cnjtion, apat, db, ms, mv);
 }
 
 const Handle& MinerUtils::support_key()

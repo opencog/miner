@@ -21,10 +21,10 @@ cd <EXTERNAL-TOOLS>/SUMO_importer
 ./sumo-opencog.sh
 ```
 
-copy the generated output (replace `<OPENCOG_REPO>` appropriately)
+copy the generated output (replace `<MINER_REPO>` appropriately)
 
 ```bash
-SCM_DIR=<OPENCOG_REPO>/examples/miner/sumo/scm
+SCM_DIR=<MINER_REPO>/examples/miner/sumo/scm
 mkdir "$SCM_DIR"
 cp all-sumo-labeled-kb.scm "$SCM_DIR"
 cp sumo/output/*.scm "$SCM_DIR"

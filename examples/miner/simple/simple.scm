@@ -28,12 +28,12 @@
 ;; surprisingness of conjunctions of components)
 (define results-as (cog-mine (cog-atomspace)
                              #:minsup 2
-                             #:incremental-expansion #f
+                             #:conjunction-expansion #f
                              #:surprisingness 'none))
 
 ;; Call the miner on the database of interest instead, should yield
 ;; the same results.
 (define results-lst (cog-mine (list AB AC)
                               #:minsup 2
-                              #:incremental-expansion #f
+                              #:conjunction-expansion #f
                               #:surprisingness 'none))

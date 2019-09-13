@@ -51,7 +51,7 @@
          (results (cog-mine db-cpt
                             #:minsup ms
                             #:maximum-iterations mi
-                            #:incremental-expansion #t
+                            #:conjunction-expansion #t
                             #:max-conjuncts mc
                             #:max-variables mv
                             #:surprisingness 'nisurp))
