@@ -253,7 +253,8 @@ public:
 
 	/**
 	 * Given a sequence of clause create a LambdaLink of it without
-	 * variable declaration, introducing an AndLink if necessary.
+	 * variable declaration, introducing a AndLink or PresentLink if
+	 * necessary.
 	 */
 	static Handle mk_pattern_no_vardecl(const HandleSeq& clauses);
 
@@ -453,18 +454,33 @@ public:
 	                                         const HandleMap& pv2cv);
 
 	/**
-	 * Like expand_conjunction_connect above but recursively consider
-	 * all variable mappings from pattern to cnjtion.
+	 * Like expand_conjunction_connect but recursively consider all
+	 * variable mappings from pattern to cnjtion.
 	 *
 	 * pvi is the variable index of pattern variable declaration.
 	 */
-	static HandleSet expand_conjunction_connect_rec(const Handle& cnjtion,
-	                                                const Handle& pattern,
-	                                                const HandleSeq& db,
-	                                                unsigned ms,
-	                                                unsigned mv,
-	                                                const HandleMap& pv2cv=HandleMap(),
-	                                                unsigned pvi=0);
+	static HandleSet expand_conjunction_rec(const Handle& cnjtion,
+	                                        const Handle& pattern,
+	                                        const HandleSeq& db,
+	                                        unsigned ms,
+	                                        unsigned mv,
+	                                        const HandleMap& pv2cv=HandleMap(),
+	                                        unsigned pvi=0);
+
+	/**
+	 * Like expand_conjunction_rec but enforce specialization. Mean
+	 * only total mappings from the variables of pattern to the
+	 * variables of cnjtion will be considered, as to not introduced
+	 * any new variables, for that reason mv can be ignored (cause
+	 * cnjtion and pattern are assumed to already have a number of
+	 * variables not exceeding mv).
+	 */
+	static HandleSet expand_conjunction_es_rec(const Handle& cnjtion,
+	                                           const Handle& pattern,
+	                                           const HandleSeq& db,
+	                                           unsigned ms,
+	                                           const HandleMap& pv2cv=HandleMap(),
+	                                           unsigned pvi=0);
 
 	/**
 	 * Given cnjtion and pattern, consider all possible connections
@@ -485,13 +501,17 @@ public:
 	 * If an expansion is cnjtion itself it will be dismissed.
 	 *
 	 * mv is the maximum number of variables allowed in the resulting
-	 * patterns.
+	 *    patterns.
+	 *
+	 * es is a flag to enforce specialization by
+	 *    discarding new variables.
 	 */
 	static HandleSet expand_conjunction(const Handle& cnjtion,
 	                                    const Handle& pattern,
 	                                    const HandleSeq& db,
 	                                    unsigned ms,
-	                                    unsigned mv=UINT_MAX);
+	                                    unsigned mv=UINT_MAX,
+	                                    bool es=true);
 
 	/**
 	 * Return an atom to serve as key to store the support value.
