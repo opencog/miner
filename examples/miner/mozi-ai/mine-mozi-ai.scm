@@ -25,11 +25,11 @@
 ;; Function to run the pattern miner on a given file with the follow
 ;; parameters
 ;;
-;; ms: minimum support
+;; mf: minimum frequency
 ;; mi: maximum number of iterations
 ;; mc: maximum number of conjuncts
 ;; mv: maximum number of variables
-(define (run-mozi-ai-miner kb ms mi mc mv)
+(define (run-mozi-ai-miner kb mf mi mc mv)
   (clear)
   (load kb)
 
@@ -50,7 +50,7 @@
          (msg-1 (cog-logger-info "Run pattern miner over ~a" kb))
          ;; (results '())
          (results (cog-mine db-cpt
-                            #:minsup ms
+                            #:minfreq mf
                             #:maximum-iterations mi
                             #:conjunction-expansion #t
                             #:max-conjuncts mc
@@ -67,7 +67,7 @@
 ;; Run the pattern miner over a list of files
 (for-each (lambda (args) (apply run-mozi-ai-miner args))
           (list
-           (list "kbs/reactome.scm" 10 50 2 2)
-           (list "kbs/ChEBI2Reactome_PE_Pathway.txt.scm" 10 30 2 2)
+           (list "kbs/reactome.scm" 0.01 50 2 2)
+           (list "kbs/ChEBI2Reactome_PE_Pathway.txt.scm" 0.01 30 2 2)
           )
 )

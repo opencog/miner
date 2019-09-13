@@ -457,9 +457,24 @@
 (define* (cog-miner . args)
   (display ("The command you are looking for is cog-mine.")))
 
+(define (to-number n)
+"
+  Take a scheme number or a number node in argument
+  and return a scheme number.
+"
+  (if (number? n) n (cog-number n)))
+
+(define (to-number-node n)
+"
+  Take a scheme number or a number node in argument
+  and return a number node.
+"
+  (if (number? n) (Number n) n))
+
 (define* (cog-mine db
                    #:key
                    (minsup 10)
+                   (minfreq -1)
                    (initpat (top))
                    (maximum-iterations 1000)
                    (complexity-penalty 1)
@@ -475,6 +490,7 @@
 
   Usage: (cog-mine db
                    #:minsup ms
+                   #:minfreq mf
                    #:initpat ip
                    #:maximum-iterations mi
                    #:complexity-penalty cp
@@ -509,8 +525,16 @@
               tn
               (Concept db-name))
 
-  ms: [optional, default=10] Minimum support. All patterns with frequency below
+  ms: [optional, default=10] Minimum support. All patterns with count below
       ms are discarded. Can be a Scheme number or an Atomese number node.
+
+  mf: [optional, default=-1] Minimum frequency. All patterns with
+      frequency below mf are discarded. Can be a Scheme number or an Atomese
+      number node. A normal value ranges from 0 to 1. A negative value means
+      disabled, in which case minsup is used instead. Note that the results
+      are still described in minsup terms, that this option does is calculate
+      the minsup corresponding to a given frequency, such that minsup is equal
+      to minfreq * |db|. Can be a Scheme number or an Atomese number node.
 
   ip: [optional, default=(top)] Initial pattern to start the search from.
       All mined patterns will be specializations of this pattern.
@@ -604,9 +628,12 @@
                      (fill-db-cpt (random-db-cpt) db)
                      ;; Otherwise db is already a concept
                      db))
-         (ms-nn (if (number? minsup) (Number minsup) minsup))
+         (db-size (get-cardinality db-cpt))
+         (mf (to-number minfreq))
+         (ms (if (<= 0 mf) (ceiling (* mf db-size)) (to-number minsup)))
+         (ms-n (to-number-node ms))
          ;; Check that the initial pattern has enough support
-         (es (cog-enough-support? initpat db-cpt ms-nn)))
+         (es (cog-enough-support? initpat db-cpt ms-n)))
     (if (not es)
         ;; The initial pattern doesn't have enough support, thus the
         ;; solution set is empty.
@@ -617,7 +644,7 @@
         ;; The initial pattern has enough support, let's configure the
         ;; rule engine and run the pattern mining query
         (let* (;; Configure pattern miner forward chainer
-               (source (minsup-eval-true initpat db-cpt minsup))
+               (source (minsup-eval-true initpat db-cpt ms-n))
                (miner-rbs (random-miner-rbs-cpt))
                (cfg-m (configure-miner miner-rbs
                                        #:maximum-iterations maximum-iterations
@@ -630,7 +657,7 @@
                ;; Run pattern miner in a forward way
                (results (cog-fc miner-rbs source))
                ;; Fetch all relevant results
-               (patterns (fetch-patterns db-cpt minsup))
+               (patterns (fetch-patterns db-cpt ms-n))
                (patterns-lst (cog-outgoing-set patterns)))
 
           (if (equal? surprisingness 'none)
