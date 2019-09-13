@@ -37,3 +37,9 @@
                               #:minsup 2
                               #:conjunction-expansion #f
                               #:surprisingness 'none))
+
+;; Use minfreq instead of minsup, should yield the same results.
+(define results-mf (cog-mine (list AB AC)
+                             #:minfreq 1
+                             #:conjunction-expansion #f
+                             #:surprisingness 'none))
