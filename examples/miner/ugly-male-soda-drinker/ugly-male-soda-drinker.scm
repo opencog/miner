@@ -67,7 +67,7 @@
 (define results (cog-mine (cog-atomspace)
                           #:minsup 5
                           #:maximum-iterations 100
-                          #:incremental-expansion #t
+                          #:conjunction-expansion #t
                           #:max-conjuncts 3
                           #:max-variables 2
                           #:surprisingness 'nisurp))
