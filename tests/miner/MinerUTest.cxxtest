@@ -163,6 +163,7 @@ public:
 	void test_ABAB();
 	void test_AAAA();
 	void test_transitivity();
+	void test_no_transitivity();
 	void test_evaluation();
 	void test_2conjuncts_1();
 	void test_2conjuncts_2();
@@ -248,16 +249,16 @@ MinerUTest::MinerUTest() : _scm(&_as), _tmp_scm(&_tmp_as)
 	randGen().seed(0);
 
 	// Main logger
-	logger().set_level(Logger::DEBUG);
+	logger().set_level(Logger::INFO);
 	logger().set_timestamp_flag(false);
-	logger().set_sync_flag(true);
+	// logger().set_sync_flag(true);
 	logger().set_print_to_stdout_flag(true);
 
 	// URE logger
-	ure_logger().set_level(Logger::DEBUG);
+	ure_logger().set_level(Logger::INFO);
 	ure_logger().set_timestamp_flag(false);
-	ure_logger().set_sync_flag(true);
-	ure_logger().set_print_to_stdout_flag(true);
+	// ure_logger().set_sync_flag(true);
+	// ure_logger().set_print_to_stdout_flag(false);
 
 	// Configure scheme load-paths that are common for all tests.
 	_scm.eval("(add-to-load-path \"" PROJECT_SOURCE_DIR
@@ -494,7 +495,8 @@ void MinerUTest::test_expand_conjunction_3()
 		VarXY = al(VARIABLE_LIST, X, Y),
 		pat = MinerUtils::mk_pattern(VarXY, {InhXY});
 
-	HandleSet results = MinerUtils::expand_conjunction(pat, pat, db, 1);
+	HandleSet results = MinerUtils::expand_conjunction(pat, pat, db, 1,
+	                                                   UINT_MAX, false);
 	Handle
 		InhXW = al(INHERITANCE_LINK, X, W),
 		InhZX = al(INHERITANCE_LINK, Z, X),
@@ -512,6 +514,12 @@ void MinerUTest::test_expand_conjunction_3()
 	logger().debug() << "expected = " << oc_to_string(expected);
 
 	TS_ASSERT(content_eq(results, expected));
+
+	// Same as above but enforce specialization
+	HandleSet es_results = MinerUtils::expand_conjunction(pat, pat, db, 1,
+	                                                      UINT_MAX, true);
+	HandleSet es_expected{};
+	TS_ASSERT(content_eq(es_results, es_expected));
 }
 
 void MinerUTest::test_expand_conjunction_4()
@@ -534,7 +542,8 @@ void MinerUTest::test_expand_conjunction_4()
 		        VarXY,
 		        LstXY);
 
-	HandleSet results = MinerUtils::expand_conjunction(p1, p2, db, 1);
+	HandleSet results = MinerUtils::expand_conjunction(p1, p2, db, 1,
+	                                                   UINT_MAX, false);
 	Handle
 		InhXZ = al(INHERITANCE_LINK, X, Z),
 		InhZY = al(INHERITANCE_LINK, Z, Y),
@@ -901,10 +910,11 @@ void MinerUTest::test_AAAA()
 
 	// Run URE pattern miner
 	Handle ure_results = ure_pm(db, 2, 50, initpat),
+		ure_body = al(IMPLICATION_LINK,
+		              InhXX,
+		              InhXX),
 		ure_expected = mk_minsup_eval(2,
-		                              MinerUtils::mk_pattern_no_vardecl({al(IMPLICATION_LINK,
-		                                                                    InhXX,
-		                                                                    InhXX)}));
+		                              MinerUtils::mk_pattern_no_vardecl({ure_body}));
 
 	logger().debug() << "ure_results = " << oc_to_string(ure_results);
 	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
@@ -914,8 +924,54 @@ void MinerUTest::test_AAAA()
 
 void MinerUTest::test_transitivity()
 {
-	// TODO: Mine transitivity pattern using incremental conjunction
-	// expansion. Check with and without enforce_specialization
+	// Mine transitivity pattern using incremental conjunction
+	// expansion. Check with and without enforce specialization.
+
+	// Define db
+	Handle
+		InhAB = al(INHERITANCE_LINK, A, B),
+		InhBC = al(INHERITANCE_LINK, B, C);
+	HandleSeq db{InhAB, InhBC};
+
+	// Run URE pattern miner without enforcing specialization (which is
+	// necessary to mine transitivity).
+	int ms = 1;
+	Handle results = ure_pm(db, ms, 50, top, true, 2, 3, false);
+	HandleSeq clauses = {al(INHERITANCE_LINK, X, Y),
+	                     al(INHERITANCE_LINK, Y, Z)};
+	Handle expected = mk_minsup_eval(ms,
+	                                 MinerUtils::mk_pattern_no_vardecl(clauses));
+
+	logger().debug() << "results = " << oc_to_string(results);
+	logger().debug() << "expected = " << oc_to_string(expected);
+
+	TS_ASSERT(is_in(expected, results->getOutgoingSet()));
+}
+
+void MinerUTest::test_no_transitivity()
+{
+	// Like test_transitivity but enforce specialization, thus should
+	// miss the transitivity pattern.
+
+	// Define db
+	Handle
+		InhAB = al(INHERITANCE_LINK, A, B),
+		InhBC = al(INHERITANCE_LINK, B, C);
+	HandleSeq db{InhAB, InhBC};
+
+	// Run URE pattern miner without enforcing specialization (which is
+	// necessary to mine transitivity).
+	int ms = 1;
+	Handle results = ure_pm(db, ms, 50, top, true, 2, 3, true);
+	HandleSeq clauses = {al(INHERITANCE_LINK, X, Y),
+	                     al(INHERITANCE_LINK, Y, Z)};
+	Handle not_expect = mk_minsup_eval(ms,
+	                                   MinerUtils::mk_pattern_no_vardecl(clauses));
+
+	logger().debug() << "results = " << oc_to_string(results);
+	logger().debug() << "not_expect = " << oc_to_string(not_expect);
+
+	TS_ASSERT(not is_in(not_expect, results->getOutgoingSet()));
 }
 
 void MinerUTest::test_evaluation()
@@ -1382,11 +1438,7 @@ void MinerUTest::test_SodaDrinker_incremental()
 	std::string mode("nisurp-old");
 	HandleSeq surp_results = MinerUTestUtils::ure_surp(_as, _scm, surp_rb,
 	                                                   mode, max_conjuncts);
-
-	// We get the second, because due to the old I-Surprisingness not
-	// accounting for linkage, the ugly male soda drinker comes second
-	// not first.
-	Handle surp_result = surp_results[1];
+	Handle surp_result = surp_results.front();
 
 	logger().debug() << "surp_results = " << oc_to_string(surp_results);
 

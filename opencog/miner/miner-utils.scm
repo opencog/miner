@@ -214,11 +214,13 @@
 (define* (configure-rules pm-rbs
                           #:key
                           (conjunction-expansion #t)
+                          (enforce-specialization #t)
                           (max-conjuncts 3)
                           (max-variables 3))
   (configure-mandatory-rules pm-rbs)
   (configure-optional-rules pm-rbs
                             #:conjunction-expansion conjunction-expansion
+                            #:enforce-specialization enforce-specialization
                             #:max-conjuncts max-conjuncts
                             #:max-variables max-variables))
 
