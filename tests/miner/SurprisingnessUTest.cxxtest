@@ -77,8 +77,8 @@ private:
 	// Inheritance is not taken into account.
 	void populate_uniform_inheritance_links(unsigned n_cpts, double ip);
 
-	// Generate Lists of ari concepts among n_cpts
-	void populate_uniform_list_links(unsigned n_cpts, unsigned ari, double ip);
+	// Generate ternary Lists of concepts among n_cpts
+	void populate_uniform_ternary_list_links(unsigned n_cpts, double ip);
 
 public:
 	SurprisingnessUTest();
@@ -189,9 +189,8 @@ void SurprisingnessUTest::populate_uniform_inheritance_links(unsigned n_cpts,
 	// logger().debug() << "AtomSpace:" << std::endl << _as;
 }
 
-void SurprisingnessUTest::populate_uniform_list_links(unsigned n_cpts,
-                                                      unsigned ari,
-                                                      double ip)
+void SurprisingnessUTest::populate_uniform_ternary_list_links(unsigned n_cpts,
+                                                              double ip)
 {
 	// Create concepts Ci for i in [0, n_cpts)
 	HandleSeq cpts = populate_concepts(n_cpts);
@@ -1224,7 +1223,7 @@ void SurprisingnessUTest::test_nisurp_linkage_synthetic_7()
 	logger().info("BEGIN TEST: %s", __FUNCTION__);
 
 	// Create data base
-	populate_uniform_list_links(50, 3, 0.1);
+	populate_uniform_ternary_list_links(50, 0.1);
 
 	// Create pattern to measure surprisingness of
 	//
@@ -1287,7 +1286,7 @@ void SurprisingnessUTest::test_nisurp_linkage_synthetic_8()
 	logger().info("BEGIN TEST: %s", __FUNCTION__);
 
 	// Create data base
-	populate_uniform_list_links(50, 3, 0.1);
+	populate_uniform_ternary_list_links(50, 0.1);
 
 	// Create pattern to measure surprisingness of
 	//

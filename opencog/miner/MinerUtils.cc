@@ -638,6 +638,7 @@ void MinerUtils::remove_useless_clauses(const Handle& vardecl, HandleSeq& clause
 {
 	remove_constant_clauses(vardecl, clauses);
 	remove_redundant_subclauses(clauses);
+	// TODO: add remove_abstract_clauses(vardecl, clauses);
 }
 
 void MinerUtils::remove_constant_clauses(const Handle& vardecl, HandleSeq& clauses)

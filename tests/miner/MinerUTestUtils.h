@@ -297,6 +297,28 @@ public:
 	                          const Handle& surp_rb,
 	                          const std::string& mode,
 	                          unsigned max_conjuncts);
+
+	/**
+	 * Populate the given atomspace with n nodes of a given type, named
+	 * prefix + std::to_string(i) with i in [0, n).
+	 *
+	 * The handles of the populated atoms.
+	 */
+	static HandleSeq populate_nodes(AtomSpace& as,
+	                                unsigned n,
+	                                Type type,
+	                                const std::string& prefix);
+
+	/**
+	 * Populate the given atomspace by creating links of a given type
+	 * and arity with probability p between any arity handles from
+	 * hs. Return the handles of the populated atoms.
+	 */
+	static HandleSeq populate_links(AtomSpace& as,
+	                                const HandleSeq& hs,
+	                                Type type,
+	                                unsigned arity,
+	                                double p);
 };
 
 } // ~namespace opencog

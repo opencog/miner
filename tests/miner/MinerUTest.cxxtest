@@ -31,6 +31,7 @@
 #include <opencog/util/random.h>
 #include <opencog/atoms/truthvalue/TruthValue.h>
 #include <opencog/atoms/truthvalue/SimpleTruthValue.h>
+#include <opencog/atoms/pattern/GetLink.h>
 #include <opencog/atomspace/AtomSpace.h>
 #include <opencog/miner/HandleTree.h>
 #include <opencog/miner/Miner.h>
@@ -141,7 +142,8 @@ public:
 	void tearDown();
 
 	// Auxiliary methods
-	void test_remove_useless_clauses();
+	void test_remove_useless_clauses_1();
+	void test_remove_useless_clauses_2();
 	void test_compose_1();
 	void test_compose_2();
 	void test_compose_3();
@@ -165,6 +167,7 @@ public:
 	void test_ABAB();
 	void test_AAAA();
 	void test_transitivity();
+	void test_long_transitivity();
 	void test_no_transitivity();
 	void test_evaluation();
 	void test_2conjuncts_1();
@@ -314,7 +317,7 @@ void MinerUTest::tearDown()
 	_tmp_as.clear();
 }
 
-void MinerUTest::test_remove_useless_clauses()
+void MinerUTest::test_remove_useless_clauses_1()
 {
 	logger().info("BEGIN TEST: %s", __FUNCTION__);
 
@@ -326,6 +329,46 @@ void MinerUTest::test_remove_useless_clauses()
 	logger().debug() << "expected = " << oc_to_string(expected);
 
 	TS_ASSERT(content_eq(result, expected));
+}
+
+void MinerUTest:: test_remove_useless_clauses_2()
+{
+	// Clause 3 is more abstract than all clauses of the pattern and
+	// does not introduce new variables, therefore it is redundant and
+	// can be removed.
+	Handle
+		vardecl = al(VARIABLE_LIST, X, Y),
+		clause1 = al(INHERITANCE_LINK, X, C1),
+		clause2 = al(INHERITANCE_LINK, C2, Y),
+		clause3 = al(INHERITANCE_LINK, X, Y),
+		pattern = MinerUtils::mk_pattern(vardecl, {clause1, clause2, clause3});
+
+	Handle
+		reduced = MinerUtils::remove_useless_clauses(pattern),
+		expect = MinerUtils::mk_pattern(vardecl, {clause1, clause2});
+
+	logger().debug() << "pattern = " << oc_to_string(pattern);
+	logger().debug() << "reduced = " << oc_to_string(reduced);
+
+	// First check the result is as expected
+	TS_ASSERT(content_eq(reduced, expect));
+
+	// Second check that both pattern and result have the same matches
+	unsigned n_cpts = 1000;
+	Type node_t = CONCEPT_NODE;
+	HandleSeq cpts = MinerUTestUtils::populate_nodes(_as, n_cpts, node_t, "C");
+	Type link_t = INHERITANCE_LINK;
+	MinerUTestUtils::populate_links(_as, cpts, link_t, 2, 0.1);
+	// logger().debug() << "_as = " << _as;
+	GetLinkPtr pattern_gl = createGetLink(HandleSeq{pattern});
+	Handle pattern_results = HandleCast(pattern_gl->execute(&_as));
+	GetLinkPtr reduced_gl = createGetLink(HandleSeq{reduced});
+	Handle reduced_results = HandleCast(pattern_gl->execute(&_as));
+
+	logger().debug() << "pattern_results = " << oc_to_string(pattern_results);
+	logger().debug() << "reduced_results = " << oc_to_string(reduced_results);
+
+	TS_ASSERT_EQUALS(pattern_results, reduced_results);
 }
 
 void MinerUTest::test_compose_1()
@@ -945,6 +988,37 @@ void MinerUTest::test_transitivity()
 	Handle results = ure_pm(db, ms, 50, top, true, 2, 3, 3, false);
 	HandleSeq clauses = {al(INHERITANCE_LINK, X, Y),
 	                     al(INHERITANCE_LINK, Y, Z)};
+	Handle expected = mk_minsup_eval(ms,
+	                                 MinerUtils::mk_pattern_no_vardecl(clauses));
+
+	logger().debug() << "results = " << oc_to_string(results);
+	logger().debug() << "expected = " << oc_to_string(expected);
+
+	TS_ASSERT(is_in(expected, results->getOutgoingSet()));
+}
+
+void MinerUTest::test_long_transitivity()
+{
+	// Mine transitivity pattern using incremental conjunction
+	// expansion. Check with and without enforce specialization.
+
+	// Define db
+	Handle
+		InhAB = al(INHERITANCE_LINK, A, B),
+		InhBC = al(INHERITANCE_LINK, B, C),
+		InhCD = al(INHERITANCE_LINK, C, D);
+	HandleSeq db{InhAB, InhBC};
+
+	// Run URE pattern miner without enforcing specialization (which is
+	// necessary to mine transitivity).
+	int ms = 1;
+	// TMP: Iteration 6, last result contains redundant
+	// abstraction. Actually doesn't work because it introduces a new
+	// variable. See the 17 total results to find one.
+	Handle results = ure_pm(db, ms, 500, top, true, 3, 4, false);
+	HandleSeq clauses = {al(INHERITANCE_LINK, X, Y),
+	                     al(INHERITANCE_LINK, Y, Z),
+	                     al(INHERITANCE_LINK, Z, W)};
 	Handle expected = mk_minsup_eval(ms,
 	                                 MinerUtils::mk_pattern_no_vardecl(clauses));
 

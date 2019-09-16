@@ -690,7 +690,7 @@ public:
 	                           const Handle& var);
 
 	/**
-	 * Tell whether 2 blocks/subpatterns are equivalent relatie to a
+	 * Tell whether 2 blocks/subpatterns are equivalent relative to a
 	 * given variable. Basically, whether both block are semantically
 	 * equivalent and var is in the same position in both of them.
 	 *
