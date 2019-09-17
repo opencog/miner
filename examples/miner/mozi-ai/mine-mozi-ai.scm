@@ -11,7 +11,7 @@
 
 ;; Set main logger
 ;; (cog-logger-set-timestamp! #f)
-;; (cog-logger-set-level! "debug")
+(cog-logger-set-level! "debug")
 ;; (cog-logger-set-sync! #t)
 
 ;; Set URE logger
@@ -21,6 +21,12 @@
 
 ;; Set random seed
 (cog-randgen-set-seed! 0)
+
+;; Helpers
+(define (scope? x) (cog-subtype? 'ScopeLink (cog-type x)))
+(define (lst? x) (cog-subtype? 'ListLink (cog-type x)))
+(define (eval-pred-name? name x) (and (cog-subtype? 'EvaluationLink (cog-type x))
+                                      (equal? (cog-name (gar x)) name)))
 
 ;; Function to run the pattern miner on a given file with the follow
 ;; parameters
@@ -33,18 +39,29 @@
   (clear)
   (load kb)
 
-  (let* (;; Construct corpus to mine. We select all root atoms except
-         ;; quanfiers (ForAll, Exists, ImplicationScope, etc)
-         ;; statements, as they usually represent rules rather than
-         ;; data.
-         (scope? (lambda (x) (cog-subtype? 'ScopeLink (cog-type x))))
-         (db
-          (filter (lambda (x) (not (scope? x))) (cog-get-all-roots)))
-          ;; (filter scope? (cog-get-all-roots)))
-          ;; (cog-get-all-roots))
+  (let* (;; Construct corpus to mine.
+         (db (cog-atomspace))
+         (db-lst (get-db-lst db))
+
+         ;; Filter out types from db-lst
+         (eval-has_pubmedID? (lambda (x) (eval-pred-name? "has_pubmedID" x)))
+         (eval-has_definition? (lambda (x) (eval-pred-name? "has_definition" x)))
+         (eval-has_name? (lambda (x) (eval-pred-name? "has_name" x)))
+         (eval-GO_definition? (lambda (x) (eval-pred-name? "GO_definition" x)))
+         (admissible? (lambda (x) (and
+                                    (cog-link? x)
+                                    (not (scope? x))
+                                    (not (lst? x))
+                                    (not (eval-has_pubmedID? x))
+                                    (not (eval-has_definition? x))
+                                    (not (eval-has_name? x))
+                                    (not (eval-GO_definition? x)))))
+         (db-filtered-lst (filter admissible? db-lst))
+
+         (msg-0 (cog-logger-debug "db (size = ~a):\n~a" (length db-filtered-lst) db-filtered-lst))
 
          ;; Build db concept
-         (db-cpt (fill-db-cpt (Concept "sumo-db") db))
+         (db-cpt (fill-db-cpt (Concept "sumo-db") db-filtered-lst))
 
          ;; Run pattern miner
          (msg-1 (cog-logger-info "Run pattern miner over ~a" kb))
@@ -73,7 +90,8 @@
 ;; Run the pattern miner over a list of files
 (for-each (lambda (args) (apply run-mozi-ai-miner args))
           (list
-           (list "kbs/all.scm" 0.001 100 2 2)
+           (list "kbs/bestLMPDmoses.scm" 0.01 100 2 2)
+           ;; (list "kbs/all.scm" 0.001 100 2 2)
            ;; (list "kbs/reactome.scm" 0.01 50 2 2)
            ;; (list "kbs/ChEBI2Reactome_PE_Pathway.txt.scm" 0.01 30 2 2)
           )
