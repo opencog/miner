@@ -27,6 +27,28 @@
 (define (lst? x) (cog-subtype? 'ListLink (cog-type x)))
 (define (eval-pred-name? name x) (and (cog-subtype? 'EvaluationLink (cog-type x))
                                       (equal? (cog-name (gar x)) name)))
+(define (forall? p l) (if (null? l)
+                          #t
+                          (if (p (car l))
+                              (forall? p (cdr l))
+                              #f)))
+(define (exist? p l) (if (null? l)
+                         #f
+                         (if (p (car l))
+                             #t
+                             (exist? p (cdr l)))))
+(define (subgraph? x y) (if (equal? x y)
+                            #t
+                            (if (cog-link? y)
+                                (exist? (lambda (s) (subgraph? x s)) (cog-outgoing-set y))
+                                #f)))
+(define (member? x lst) (if (member x lst) #t #f))
+(define (delete-subgraph-not-in x lst) (if (and (cog-atom? x) (not (member? x lst)))
+                                           (let* ((outgoings (cog-outgoing-set x))
+                                                  (del (lambda (x) (delete-subgraph-not-in x lst))))
+                                             (cog-logger-debug "cog-delete ~a" x)
+                                             (cog-delete x)
+                                             (map del outgoings))))
 
 ;; Function to run the pattern miner on a given file with the follow
 ;; parameters
@@ -37,13 +59,17 @@
 ;; mv: maximum number of variables
 (define (run-mozi-ai-miner kb mf mi mc mv)
   (clear)
-  (load kb)
 
-  (let* (;; Construct corpus to mine.
-         (db (cog-atomspace))
-         (db-lst (get-db-lst db))
+  (let* (;; Load the corpus in a seperate atomspace
+         (base-as (cog-push-atomspace))
+         (dummy (load kb))
 
-         ;; Filter out types from db-lst
+         ;; Construct corpus to mine.
+         (db-as (cog-atomspace))
+         (db-lst (get-db-lst db-as))
+         (msg (cog-logger-debug "db-as size = ~a" (count-all)))
+
+         ;; Filter in addimissible types from db-lst
          (eval-has_pubmedID? (lambda (x) (eval-pred-name? "has_pubmedID" x)))
          (eval-has_definition? (lambda (x) (eval-pred-name? "has_definition" x)))
          (eval-has_name? (lambda (x) (eval-pred-name? "has_name" x)))
@@ -56,21 +82,28 @@
                                     (not (eval-has_definition? x))
                                     (not (eval-has_name? x))
                                     (not (eval-GO_definition? x)))))
-         (db-filtered-lst (filter admissible? db-lst))
+         (db-in-lst (filter admissible? db-lst))
+         (msg (cog-logger-debug "db-in-lst size = ~a" (length db-in-lst)))
 
-         (msg-0 (cog-logger-debug "db (size = ~a):\n~a" (length db-filtered-lst) db-filtered-lst))
+         ;; Copy admissibal atoms in the base atomspace
+         (base-db-in-lst (cog-cp base-as db-in-lst))
+
+         ;; Discard the db atomspace
+         (dummy (cog-pop-atomspace))
+         (msg (cog-logger-debug "base-as size = ~a" (count-all)))
+         (msg (cog-logger-fine "base-db-in-lst = ~a" base-db-in-lst))
 
          ;; Build db concept
-         (db-cpt (fill-db-cpt (Concept "sumo-db") db-filtered-lst))
+         (db-cpt (fill-db-cpt (Concept "sumo-db") base-db-in-lst))
 
          ;; Run pattern miner
-         (msg-1 (cog-logger-info "Run pattern miner over ~a" kb))
-         (msg-2 (cog-logger-info (string-append "With parameters:\n"
-                                                "minfreq = ~a\n"
-                                                "max-iterations = ~a\n"
-                                                "max-conjuncts = ~a\n"
-                                                "max-variables = ~a")
-                                 mf mi mc mv))
+         (msg (cog-logger-info "Run pattern miner over ~a" kb))
+         (msg (cog-logger-info (string-append "With parameters:\n"
+                                              "minfreq = ~a\n"
+                                              "max-iterations = ~a\n"
+                                              "max-conjuncts = ~a\n"
+                                              "max-variables = ~a")
+                               mf mi mc mv))
          ;; (results '())
          (results (cog-mine db-cpt
                             #:minfreq mf
@@ -79,7 +112,7 @@
                             #:max-conjuncts mc
                             #:max-variables mv
                             #:surprisingness 'nisurp))
-         (msg-3 (cog-logger-info "Results from mining ~a:\n~a" kb results)))
+         (msg (cog-logger-info "Results from mining ~a:\n~a" kb results)))
 
     ;; We do not return the results because the atomspace is gonna be
     ;; cleared in the next call of that function. Instead the user
@@ -90,7 +123,7 @@
 ;; Run the pattern miner over a list of files
 (for-each (lambda (args) (apply run-mozi-ai-miner args))
           (list
-           (list "kbs/bestLMPDmoses.scm" 0.01 100 2 2)
+           (list "kbs/bestLMPDmoses.scm" 0.001 1000 2 2)
            ;; (list "kbs/all.scm" 0.001 100 2 2)
            ;; (list "kbs/reactome.scm" 0.01 50 2 2)
            ;; (list "kbs/ChEBI2Reactome_PE_Pathway.txt.scm" 0.01 30 2 2)
