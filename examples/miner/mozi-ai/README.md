@@ -35,6 +35,7 @@ wget -r --no-parent https://mozi.ai/datasets/
 mv mozi.ai/datasets/* kbs
 trash mozi.ai
 trash kbs/index.html
+cat kbs/*.scm > kbs/all.scm
 ```
 
 Note: you may replace `trash` by `rm -fr`, but don't forget that with

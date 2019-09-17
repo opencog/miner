@@ -48,6 +48,12 @@
 
          ;; Run pattern miner
          (msg-1 (cog-logger-info "Run pattern miner over ~a" kb))
+         (msg-2 (cog-logger-info (string-append "With parameters:\n"
+                                                "minfreq = ~a\n"
+                                                "max-iterations = ~a\n"
+                                                "max-conjuncts = ~a\n"
+                                                "max-variables = ~a")
+                                 mf mi mc mv))
          ;; (results '())
          (results (cog-mine db-cpt
                             #:minfreq mf
@@ -56,7 +62,7 @@
                             #:max-conjuncts mc
                             #:max-variables mv
                             #:surprisingness 'nisurp))
-         (msg-2 (cog-logger-info "Results from mining ~a:\n~a" kb results)))
+         (msg-3 (cog-logger-info "Results from mining ~a:\n~a" kb results)))
 
     ;; We do not return the results because the atomspace is gonna be
     ;; cleared in the next call of that function. Instead the user
@@ -67,7 +73,8 @@
 ;; Run the pattern miner over a list of files
 (for-each (lambda (args) (apply run-mozi-ai-miner args))
           (list
-           (list "kbs/reactome.scm" 0.01 50 2 2)
-           (list "kbs/ChEBI2Reactome_PE_Pathway.txt.scm" 0.01 30 2 2)
+           (list "kbs/all.scm" 0.001 100 2 2)
+           ;; (list "kbs/reactome.scm" 0.01 50 2 2)
+           ;; (list "kbs/ChEBI2Reactome_PE_Pathway.txt.scm" 0.01 30 2 2)
           )
 )
