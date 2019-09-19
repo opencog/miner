@@ -29,8 +29,16 @@ Now go back to that directory.
 ### Import More KBs
 
 The mozi-ai example is provided with a small dataset. If you wish to
-run the demo with more datasets provided by mozi-ai read below,
-otherwise jump to the next section.
+use that small sample dataset, first decrompress it
+
+```bash
+zx -d kbs/mozi-ai-sample.scm
+```
+
+Once decompressed you may directly jump to the Run Pattern Miner
+Section below. Otherwise, if you wish to use larger datasets provided
+by mozi-ai, assuming you have a beefy machine (last gen CPU with at
+least 16GB of RAM) at your disposal, read on.
 
 From this directory, where that example is, type the following
 commands:
@@ -50,7 +58,7 @@ Now you should have multiple scheme files under the `kbs` directory.
 
 ### Run Pattern Miner
 
-By default the demo uses the provided dataset `bestLMPDmoses.scm`
+By default the demo uses the provided dataset `mozi-ai-sample.scm`
 under the folder `kbs`. If you wish to use another dataset go to
 `mine-mozi-ai.scm` and modify the variable `kb-filename`
 accordingly. Then enter the following
@@ -60,7 +68,7 @@ guile --no-auto-compile -l mine-mozi-ai.scm
 ```
 
 which will run the pattern miner over the provided dataset. The
-results will be logged in the `opencog*.log` file at the lines
+results will be logged in a `opencog*.log` file, after the line
 
 ```
 Results from mining <kb-filename>:
@@ -71,7 +79,7 @@ mining.
 
 ### Tweaking Parameters
 
-Go in `mine-mozi-ai.scm` and change the parameters under the line
+Go to `mine-mozi-ai.scm` and change the parameters under the line
 
 ```scheme
 ;; Set parameters
