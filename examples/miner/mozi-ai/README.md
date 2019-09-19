@@ -24,13 +24,18 @@ sudo ldconfig /usr/local/lib/opencog
 A `bioscience` module containing atom type definitions such as
 `GeneNode` should now be installed on your system.
 
-### Import KBs
+Now go back to that directory.
 
-Go back to this directory, where that example is, and type the
-following commands:
+### Import More KBs
+
+The mozi-ai example is provided with a small dataset. If you wish to
+run the demo with more datasets provided by mozi-ai read below,
+otherwise jump to the next section.
+
+From this directory, where that example is, type the following
+commands:
 
 ```bash
-mkdir kbs
 wget -r --no-parent https://mozi.ai/datasets/
 mv mozi.ai/datasets/* kbs
 trash mozi.ai
@@ -38,25 +43,36 @@ trash kbs/index.html
 cat kbs/*.scm > kbs/all.scm
 ```
 
-Note: you may replace `trash` by `rm -fr`, but don't forget that with
-power comes responsability.
+Note: you may replace `trash` by `rm -r`, but don't forget! With great
+power comes great responsibility.
 
-Now you should have scheme files under the `kbs` directory.
+Now you should have multiple scheme files under the `kbs` directory.
 
 ### Run Pattern Miner
+
+By default the demo uses the provided dataset `bestLMPDmoses.scm`
+under the folder `kbs`. If you wish to use another dataset go to
+`mine-mozi-ai.scm` and modify the variable `kb-filename`
+accordingly. Then enter the following
 
 ```bash
 guile --no-auto-compile -l mine-mozi-ai.scm
 ```
 
-which will run the pattern miner of the files. The results will be
-logged in the `opencog.log` file at the lines
+which will run the pattern miner over the provided dataset. The
+results will be logged in the `opencog*.log` file at the lines
 
 ```
-Results from mining <FILENAME>:
+Results from mining <kb-filename>:
 ```
+
+as well as stored in `results` variable accessible from guile after
+mining.
 
 ### Tweaking Parameters
 
-Go in `mine-mozi-ai.scm`, the run-mozi-ai-miner function accepts a
-list of parameters that can be changed for each KB.
+Go in `mine-mozi-ai.scm` and change the parameters under the line
+
+```scheme
+;; Set parameters
+```

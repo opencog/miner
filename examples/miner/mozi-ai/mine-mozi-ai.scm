@@ -3,52 +3,167 @@
 ;; guile --no-auto-compile -l mine-mozi-ai.scm
 
 ;; Load modules
+(use-modules (srfi srfi-1))
 (use-modules (opencog randgen))
 (use-modules (opencog logger))
 (use-modules (opencog ure))
 (use-modules (opencog miner))
 (use-modules (opencog bioscience))
 
+;; Set parameters
+(define kb-filename "bestLMPDmoses.scm")
+(define min-freq 0.001)
+(define max-iter 250)
+(define max-cnjs 3)
+(define max-vars 2)
+(define rand-seed 0)
+
+;; Set random seed
+(cog-randgen-set-seed! rand-seed)
+
+;; Set loggers
+(define (rm-scm-extension fn)
+  (if (string-suffix? ".scm" fn)
+      (substring fn 0 (- (string-length fn) 4))
+      fn))
+(define log-filename (string-append
+                      "opencog-"
+                      (rm-scm-extension kb-filename)
+                      "-s" (number->string rand-seed)
+                      "-mf" (number->string min-freq)
+                      "-mi" (number->string max-iter)
+                      "-mc" (number->string max-cnjs)
+                      "-mv" (number->string max-vars)
+                      ".log"))
+
 ;; Set main logger
 ;; (cog-logger-set-timestamp! #f)
 (cog-logger-set-level! "debug")
 ;; (cog-logger-set-sync! #t)
+(cog-logger-set-filename! log-filename)
 
 ;; Set URE logger
 (ure-logger-set-level! "debug")
 ;; (ure-logger-set-timestamp! #f)
 ;; (ure-logger-set-sync! #t)
-
-;; Set random seed
-(cog-randgen-set-seed! 0)
+(ure-logger-set-filename! log-filename)
 
 ;; Helpers
-(define (scope? x) (cog-subtype? 'ScopeLink (cog-type x)))
-(define (lst? x) (cog-subtype? 'ListLink (cog-type x)))
-(define (eval-pred-name? name x) (and (cog-subtype? 'EvaluationLink (cog-type x))
-                                      (equal? (cog-name (gar x)) name)))
-(define (forall? p l) (if (null? l)
-                          #t
-                          (if (p (car l))
-                              (forall? p (cdr l))
-                              #f)))
-(define (exist? p l) (if (null? l)
-                         #f
-                         (if (p (car l))
-                             #t
-                             (exist? p (cdr l)))))
-(define (subgraph? x y) (if (equal? x y)
-                            #t
-                            (if (cog-link? y)
-                                (exist? (lambda (s) (subgraph? x s)) (cog-outgoing-set y))
-                                #f)))
-(define (member? x lst) (if (member x lst) #t #f))
-(define (delete-subgraph-not-in x lst) (if (and (cog-atom? x) (not (member? x lst)))
-                                           (let* ((outgoings (cog-outgoing-set x))
-                                                  (del (lambda (x) (delete-subgraph-not-in x lst))))
-                                             (cog-logger-debug "cog-delete ~a" x)
-                                             (cog-delete x)
-                                             (map del outgoings))))
+(define (scope? x)
+  (cog-subtype? 'ScopeLink (cog-type x)))
+
+(define (lst? x)
+  (cog-subtype? 'ListLink (cog-type x)))
+
+(define (eval-pred-name? name x)
+  (and (cog-subtype? 'EvaluationLink (cog-type x))
+       (equal? (cog-name (gar x)) name)))
+
+(define (forall? p l)
+  (if (null? l)
+      #t
+      (if (p (car l))
+          (forall? p (cdr l))
+          #f)))
+
+(define (exist? p l)
+  (if (null? l)
+      #f
+      (if (p (car l))
+          #t
+          (exist? p (cdr l)))))
+
+(define (subgraph? x y)
+  (if (equal? x y)
+      #t
+      (if (cog-link? y)
+          (exist? (lambda (s) (subgraph? x s)) (cog-outgoing-set y))
+          #f)))
+
+(define (member? x lst)
+  (if (member x lst) #t #f))
+
+(define (delete-subgraph-not-in x lst)
+  (if (and (cog-atom? x) (not (member? x lst)))
+      (let* ((outgoings (cog-outgoing-set x))
+             (del (lambda (x) (delete-subgraph-not-in x lst))))
+        (cog-logger-debug "cog-delete ~a" x)
+        (cog-delete x)
+        (map del outgoings))))
+
+(define (get-pattern se)
+"
+ Given an surprisingness evaluation like
+
+ (Evaluation (Predicate \"nisurp\") <pattern>)
+
+ return <pattern>
+"
+  (cog-outgoing-atom (gdr se) 0))
+
+(define (get-body pattern)
+"
+ Given a pattern like
+
+ (Lambda <vardecl> <body>)
+
+ return <body>
+"
+  (cog-outgoing-atom pattern 1))
+
+(define (get-eval-args eval)
+"
+  Given an evaluation link like
+
+  (Evaluation <predicate> (List <arg1> ... <argn>))
+
+  return (<arg1> ... <argn>)
+"
+  (let* ((args (gdr eval)))
+    (if (lst? args)
+        (cog-outgoing-set args)
+        args)))
+
+(define (exist-pair? p l)
+"
+  Given a property p and list l, find a pair in that list such that p is true.
+  p is assumed to be symmetric and irreflexive.
+"
+  (if (= (length l) 2)
+      ;; Base case
+      (p (car l) (cadr l))
+      ;; Recursive case
+      (exist? (lambda (x) (p (car l) x)) (cdr l))))
+
+(define (postprocess results)
+"
+ Till reasoning is fully enabled, postprocess the results to remove
+ obvious patterns such as (Present P(X, Y) P(Y, X)) when P is symmetric.
+"
+  (define (reverse? l1 l2)
+    (equal? l1 (reverse l2)))
+  (define (enough-clauses? pattern)
+    (let* ((body (get-body pattern))
+           (clauses (cog-outgoing-set body)))
+      (= (length clauses) max-conjuncts)))
+  (define (symmetric? pattern)
+    (let* ((body (get-body pattern))
+           (clauses (cog-outgoing-set body))
+           (eval-interacts-with? (lambda (x) (eval-pred-name? "interacts_with" x)))
+           (interacts-with-clauses (filter eval-interacts-with? clauses))
+           (reverse-args? (lambda (left-clause right-clause)
+                            (let* ((left-args (get-eval-args left-clause))
+                                   (right-args (get-eval-args right-clause)))
+                              (reverse? left-args right-args))))
+           (smtr? (if (<= 2 (length interacts-with-clauses))
+                      (exist-pair? reverse-args? interacts-with-clauses)
+                      #f)))
+      smtr?))
+  (define (in? result)
+    (let* ((pattern (get-pattern result)))
+      (and (enough-clauses? pattern)
+           (not (symmetric? (get-pattern result))))))
+  (filter in? results))
 
 ;; Function to run the pattern miner on a given file with the follow
 ;; parameters
@@ -58,8 +173,6 @@
 ;; mc: maximum number of conjuncts
 ;; mv: maximum number of variables
 (define (run-mozi-ai-miner kb mf mi mc mv)
-  (clear)
-
   (let* (;; Load the corpus in a seperate atomspace
          (base-as (cog-push-atomspace))
          (dummy (load kb))
@@ -94,17 +207,17 @@
          (msg (cog-logger-fine "base-db-in-lst = ~a" base-db-in-lst))
 
          ;; Build db concept
-         (db-cpt (fill-db-cpt (Concept "sumo-db") base-db-in-lst))
+         (db-cpt (fill-db-cpt (Concept kb) base-db-in-lst))
 
          ;; Run pattern miner
          (msg (cog-logger-info "Run pattern miner over ~a" kb))
          (msg (cog-logger-info (string-append "With parameters:\n"
-                                              "minfreq = ~a\n"
+                                              "random-seed = ~a\n"
+                                              "min-frequency = ~a\n"
                                               "max-iterations = ~a\n"
                                               "max-conjuncts = ~a\n"
                                               "max-variables = ~a")
-                               mf mi mc mv))
-         ;; (results '())
+                               rand-seed mf mi mc mv))
          (results (cog-mine db-cpt
                             #:minfreq mf
                             #:maximum-iterations mi
@@ -112,20 +225,11 @@
                             #:max-conjuncts mc
                             #:max-variables mv
                             #:surprisingness 'nisurp))
-         (msg (cog-logger-info "Results from mining ~a:\n~a" kb results)))
+         (pp-results (postprocess results))
+         (msg (cog-logger-info "Results from mining ~a:\nsize = ~a\n~a"
+                               kb (length pp-results) pp-results)))
+    pp-results))
 
-    ;; We do not return the results because the atomspace is gonna be
-    ;; cleared in the next call of that function. Instead the user
-    ;; should collect the patterns in the opencog.log file.
-    *unspecified*)
-)
-
-;; Run the pattern miner over a list of files
-(for-each (lambda (args) (apply run-mozi-ai-miner args))
-          (list
-           (list "kbs/bestLMPDmoses.scm" 0.001 1000 2 2)
-           ;; (list "kbs/all.scm" 0.001 100 2 2)
-           ;; (list "kbs/reactome.scm" 0.01 50 2 2)
-           ;; (list "kbs/ChEBI2Reactome_PE_Pathway.txt.scm" 0.01 30 2 2)
-          )
-)
+;; Run the pattern miner over the kb with the given parameters
+(define results (run-mozi-ai-miner (string-append "kbs/" kb-filename)
+                                   min-freq max-iter max-cnjs max-vars))
