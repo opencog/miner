@@ -101,6 +101,29 @@
 "
   (random-node 'ConceptNode 16 "surprisingness-rbs-"))
 
+(define (get-db-lst db)
+"
+  Given a db which either
+  1. a Scheme list
+  2. an Atomese List or Set
+  3. an AtomSpace
+
+  return a scheme list of all the atoms in that db.
+"
+  (define (lst-set? a)
+    (and (cog-atom? db)
+         (or (eq? (cog-type? db) 'ListLink)
+             (eq? (cog-type? db) 'SetLink))))
+  (cond ;; Scheme list
+        ((list? db) db)
+        ;; Atomese List or Set
+        ((lst-set? db) (cog-outgoing-set db))
+        ;; AtomSpace
+        ((cog-atomspace? db) (let* ((prev-as (cog-set-atomspace! db))
+                                    (db-atoms (cog-get-atoms 'Atom #t)))
+                               (cog-set-atomspace! prev-as)
+                               db-atoms))))
+
 (define (fill-db-cpt db-cpt db)
 "
   Usage: (fill-db-cpt db-cpt db)
@@ -119,17 +142,7 @@
   Once all memberships have been added to the current atomspace,
   db-cpt is returned.
 "
-  (define (is-List-Set a)
-    (and (cog-atom? db)
-         (or (eq? (cog-type? db) 'ListLink)
-             (eq? (cog-type? db) 'SetLink))))
-  (let* ((db-lst (cond ;; Scheme list
-                       ((list? db) db)
-                       ;; Atomese List or Set
-                       ((is-List-Set db) (cog-outgoing-set db))
-                       ;; AtomSpace
-                       ;; TODO: bug!!! should use the given atomspace
-                       ((cog-atomspace? db) (cog-get-atoms 'Atom #t))))
+  (let* ((db-lst (get-db-lst db))
          (mk-member (lambda (dt) (Member dt db-cpt))))
     (for-each mk-member db-lst))
   db-cpt)
@@ -693,6 +706,7 @@
     top
     random-db-cpt
     random-miner-rbs-cpt
+    get-db-lst
     fill-db-cpt
     configure-mandatory-rules
     configure-optional-rules

@@ -24,38 +24,63 @@ sudo ldconfig /usr/local/lib/opencog
 A `bioscience` module containing atom type definitions such as
 `GeneNode` should now be installed on your system.
 
-### Import KBs
+Now go back to that directory.
 
-Go back to this directory, where that example is, and type the
-following commands:
+### Import More KBs
+
+The mozi-ai example is provided with a small dataset. If you wish to
+use that small sample dataset, first decrompress it
 
 ```bash
-mkdir kbs
+zx -d kbs/mozi-ai-sample.scm
+```
+
+Once decompressed you may directly jump to the Run Pattern Miner
+Section below. Otherwise, if you wish to use larger datasets provided
+by mozi-ai, assuming you have a beefy machine (last gen CPU with at
+least 16GB of RAM) at your disposal, read on.
+
+From this directory, where that example is, type the following
+commands:
+
+```bash
 wget -r --no-parent https://mozi.ai/datasets/
 mv mozi.ai/datasets/* kbs
 trash mozi.ai
 trash kbs/index.html
+cat kbs/*.scm > kbs/all.scm
 ```
 
-Note: you may replace `trash` by `rm -fr`, but don't forget that with
-power comes responsability.
+Note: you may replace `trash` by `rm -r`, but don't forget! With great
+power comes great responsibility.
 
-Now you should have scheme files under the `kbs` directory.
+Now you should have multiple scheme files under the `kbs` directory.
 
 ### Run Pattern Miner
+
+By default the demo uses the provided dataset `mozi-ai-sample.scm`
+under the folder `kbs`. If you wish to use another dataset go to
+`mine-mozi-ai.scm` and modify the variable `kb-filename`
+accordingly. Then enter the following
 
 ```bash
 guile --no-auto-compile -l mine-mozi-ai.scm
 ```
 
-which will run the pattern miner of the files. The results will be
-logged in the `opencog.log` file at the lines
+which will run the pattern miner over the provided dataset. The
+results will be logged in a `opencog*.log` file, after the line
 
 ```
-Results from mining <FILENAME>:
+Results from mining <kb-filename>:
 ```
+
+as well as stored in `results` variable accessible from guile after
+mining.
 
 ### Tweaking Parameters
 
-Go in `mine-mozi-ai.scm`, the run-mozi-ai-miner function accepts a
-list of parameters that can be changed for each KB.
+Go to `mine-mozi-ai.scm` and change the parameters under the line
+
+```scheme
+;; Set parameters
+```

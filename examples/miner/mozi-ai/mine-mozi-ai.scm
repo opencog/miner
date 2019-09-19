@@ -2,72 +2,83 @@
 ;;
 ;; guile --no-auto-compile -l mine-mozi-ai.scm
 
-;; Load modules
+;; Set parameters
+(define kb-filename "mozi-ai-sample.scm")
+(define min-freq 0.001)
+(define max-iter 1000)
+(define max-cnjs 3)
+(define max-vars 2)
+(define rand-seed 0)
+
+;; Load modules & utils
+(use-modules (srfi srfi-1))
 (use-modules (opencog randgen))
 (use-modules (opencog logger))
 (use-modules (opencog ure))
 (use-modules (opencog miner))
 (use-modules (opencog bioscience))
+(load "mozi-ai-utils.scm")
+
+;; Set random seed
+(cog-randgen-set-seed! rand-seed)
+
+;; Set loggers
+(define (rm-scm-extension fn)
+  (if (string-suffix? ".scm" fn)
+      (substring fn 0 (- (string-length fn) 4))
+      fn))
+(define log-filename (string-append
+                      "opencog-"
+                      (rm-scm-extension kb-filename)
+                      "-s" (number->string rand-seed)
+                      "-mf" (number->string min-freq)
+                      "-mi" (number->string max-iter)
+                      "-mc" (number->string max-cnjs)
+                      "-mv" (number->string max-vars)
+                      ".log"))
 
 ;; Set main logger
 ;; (cog-logger-set-timestamp! #f)
-;; (cog-logger-set-level! "debug")
+(cog-logger-set-level! "debug")
 ;; (cog-logger-set-sync! #t)
+(cog-logger-set-filename! log-filename)
 
 ;; Set URE logger
 (ure-logger-set-level! "debug")
 ;; (ure-logger-set-timestamp! #f)
 ;; (ure-logger-set-sync! #t)
+(ure-logger-set-filename! log-filename)
 
-;; Set random seed
-(cog-randgen-set-seed! 0)
-
-;; Function to run the pattern miner on a given file with the follow
-;; parameters
-;;
-;; mf: minimum frequency
-;; mi: maximum number of iterations
-;; mc: maximum number of conjuncts
-;; mv: maximum number of variables
-(define (run-mozi-ai-miner kb mf mi mc mv)
-  (clear)
-  (load kb)
-
-  (let* (;; Construct corpus to mine. We select all root atoms except
-         ;; quanfiers (ForAll, Exists, ImplicationScope, etc)
-         ;; statements, as they usually represent rules rather than
-         ;; data.
-         (scope? (lambda (x) (cog-subtype? 'ScopeLink (cog-type x))))
-         (db
-          (filter (lambda (x) (not (scope? x))) (cog-get-all-roots)))
-          ;; (filter scope? (cog-get-all-roots)))
-          ;; (cog-get-all-roots))
+;; Function to run the pattern miner on the kb and parameters defined
+;; at the top
+(define (run-mozi-ai-miner)
+  (let* (;; Load kb
+         (db-lst (load-preprocess (string-append "kbs/" kb-filename)))
+         (msg (cog-logger-fine "db-lst size = ~a" (length db-lst)))
 
          ;; Build db concept
-         (db-cpt (fill-db-cpt (Concept "sumo-db") db))
+         (db-cpt (fill-db-cpt (Concept kb-filename) db-lst))
 
          ;; Run pattern miner
-         (msg-1 (cog-logger-info "Run pattern miner over ~a" kb))
-         ;; (results '())
+         (msg (cog-logger-info "Run pattern miner over ~a" kb-filename))
+         (msg (cog-logger-info (string-append "With parameters:\n"
+                                              "random-seed = ~a\n"
+                                              "min-frequency = ~a\n"
+                                              "max-iterations = ~a\n"
+                                              "max-conjuncts = ~a\n"
+                                              "max-variables = ~a")
+                               rand-seed min-freq max-iter max-cnjs max-vars))
          (results (cog-mine db-cpt
-                            #:minfreq mf
-                            #:maximum-iterations mi
+                            #:minfreq min-freq
+                            #:maximum-iterations max-iter
                             #:conjunction-expansion #t
-                            #:max-conjuncts mc
-                            #:max-variables mv
+                            #:max-conjuncts max-cnjs
+                            #:max-variables max-vars
                             #:surprisingness 'nisurp))
-         (msg-2 (cog-logger-info "Results from mining ~a:\n~a" kb results)))
+         (pp-results (postprocess results max-cnjs))
+         (msg (cog-logger-info "Results from mining ~a:\nsize = ~a\n~a"
+                               kb-filename (length pp-results) pp-results)))
+    pp-results))
 
-    ;; We do not return the results because the atomspace is gonna be
-    ;; cleared in the next call of that function. Instead the user
-    ;; should collect the patterns in the opencog.log file.
-    *unspecified*)
-)
-
-;; Run the pattern miner over a list of files
-(for-each (lambda (args) (apply run-mozi-ai-miner args))
-          (list
-           (list "kbs/reactome.scm" 0.01 50 2 2)
-           (list "kbs/ChEBI2Reactome_PE_Pathway.txt.scm" 0.01 30 2 2)
-          )
-)
+;; Run the pattern miner
+(define results (run-mozi-ai-miner))
