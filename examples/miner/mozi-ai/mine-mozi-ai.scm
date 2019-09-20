@@ -31,10 +31,10 @@
                       "opencog-"
                       (rm-scm-extension kb-filename)
                       "-s" (number->string rand-seed)
-                      "-mf" (number->string min-freq)
-                      "-mi" (number->string max-iter)
-                      "-mc" (number->string max-cnjs)
-                      "-mv" (number->string max-vars)
+                      "-f" (number->string min-freq)
+                      "-i" (number->string max-iter)
+                      "-c" (number->string max-cnjs)
+                      "-v" (number->string max-vars)
                       ".log"))
 
 ;; Set main logger
