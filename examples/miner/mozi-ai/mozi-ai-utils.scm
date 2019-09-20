@@ -108,6 +108,7 @@
          (eval-has_definition? (lambda (x) (eval-pred-name? "has_definition" x)))
          (eval-has_name? (lambda (x) (eval-pred-name? "has_name" x)))
          (eval-GO_definition? (lambda (x) (eval-pred-name? "GO_definition" x)))
+         (eval-GO_name? (lambda (x) (eval-pred-name? "GO_name" x)))
          (admissible? (lambda (x) (and
                                     (cog-link? x)
                                     (not (scope? x))
@@ -115,7 +116,8 @@
                                     (not (eval-has_pubmedID? x))
                                     (not (eval-has_definition? x))
                                     (not (eval-has_name? x))
-                                    (not (eval-GO_definition? x)))))
+                                    (not (eval-GO_definition? x))
+                                    (not (eval-GO_name? x)))))
          (db-in-lst (filter admissible? db-lst))
 
          ;; Copy admissibal atoms in the base atomspace
