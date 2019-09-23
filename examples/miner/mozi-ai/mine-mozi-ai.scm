@@ -3,12 +3,12 @@
 ;; guile --no-auto-compile -l mine-mozi-ai.scm
 
 ;; Set parameters
-(define kb-filename "mozi-ai-sample.scm")
-(define min-freq 0.001)
-(define max-iter 1000)
-(define max-cnjs 3)
+(define kb-filename "mozi-ai-sample2.scm")
+(define min-freq 0.002)
+(define max-iter 5000)
+(define max-cnjs 4)
 (define max-vars 2)
-(define rand-seed 0)
+(define rand-seed 8)
 
 ;; Load modules & utils
 (use-modules (srfi srfi-1))
@@ -23,13 +23,9 @@
 (cog-randgen-set-seed! rand-seed)
 
 ;; Set loggers
-(define (rm-scm-extension fn)
-  (if (string-suffix? ".scm" fn)
-      (substring fn 0 (- (string-length fn) 4))
-      fn))
 (define log-filename (string-append
                       "opencog-"
-                      (rm-scm-extension kb-filename)
+                      (rm-extension kb-filename "scm")
                       "-s" (number->string rand-seed)
                       "-f" (number->string min-freq)
                       "-i" (number->string max-iter)

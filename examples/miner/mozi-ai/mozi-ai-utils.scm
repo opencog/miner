@@ -3,6 +3,7 @@
 ;; Load modules
 (use-modules (srfi srfi-1))
 (use-modules (opencog miner))
+(use-modules (opencog logger))
 
 ;; Helpers
 (define (scope? x)
@@ -120,7 +121,39 @@
                                     (not (eval-GO_name? x)))))
          (db-in-lst (filter admissible? db-lst))
 
-         ;; Copy admissibal atoms in the base atomspace
+         ;; ;; TMP log pre-processed DB
+         ;; (msg (cog-logger-debug "db-in-lst:\n~a" db-in-lst))
+
+         ;; Copy admissible atoms in the base atomspace
+         (base-db-in-lst (cog-cp base-as db-in-lst))
+
+         ;; Discard the db atomspace
+         (dummy (cog-pop-atomspace)))
+    base-db-in-lst))
+
+(define (load-min-preprocess kb-filename)
+"
+  Load the given dataset, but do minimal filtering (only retain links).
+"
+  (let* (;; Load the corpus in a seperate atomspace
+         (base-as (cog-push-atomspace))
+         (dummy (load kb-filename))
+
+         ;; Construct corpus to mine.
+         (db-as (cog-atomspace))
+         (db-lst (get-db-lst db-as))
+
+         ;; Filter in addimissible types from db-lst
+         (admissible? (lambda (x) (and
+                                    (cog-link? x)
+                                    (not (scope? x))
+                                    (not (lst? x)))))
+         (db-in-lst (filter admissible? db-lst))
+
+         ;; ;; TMP log pre-processed DB
+         ;; (msg (cog-logger-debug "db-in-lst:\n~a" db-in-lst))
+
+         ;; Copy admissible atoms in the base atomspace
          (base-db-in-lst (cog-cp base-as db-in-lst))
 
          ;; Discard the db atomspace
@@ -157,3 +190,47 @@
            (not (symmetric? (get-pattern result))))))
   (filter in? results))
 
+(define (rm-extension fn ext)
+  (if (string-suffix? (string-append "." ext) fn)
+      (substring fn 0 (- (string-length fn) 4))
+      fn))
+
+(define (load-patterns ptns-filename db-cpt)
+  (let* (;; Load the patterns in a seperate atomspace
+         (base-as (cog-push-atomspace))
+         (dummy (load ptns-filename))
+
+         ;; Construct patterns with the right format (minsup
+         ;; evaluations, as the miner will require that to evaluate
+         ;; their surprisingness)
+         (ptns-as (cog-atomspace))
+         (ptns-lst (cog-get-all-roots))
+
+         ;; Replace whatever evaluation by minsup
+         (ms 1)
+         (ptn->minsup (lambda (ptn) (minsup-eval-true (get-pattern ptn)
+                                                      db-cpt
+                                                      ms)))
+         (minsup-ptns-lst (map ptn->minsup ptns-lst))
+
+         ;; Copy minsup patterns in the base atomspace
+         (base-minsup-ptns-lst (cog-cp base-as minsup-ptns-lst))
+
+         ;; Discard the db atomspace
+         (dummy (cog-pop-atomspace)))
+    base-minsup-ptns-lst))
+
+;; TODO: move this to miner-utils.scm, maybe
+(define (cog-surp surprisingness max-conjuncts db-cpt)
+  (let* (
+         ;; Configure surprisingness backward chainer
+         (surp-rbs (random-surprisingness-rbs-cpt))
+         (target (surp-target surprisingness db-cpt))
+         (vardecl (surp-vardecl))
+         (cfg-s (configure-surprisingness surp-rbs
+                                          surprisingness
+                                          max-conjuncts))
+
+         ;; Run surprisingness in a backward way
+         (results (cog-bc surp-rbs target #:vardecl vardecl)))
+    results))
