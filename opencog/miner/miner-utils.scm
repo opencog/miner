@@ -706,12 +706,15 @@
     top
     random-db-cpt
     random-miner-rbs-cpt
+    random-surprisingness-rbs-cpt
     get-db-lst
     fill-db-cpt
     configure-mandatory-rules
     configure-optional-rules
     configure-rules
     configure-surprisingness
+    surp-target
+    surp-vardecl
     configure-miner
     minsup-eval
     minsup-eval-true

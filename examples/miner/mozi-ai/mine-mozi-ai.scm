@@ -4,8 +4,8 @@
 
 ;; Set parameters
 (define kb-filename "mozi-ai-sample.scm")
-(define min-freq 0.001)
-(define max-iter 1000)
+(define min-freq 0.01)
+(define max-iter 100)
 (define max-cnjs 3)
 (define max-vars 2)
 (define rand-seed 0)
@@ -23,18 +23,14 @@
 (cog-randgen-set-seed! rand-seed)
 
 ;; Set loggers
-(define (rm-scm-extension fn)
-  (if (string-suffix? ".scm" fn)
-      (substring fn 0 (- (string-length fn) 4))
-      fn))
 (define log-filename (string-append
                       "opencog-"
-                      (rm-scm-extension kb-filename)
+                      (rm-extension kb-filename "scm")
                       "-s" (number->string rand-seed)
-                      "-mf" (number->string min-freq)
-                      "-mi" (number->string max-iter)
-                      "-mc" (number->string max-cnjs)
-                      "-mv" (number->string max-vars)
+                      "-f" (number->string min-freq)
+                      "-i" (number->string max-iter)
+                      "-c" (number->string max-cnjs)
+                      "-v" (number->string max-vars)
                       ".log"))
 
 ;; Set main logger
