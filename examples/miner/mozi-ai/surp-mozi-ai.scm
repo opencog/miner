@@ -44,21 +44,24 @@
 ;; surprisingness. Patterns can be already wrapped with a
 ;; surprisingness measure. In such case such function will replace it.
 (define (run-surprisingness)
-  (let* (;; Load kb
+  (let* (;; db concept
+         (db-cpt (Concept kb-filename))
+
+         ;; Load patterns
+         (ptns-filepath (string-append "ptns/" ptns-filename))
+         (msg (cog-logger-debug "Loading ~a" ptns-filepath))
+         (ptns-lst (load-patterns ptns-filepath db-cpt))
+
+         ;; Load kb
          (kb-filepath (string-append "kbs/" kb-filename))
          (msg (cog-logger-debug "Loading ~a" kb-filepath))
          (db-lst (load-min-preprocess kb-filepath))
-         (msg (cog-logger-debug "db-lst size = ~a" (length db-lst)))
 
          ;; Build db concept
-         (db-cpt (fill-db-cpt (Concept kb-filename) db-lst))
-
-         ;; Load patterns
-         (ptns-lst (load-patterns (string-append "ptns/" ptns-filename) db-cpt))
-         (msg (cog-logger-debug "ptns-lst size = ~a" (length ptns-lst)))
+         (dmy (fill-db-cpt db-cpt db-lst))
 
          ;; Surprisingness
-         (msg (cog-logger-info "Run surprisingness over ~a with patterns"
+         (msg (cog-logger-info "Run surprisingness over ~a with patterns ~a"
                                kb-filename ptns-filename))
          (msg (cog-logger-info (string-append "With parameters:\n"
                                               "surp = ~a\n"

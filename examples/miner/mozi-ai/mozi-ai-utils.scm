@@ -12,6 +12,12 @@
 (define (lst? x)
   (cog-subtype? 'ListLink (cog-type x)))
 
+(define (and? x)
+  (cog-subtype? 'AndLink (cog-type x)))
+
+(define (eval? x)
+  (cog-subtype? 'EvaluationLink (cog-type x)))
+
 (define (eval-pred-name? name x)
   (and (cog-subtype? 'EvaluationLink (cog-type x))
        (equal? (cog-name (gar x)) name)))
@@ -114,6 +120,7 @@
                                     (cog-link? x)
                                     (not (scope? x))
                                     (not (lst? x))
+                                    (not (and? x))
                                     (not (eval-has_pubmedID? x))
                                     (not (eval-has_definition? x))
                                     (not (eval-has_name? x))
@@ -147,7 +154,8 @@
          (admissible? (lambda (x) (and
                                     (cog-link? x)
                                     (not (scope? x))
-                                    (not (lst? x)))))
+                                    (not (lst? x))
+                                    (not (and? x)))))
          (db-in-lst (filter admissible? db-lst))
 
          ;; ;; TMP log pre-processed DB
@@ -204,11 +212,12 @@
          ;; evaluations, as the miner will require that to evaluate
          ;; their surprisingness)
          (ptns-as (cog-atomspace))
-         (ptns-lst (cog-get-all-roots))
+         (ptns-lst (filter eval? (cog-get-all-roots)))
 
          ;; Replace whatever evaluation by minsup
          (ms 1)
-         (ptn->minsup (lambda (ptn) (minsup-eval-true (get-pattern ptn)
+         (ptn->minsup (lambda (ptn)
+                        (minsup-eval-true (get-pattern ptn)
                                                       db-cpt
                                                       ms)))
          (minsup-ptns-lst (map ptn->minsup ptns-lst))
