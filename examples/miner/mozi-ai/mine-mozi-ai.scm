@@ -3,12 +3,12 @@
 ;; guile --no-auto-compile -l mine-mozi-ai.scm
 
 ;; Set parameters
-(define kb-filename "mozi-ai-sample2.scm")
-(define min-freq 0.002)
-(define max-iter 5000)
-(define max-cnjs 4)
+(define kb-filename "mozi-ai-sample.scm")
+(define min-freq 0.01)
+(define max-iter 100)
+(define max-cnjs 3)
 (define max-vars 2)
-(define rand-seed 8)
+(define rand-seed 0)
 
 ;; Load modules & utils
 (use-modules (srfi srfi-1))
