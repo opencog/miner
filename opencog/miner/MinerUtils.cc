@@ -51,7 +51,8 @@
 namespace opencog
 {
 
-HandleSetSeq MinerUtils::shallow_abstract(const Valuations& valuations, unsigned ms)
+HandleSetSeq MinerUtils::shallow_abstract(const Valuations& valuations,
+                                          unsigned ms)
 {
 	// Base case
 	if (valuations.no_focus())
@@ -66,7 +67,8 @@ HandleSetSeq MinerUtils::shallow_abstract(const Valuations& valuations, unsigned
 	return shabs_per_var;
 }
 
-HandleSet MinerUtils::focus_shallow_abstract(const Valuations& valuations, unsigned ms)
+HandleSet MinerUtils::focus_shallow_abstract(const Valuations& valuations,
+                                             unsigned ms)
 {
 	HandleSet shabs;
 
@@ -826,6 +828,7 @@ HandleSet MinerUtils::expand_conjunction_es_rec(const Handle& cnjtion,
                                                 const Handle& pattern,
                                                 const HandleSeq& db,
                                                 unsigned ms,
+                                                unsigned mv,
                                                 const HandleMap& pv2cv,
                                                 unsigned pvi)
 {
@@ -840,9 +843,10 @@ HandleSet MinerUtils::expand_conjunction_es_rec(const Handle& cnjtion,
 	if (pv2cv.size() == pvars.size()) {
 		Handle npat = expand_conjunction_connect(cnjtion, pattern, pv2cv);
 
-		// If the number of conjuncts has dropped then it shouldn't be
-		// considered.
-		if (n_conjuncts(npat) <= n_conjuncts(cnjtion))
+		// If the number of variables is too high or the number of
+		// conjuncts has dropped then it shouldn't be considered.
+		if (mv < get_variables(npat).size() or
+		    n_conjuncts(npat) <= n_conjuncts(cnjtion))
 			return {};
 
 		// Insert npat in the atomspace where cnjtion and pattern
@@ -868,7 +872,7 @@ HandleSet MinerUtils::expand_conjunction_es_rec(const Handle& cnjtion,
 		HandleMap pv2cv_ext(pv2cv);
 		pv2cv_ext[pvars.varseq[pvi]] = cv;
 		HandleSet rrs = expand_conjunction_es_rec(cnjtion, pattern, db, ms,
-		                                          pv2cv_ext, pvi + 1);
+		                                          mv, pv2cv_ext, pvi + 1);
 		patterns.insert(rrs.begin(), rrs.end());
 	}
 	return patterns;
@@ -887,7 +891,7 @@ HandleSet MinerUtils::expand_conjunction(const Handle& cnjtion,
 
 	// Consider all variable mappings from apat to cnjtion
 	return es ?
-		expand_conjunction_es_rec(cnjtion, apat, db, ms)
+		expand_conjunction_es_rec(cnjtion, apat, db, ms, mv)
 		: expand_conjunction_rec(cnjtion, apat, db, ms, mv);
 }
 
