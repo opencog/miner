@@ -7,10 +7,10 @@
 ;; (cog-logger-set-level! "debug")
 ;; (cog-logger-set-sync! #t)
 ;; (cog-logger-set-timestamp! #f)
-;; (use-modules (opencog ure))
-;; (ure-logger-set-level! "debug")
+(use-modules (opencog ure))
+(ure-logger-set-level! "debug")
 ;; (ure-logger-set-sync! #t)
-;; (ure-logger-set-timestamp! #f)
+(ure-logger-set-timestamp! #f)
 
 ;; Load KB
 (load "kb.scm")
@@ -70,4 +70,5 @@
                           #:conjunction-expansion #t
                           #:max-conjuncts 3
                           #:max-variables 2
+                          #:max-cnjexp-variables 1
                           #:surprisingness 'nisurp))

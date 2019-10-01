@@ -181,6 +181,7 @@ public:
 	                     bool conjunction_expansion=false,
 	                     unsigned max_conjuncts=UINT_MAX,
 	                     unsigned max_variables=UINT_MAX,
+	                     unsigned max_cnjexp_variables=UINT_MAX,
 	                     bool enforce_specialization=true,
 	                     double complexity_penalty=0.0);
 	static Handle ure_pm(AtomSpace& as,
@@ -192,6 +193,7 @@ public:
 	                     bool conjunction_expansion=false,
 	                     unsigned max_conjuncts=UINT_MAX,
 	                     unsigned max_variables=UINT_MAX,
+	                     unsigned max_cnjexp_variables=UINT_MAX,
 	                     bool enforce_specialization=true,
 	                     double complexity_penalty=0.0);
 
@@ -279,6 +281,7 @@ public:
 	                                     bool conjunction_expansion,
 	                                     unsigned max_conjuncts=UINT_MAX,
 	                                     unsigned max_variables=UINT_MAX,
+	                                     unsigned max_cnjexp_variables=UINT_MAX,
 	                                     bool enforce_specialization=false);
 	static void configure_surprisingness(SchemeEval& scm,
 	                                     const Handle& surp_rb,

@@ -471,14 +471,13 @@ public:
 	 * Like expand_conjunction_rec but enforce specialization. Mean
 	 * only total mappings from the variables of pattern to the
 	 * variables of cnjtion will be considered, as to not introduced
-	 * any new variables, for that reason mv can be ignored (cause
-	 * cnjtion and pattern are assumed to already have a number of
-	 * variables not exceeding mv).
+	 * any new variables.
 	 */
 	static HandleSet expand_conjunction_es_rec(const Handle& cnjtion,
 	                                           const Handle& pattern,
 	                                           const HandleSeq& db,
 	                                           unsigned ms,
+	                                           unsigned mv,
 	                                           const HandleMap& pv2cv=HandleMap(),
 	                                           unsigned pvi=0);
 
