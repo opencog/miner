@@ -170,8 +170,8 @@
                                                conjunction-expansion
                                                enforce-specialization
                                                max-conjuncts
-                                               max-variables)
-  (define mv (min 9 max-variables))
+                                               max-cnjexp-variables)
+  (define mv (min 9 max-cnjexp-variables))
 
   (if (and conjunction-expansion (< 1 max-conjuncts))
       ;; (load-from-path (mk-full-rule-path "conjunction-expansion.scm"))
@@ -209,7 +209,8 @@
                                    (conjunction-expansion #t)
                                    (enforce-specialization #t)
                                    (max-conjuncts 3)
-                                   (max-variables 3))
+                                   (max-variables 3)
+                                   (max-cnjexp-variables 2))
 
   ;; Load shallow specialization, either unary, if
   ;; conjunction-expansion is enabled, or not
@@ -222,20 +223,22 @@
                                          conjunction-expansion
                                          enforce-specialization
                                          max-conjuncts
-                                         max-variables))
+                                         (min max-variables max-cnjexp-variables)))
 
 (define* (configure-rules pm-rbs
                           #:key
                           (conjunction-expansion #t)
                           (enforce-specialization #t)
                           (max-conjuncts 3)
-                          (max-variables 3))
+                          (max-variables 3)
+                          (max-cnjexp-variables 2))
   (configure-mandatory-rules pm-rbs)
   (configure-optional-rules pm-rbs
                             #:conjunction-expansion conjunction-expansion
                             #:enforce-specialization enforce-specialization
                             #:max-conjuncts max-conjuncts
-                            #:max-variables max-variables))
+                            #:max-variables max-variables
+                            #:max-cnjexp-variables max-cnjexp-variables))
 
 (define* (configure-surprisingness surp-rbs mode max-conjuncts)
   ;; Add surprisingness rules
@@ -282,7 +285,8 @@
                           (conjunction-expansion #t)
                           (enforce-specialization #t)
                           (max-conjuncts 3)
-                          (max-variables 3))
+                          (max-variables 3)
+                          (max-cnjexp-variables 2))
 "
   Given a Concept node representing a rule based system for the
   pattern miner. Automatically configure it with the appropriate
@@ -294,7 +298,8 @@
                           #:conjunction-expansion ce
                           #:enforce-specialization es
                           #:max-conjuncts mc)
-                          #:max-variables mv)
+                          #:max-variables mv
+                          #:max-cnjexp-variables mcev)
 
   pm-rbs: Concept node of the rule-based system to configure
 
@@ -326,13 +331,17 @@
   mv: [optional, default=3] Maximum number of variables that the resulting
       patterns should contain. As of now mv cannot be set above 9 (which
       should be more than enough).
+
+  mcev: [optional, default=2] Maximum number of variables in patterns produced
+        by the conjunction expansion rule.
 "
   ;; Load and associate rules to pm-rbs
   (configure-rules pm-rbs
                    #:conjunction-expansion conjunction-expansion
                    #:enforce-specialization enforce-specialization
                    #:max-conjuncts max-conjuncts
-                   #:max-variables max-variables)
+                   #:max-variables max-variables
+                   #:max-cnjexp-variables max-cnjexp-variables)
 
   ;; Set parameters
   (ure-set-maximum-iterations pm-rbs maximum-iterations)
@@ -495,6 +504,7 @@
                    (enforce-specialization #t)
                    (max-conjuncts 3)
                    (max-variables 3)
+                   (max-cnjexp-variables 2)
                    (surprisingness 'isurp))
 "
   Mine patterns in db (data trees, a.k.a. grounded hypergraphs) with minimum
@@ -511,6 +521,7 @@
                    #:enforce-specializtion es
                    #:max-conjuncts mc
                    #:max-variables mv
+                   #:max-cnjexp-variables mcev
                    #:surprisingness su)
 
   db: Collection of data trees to mine. It can be given in 3 forms
@@ -581,6 +592,9 @@
   mv: [optional, default=3] Maximum number of variables that the resulting
       patterns can contain. As of now mv cannot be set above 9 (which
       should be more than enough).
+
+  mcev: [optional, default=2] Maximum number of variables in patterns produced
+        by the conjunction expansion rule.
 
   su: [optional, default='isurp] After running the pattern miner,
       patterns can be ranked according to some surprisingness measure.
@@ -665,7 +679,8 @@
                                        #:conjunction-expansion conjunction-expansion
                                        #:enforce-specialization enforce-specialization
                                        #:max-conjuncts max-conjuncts
-                                       #:max-variables max-variables))
+                                       #:max-variables max-variables
+                                       #:max-cnjexp-variables max-cnjexp-variables))
 
                ;; Run pattern miner in a forward way
                (results (cog-fc miner-rbs source))
