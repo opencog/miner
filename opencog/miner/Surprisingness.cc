@@ -582,30 +582,6 @@ bool Surprisingness::is_equivalent(const Handle& l_pat,
 	return content_eq(l_pat, r_pat) and has_same_index(l_pat, r_pat, var);
 }
 
-HandleSeqUCounter::const_iterator Surprisingness::find_equivalent(
-	const HandleSeqUCounter& partition_c,
-	const HandleSeq& block,
-	const Handle& var)
-{
-	auto it = partition_c.begin();
-	for (; it != partition_c.end(); it++)
-		if (is_equivalent(it->first, block, var))
-			return it;
-	return it;
-}
-
-HandleSeqUCounter::iterator Surprisingness::find_equivalent(
-	HandleSeqUCounter& partition_c,
-	const HandleSeq& block,
-	const Handle& var)
-{
-	auto it = partition_c.begin();
-	for (; it != partition_c.end(); it++)
-		if (is_equivalent(it->first, block, var))
-			return it;
-	return it;
-}
-
 bool Surprisingness::is_syntax_more_abstract(const HandleSeq& l_blk,
                                              const HandleSeq& r_blk,
                                              const Handle& var)
@@ -740,23 +716,6 @@ HandleSeq Surprisingness::connected_subpattern_with_var(const HandleSeq& blk,
 		if (is_free_in_any_tree(scc, var))
 			return scc;
 	return {};
-}
-
-HandleSeqUCounter Surprisingness::group_eq(const HandleSeqSeq& partition,
-                                           const Handle& var)
-{
-	HandleSeqUCounter partition_c;
-	for (const HandleSeq& blk : partition) {
-		if (is_free_in_any_tree(blk, var)) {
-			auto it = find_equivalent(partition_c, blk, var);
-			if (it == partition_c.end()) {
-				partition_c[blk] = 1;
-			} else {
-				it->second++;
-			}
-		}
-	}
-	return partition_c;
 }
 
 double Surprisingness::eq_prob(const HandleSeqSeq& partition,

@@ -864,48 +864,16 @@ public:
 	                                               const Handle& var);
 
 	/**
-	 * Given subpatterns linked by a variable, count how many
-	 * subpatterns are equivalent with respect to this variable.
-	 *
-	 * For instance given patterns
-	 *
-	 * A = Inh X Y
-	 * B = Inh Y Z
-	 * C = Inh W Y
-	 *
-	 * A and C are equivalent with respect to Y, because all values
-	 * associated to Y in A and the same associated to Y in C, however
-	 * B is independent (occupies another block) because values
-	 * associated to Y in B are different than the values associated to
-	 * Y in A or C.
-	 *
-	 * Thus for this example it would return
-	 *
-	 * {A:2, C:1}
-	 *
-	 * TODO: this should be replaced by a structure considering not
-	 * only equivalence but also implication as well.
-	 */
-	static HandleSeqUCounter group_eq(const HandleSeqSeq& partition,
-	                                  const Handle& var);
-
-	/**
 	 * For each joint variable of pattern (variable that appears in
 	 * more than one partition block) calculate the probability
-	 * estimate of being assigned the same value across all blocks.
+	 * estimate of being assigned the same value across all
+	 * blocks. That implementation takes into account syntactical
+	 * abstraction between blocks in order to better estimate variable
+	 * occurance equality (see the comment above isurp).
 	 */
 	static double eq_prob(const HandleSeqSeq& partition,
 	                      const Handle& pattern,
 	                      const HandleSeq& db);
-
-	/**
-	 * Alternate implementation of eq_prob. Takes into syntactical
-	 * abstraction between blocks in order to better estimate variable
-	 * occurance equality (see the comment above isurp).
-	 */
-	static double eq_prob_alt(const HandleSeqSeq& partition,
-	                          const Handle& pattern,
-	                          const HandleSeq& db);
 
 	/**
 	 * Key of the empirical truth value
