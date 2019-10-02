@@ -349,6 +349,7 @@ void MinerUTest:: test_remove_useless_clauses_2()
 
 	logger().debug() << "pattern = " << oc_to_string(pattern);
 	logger().debug() << "reduced = " << oc_to_string(reduced);
+	logger().debug() << "expect = " << oc_to_string(expect);
 
 	// First check the result is as expected
 	TS_ASSERT(content_eq(reduced, expect));

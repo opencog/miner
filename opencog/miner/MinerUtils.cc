@@ -692,6 +692,90 @@ bool MinerUtils::no_new_variables(const Handle& clause,
 	return false;
 }
 
+bool MinerUtils::is_syntax_more_abstract(const HandleSeq& l_blk,
+                                         const HandleSeq& r_blk,
+                                         const Handle& var)
+{
+	Handle l_pat = MinerUtils::mk_pattern_no_vardecl(l_blk);
+	Handle r_pat = MinerUtils::mk_pattern_no_vardecl(r_blk);
+	return is_syntax_more_abstract(l_pat, r_pat, var);
+}
+
+bool MinerUtils::is_syntax_more_abstract(const Handle& l_pat,
+                                         const Handle& r_pat,
+                                         const Handle& var)
+{
+	Variables l_vars = MinerUtils::get_variables(l_pat);
+	Variables r_vars = MinerUtils::get_variables(r_pat);
+	Handle l_body = MinerUtils::get_body(l_pat);
+	Handle r_body = MinerUtils::get_body(r_pat);
+
+	// Let's first make sure that var is both in l_pat and r_pat
+	if (not l_vars.is_in_varset(var) or not r_vars.is_in_varset(var))
+		return false;
+
+	// Remove var from l_vars and r_vars to be considered as value
+	// rather than variable.
+	l_vars.erase(var);
+	r_vars.erase(var);
+
+	// Find all mappings from variables (except var) to terms
+	Unify unify(l_body, r_body, l_vars, r_vars);
+	Unify::SolutionSet sol = unify();
+
+	// If it is not satisfiable, l_pat is not an abstraction
+	//
+	// TODO: case of nary conjunctions additional care is needed
+	if (not sol.is_satisfiable())
+		return false;
+
+	Unify::TypedSubstitutions tsub = unify.typed_substitutions(sol, r_body);
+
+	// Check that for all mappings no variable in r_vars maps to a
+	// value (non-variable).
+	for (const auto& var2val_map : tsub)
+		for (const auto& var_val : var2val_map.first)
+			if (is_value(var_val, r_vars))
+				return false;
+	return true;
+}
+
+bool MinerUtils::is_more_abstract(const Handle& l_pat,
+                                  const Handle& r_pat,
+                                  const Handle& var)
+{
+	HandleSeq l_clauses = MinerUtils::get_clauses(l_pat);
+	HandleSeq r_clauses = MinerUtils::get_clauses(r_pat);
+	HandleSeq l_scs = connected_subpattern_with_var(l_clauses, var);
+	HandleSeq r_scs = connected_subpattern_with_var(r_clauses, var);
+	return is_more_abstract(l_scs, r_scs, var);
+}
+
+bool MinerUtils::is_more_abstract(const HandleSeq& l_blk,
+                                  const HandleSeq& r_blk,
+                                  const Handle& var)
+{
+	using namespace boost::algorithm;
+	HandleSeqSeq rps = powerseq_without_empty(r_blk);
+	return any_of(partitions(l_blk), [&](const HandleSeqSeq& lp) {
+			return any_of(rps, [&](const HandleSeq& rs) {
+					return all_of(lp, [&](const HandleSeq& lb) {
+							return is_syntax_more_abstract(lb, rs, var);
+						});
+				});
+		});
+}
+
+HandleSeqSeq MinerUtils::powerseq_without_empty(const HandleSeq& blk)
+{
+	HandleSetSet pset = powerset(HandleSet(blk.begin(), blk.end()));
+	HandleSeqSeq pseq;
+	for (const HandleSet& set : pset)
+		if (not set.empty())
+			pseq.push_back(HandleSeq(set.begin(), set.end()));
+	return pseq;
+}
+
 Handle MinerUtils::alpha_convert(const Handle& pattern,
                                  const Variables& other_vars)
 {
@@ -722,6 +806,99 @@ Handle MinerUtils::alpha_convert(const Handle& pattern,
 
 	// Reconstruct alpha converted pattern
 	return Handle(createLambdaLink(nvardecl, nbody));
+}
+
+bool MinerUtils::is_value(const Unify::HandleCHandleMap::value_type& var_val,
+                          const Variables& vars)
+{
+	return vars.is_in_varset(var_val.first)
+		and not var_val.second.is_free_variable();
+}
+
+HandleSeqSeq MinerUtils::connected_subpatterns_with_var(
+	const HandleSeqSeq& partition,
+	const Handle& var)
+{
+	HandleSeqSeq var_partition;
+	for (const HandleSeq& blk : partition) {
+		HandleSeq sc_blk = connected_subpattern_with_var(blk, var);
+		if (not sc_blk.empty()) {
+			var_partition.push_back(sc_blk);
+		}
+	}
+	return var_partition;
+}
+
+HandleSeq MinerUtils::connected_subpattern_with_var(const HandleSeq& blk,
+                                                    const Handle& var)
+{
+	if (not is_free_in_any_tree(blk, var))
+		return {};
+
+	HandleSeqSeq sccs = MinerUtils::get_components(blk);
+	for (const HandleSeq& scc : sccs)
+		if (is_free_in_any_tree(scc, var))
+			return scc;
+	return {};
+}
+
+HandleSeqSeqSeq MinerUtils::combinatorial_insert(const Handle& h,
+                                                 const HandleSeqSeq& hss)
+{
+	return combinatorial_insert(h, hss.begin(), hss.end());
+}
+
+HandleSeqSeqSeq MinerUtils::combinatorial_insert(const Handle& h,
+                                                 HandleSeqSeq::const_iterator from,
+                                                 HandleSeqSeq::const_iterator to)
+{
+	// Base case
+	if (from == to)
+		return {{{h}}};
+
+	// Recursive case
+	HandleSeq head = *from;       // Copy because will get modified
+	HandleSeqSeqSeq rst;
+	for (auto x : combinatorial_insert(h, ++from, to)) {
+		x.push_back(head);
+		rst.push_back(x);
+	}
+	head.push_back(h);
+	HandleSeqSeq fst(from, to);
+	fst.push_back(head);
+	rst.push_back(fst);
+	return rst; 
+}
+
+HandleSeqSeqSeq MinerUtils::partitions(const HandleSeq& hs)
+{
+	return partitions(hs.begin(), hs.end());
+}
+
+HandleSeqSeqSeq MinerUtils::partitions(HandleSeq::const_iterator from,
+                                       HandleSeq::const_iterator to)
+{
+	// Base case
+	if (from == to)
+		return {{}};
+
+	// Recursive case
+	Handle head = *from;
+	HandleSeqSeqSeq res;
+	for (const HandleSeqSeq& partition : partitions(++from, to)) {
+		HandleSeqSeqSeq subparts = combinatorial_insert(head, partition);
+		res.insert(res.end(), subparts.begin(), subparts.end());
+	}
+	return res;
+}
+
+HandleSeqSeqSeq MinerUtils::partitions_without_pattern(const Handle& pattern)
+{
+	HandleSeqSeqSeq prtns = partitions(MinerUtils::get_clauses(pattern));
+	prtns.resize(prtns.size() - 1);
+	// prtns.resize(1); // comment this output to only consider
+   //                  // singleton blocks (convenient for debugging)
+	return prtns;
 }
 
 Handle MinerUtils::expand_conjunction_disconnect(const Handle& cnjtion,
@@ -939,6 +1116,20 @@ double MinerUtils::support_mem(const Handle& pattern,
 		set_support(pattern, sup);
 	}
 	return sup;
+}
+
+std::string oc_to_string(const HandleSeqSeqSeq& hsss,
+                         const std::string& indent)
+{
+	std::stringstream ss;
+	ss << indent << "size = " << hsss.size() << std::endl;
+	size_t i = 0;
+	for (const HandleSeqSeq& hss : hsss) {
+		ss << indent << "atoms sets[" << i << "]:" << std::endl
+		   << oc_to_string(hss, indent + oc_to_string_indent);
+		i++;
+	}
+	return ss.str();
 }
 
 } // namespace opencog
