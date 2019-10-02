@@ -973,6 +973,8 @@ void MinerUTest::test_AAAA()
 
 void MinerUTest::test_transitivity()
 {
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
 	// Mine transitivity pattern using incremental conjunction
 	// expansion. Check with and without enforce specialization.
 
@@ -999,6 +1001,8 @@ void MinerUTest::test_transitivity()
 
 void MinerUTest::test_long_transitivity()
 {
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
 	// Mine transitivity pattern using incremental conjunction
 	// expansion. Check with and without enforce specialization.
 
@@ -1007,15 +1011,20 @@ void MinerUTest::test_long_transitivity()
 		InhAB = al(INHERITANCE_LINK, A, B),
 		InhBC = al(INHERITANCE_LINK, B, C),
 		InhCD = al(INHERITANCE_LINK, C, D);
-	HandleSeq db{InhAB, InhBC};
+	HandleSeq db{InhAB, InhBC, InhCD};
 
 	// Run URE pattern miner without enforcing specialization (which is
 	// necessary to mine transitivity).
 	int ms = 1;
-	// TMP: Iteration 6, last result contains redundant
-	// abstraction. Actually doesn't work because it introduces a new
-	// variable. See the 17 total results to find one.
-	Handle results = ure_pm(db, ms, 500, top, true, 3, 4, false);
+	int max_iteration = 50;
+	bool conjunction_expansion = true;
+	unsigned max_conjuncts = 3;
+	unsigned max_variables = 4;
+	unsigned max_cnjexp_variables = 4;
+	bool enforce_specialization = false;
+	Handle results = ure_pm(db, ms, max_iteration, top, conjunction_expansion,
+	                        max_conjuncts, max_variables, max_cnjexp_variables,
+	                        enforce_specialization);
 	HandleSeq clauses = {al(INHERITANCE_LINK, X, Y),
 	                     al(INHERITANCE_LINK, Y, Z),
 	                     al(INHERITANCE_LINK, Z, W)};
@@ -1030,6 +1039,8 @@ void MinerUTest::test_long_transitivity()
 
 void MinerUTest::test_no_transitivity()
 {
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
 	// Like test_transitivity but enforce specialization, thus should
 	// miss the transitivity pattern.
 
