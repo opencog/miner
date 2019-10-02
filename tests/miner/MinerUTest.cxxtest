@@ -61,7 +61,7 @@ private:
 	Handle X, Y, Z, W;
 
 	// Constants
-	Handle A, A1, A2, A3, B, C, C1, C2, C3, D, E, F, G, H;
+	Handle A, A1, A2, A3, B, C, C0, C1, C2, C3, D, E, F, G, H;
 
 	// Pattern miner rule base
 	Handle pm_rb;
@@ -142,6 +142,13 @@ public:
 	void tearDown();
 
 	// Auxiliary methods
+	void test_partitions();
+	void test_is_syntax_more_abstract();
+	void test_is_more_abstract_1();
+	void test_is_more_abstract_2();
+	void test_is_more_abstract_3();
+	// TODO: fix is_more_abstract to support that case
+	void xtest_is_more_abstract_4();
 	void test_remove_useless_clauses_1();
 	void test_remove_useless_clauses_2();
 	void test_compose_1();
@@ -293,6 +300,7 @@ void MinerUTest::setUp()
 	A3 = an(CONCEPT_NODE, "A3");
 	B = an(CONCEPT_NODE, "B");
 	C = an(CONCEPT_NODE, "C");
+	C0 = an(CONCEPT_NODE, "C0");
 	C1 = an(CONCEPT_NODE, "C1");
 	C2 = an(CONCEPT_NODE, "C2");
 	C3 = an(CONCEPT_NODE, "C3");
@@ -315,6 +323,114 @@ void MinerUTest::tearDown()
 {
 	_as.clear();
 	_tmp_as.clear();
+}
+
+// Test partition({A,B,C})
+void MinerUTest::test_partitions()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
+	Handle A = an(CONCEPT_NODE, "A"),
+		B = an(CONCEPT_NODE, "B"),
+		C = an(CONCEPT_NODE, "C");
+	HandleSeqSeqSeq result = MinerUtils::partitions({A, B, C}),
+		expect = { { {A}, {C}, {B} },
+		           { {C,A}, {B} },
+		           { {C}, {B,A} },
+		           { {A}, {C,B} },
+		           { {C,B,A} } };
+
+	logger().debug() << "result = " << oc_to_string(result);
+	logger().debug() << "expect = " << oc_to_string(expect);
+
+	TS_ASSERT_EQUALS(result, expect);
+}
+
+void MinerUTest::test_is_syntax_more_abstract()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
+	HandleSeq l_blk{al(LIST_LINK, Z, W, X)};
+	HandleSeq r_blk{al(LIST_LINK, X, Y, X)};
+
+	// Left block/subpattern is syntactically more abstract than
+	// right block/subpattern, relative to X.
+	TS_ASSERT(MinerUtils::is_more_abstract(l_blk, r_blk, X));
+}
+
+void MinerUTest::test_is_more_abstract_1()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
+	Handle l_pat = al(LAMBDA_LINK,
+	                  al(VARIABLE_LIST, X, Y, Z),
+	                  al(PRESENT_LINK,
+	                     al(INHERITANCE_LINK, X, Z),
+	                     al(INHERITANCE_LINK, Y, Z)));
+	Handle r_pat = al(LAMBDA_LINK,
+	                  Z,
+	                  al(INHERITANCE_LINK, C0, Z));
+
+	// Left pattern is more abstract than right pattern, relative to Z.
+	TS_ASSERT(MinerUtils::is_more_abstract(l_pat, r_pat, Z));
+}
+
+void MinerUTest::test_is_more_abstract_2()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
+	Handle l_pat = al(LAMBDA_LINK,
+	                  al(VARIABLE_LIST, X, Y),
+	                  al(INHERITANCE_LINK, X, Z));
+	Handle r_pat = al(LAMBDA_LINK,
+	                  al(VARIABLE_LIST, X, Y, Z),
+	                  al(PRESENT_LINK,
+	                     al(INHERITANCE_LINK, X, C0),
+	                     al(INHERITANCE_LINK, Z, Y),
+	                     al(INHERITANCE_LINK, Z, C1)));
+
+	// Left pattern is more abstract than right pattern, relative to X.
+	TS_ASSERT(MinerUtils::is_more_abstract(l_pat, r_pat, X));
+}
+
+void MinerUTest::test_is_more_abstract_3()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
+	Handle l_pat = al(LAMBDA_LINK,
+	                  al(VARIABLE_LIST, X, Y, Z),
+	                  al(PRESENT_LINK,
+	                     al(INHERITANCE_LINK, X, Y),
+	                     al(INHERITANCE_LINK, Z, C1)));
+	Handle r_pat = al(LAMBDA_LINK,
+	                  al(VARIABLE_LIST, X, Z),
+	                  al(PRESENT_LINK,
+	                     al(INHERITANCE_LINK, X, C0),
+	                     al(INHERITANCE_LINK, Z, Y)));
+
+	// Left pattern is more abstract than right pattern, relative to X.
+	TS_ASSERT(MinerUtils::is_more_abstract(l_pat, r_pat, X));
+
+	// Left pattern is more abstract than right pattern, relative to Y.
+	TS_ASSERT(MinerUtils::is_more_abstract(l_pat, r_pat, Y));
+}
+
+void MinerUTest::xtest_is_more_abstract_4()
+{
+	Handle l_pat = al(LAMBDA_LINK,
+	                  al(VARIABLE_LIST, X, Y, Z),
+	                  al(PRESENT_LINK,
+	                     al(INHERITANCE_LINK, X, Y),
+	                     al(INHERITANCE_LINK, Z, Y)));
+	Handle r_pat = al(LAMBDA_LINK,
+	                  al(VARIABLE_LIST, X, Z),
+	                  al(INHERITANCE_LINK, Z, C0));
+
+	// Left pattern is more abstract than right pattern, relative to X.
+	TS_ASSERT(MinerUtils::is_more_abstract(l_pat, r_pat, X));
+
+	// Left pattern is more abstract than right pattern, relative to Y.
+	TS_ASSERT(MinerUtils::is_more_abstract(l_pat, r_pat, Y));
 }
 
 void MinerUTest::test_remove_useless_clauses_1()
