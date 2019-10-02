@@ -412,6 +412,38 @@ public:
 	static void remove_redundant_clauses(HandleSeq& clauses);
 
 	/**
+	 * Remove clauses that are more abstract than all other clauses,
+	 * thus should not change the semantics of the pattern.
+	 *
+	 * For instance given the clauses
+	 *
+	 *     (Inheritance (Variable "$X") (Concept "pet"))
+	 *     (Inheritance (Concept "cat") (Variable "$Y"))
+	 *     (Inheritance (Variable "$X") (Variable "$Y")))
+	 *
+	 * the last one is more abstract than either of the first 2, thus
+	 * can be removed.
+	 */
+	static void remove_abstract_clauses(const Handle& vardecl,
+	                                    HandleSeq& clauses);
+
+	/**
+	 * Return true iff clause does not introduce new variables already
+	 * in clauses.
+	 *
+	 * For instance given
+	 *
+	 * clause = (Inheritance (Variable "$X") (Variable "$Y"))
+	 *
+	 * clauses = { (Inheritance (Variable "$X") (Concept "pet"))
+	 *             (Inheritance (Concept "cat") (Variable "$Y")) }
+	 *
+	 * all variables in clause appear in clauses so it returns true.
+	 */
+	static bool no_new_variables(const Handle& clause,
+	                             const HandleSeq& clauses);
+
+	/**
 	 * Alpha convert pattern so that none of its variables collide with
 	 * the variables in other_vars.
 	 */

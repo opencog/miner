@@ -638,7 +638,7 @@ void MinerUtils::remove_useless_clauses(const Handle& vardecl, HandleSeq& clause
 {
 	remove_constant_clauses(vardecl, clauses);
 	remove_redundant_subclauses(clauses);
-	// TODO: add remove_abstract_clauses(vardecl, clauses);
+	remove_abstract_clauses(vardecl, clauses);
 }
 
 void MinerUtils::remove_constant_clauses(const Handle& vardecl, HandleSeq& clauses)
@@ -677,6 +677,19 @@ void MinerUtils::remove_redundant_clauses(HandleSeq& clauses)
 	boost::erase(clauses,
 	             boost::unique<boost::return_found_end, HandleSeq, HandleEqual>
 	             (clauses, HandleEqual()));
+}
+
+void MinerUtils::remove_abstract_clauses(const Handle& vardecl,
+                                         HandleSeq& clauses)
+{
+	// TODO
+}
+
+bool MinerUtils::no_new_variables(const Handle& clause,
+                                  const HandleSeq& clauses)
+{
+	// TODO
+	return false;
 }
 
 Handle MinerUtils::alpha_convert(const Handle& pattern,
