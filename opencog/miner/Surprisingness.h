@@ -715,15 +715,6 @@ public:
 	                          const Handle& r_pat,
 	                          const Handle& var);
 
-	static HandleSeqUCounter::const_iterator find_equivalent(
-		const HandleSeqUCounter& partition_c,
-		const HandleSeq& block,
-		const Handle& var);
-	static HandleSeqUCounter::iterator find_equivalent(
-		HandleSeqUCounter& partition_c,
-		const HandleSeq& block,
-		const Handle& var);
-
 	/**
 	 * Tell whether the left block/subpattern is is syntactically more
 	 * abstract than the right block/subpattern relative to a given
