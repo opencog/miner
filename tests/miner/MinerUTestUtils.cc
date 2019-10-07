@@ -26,6 +26,8 @@
 
 #include <boost/range/algorithm/sort.hpp>
 
+#include <opencog/util/random.h>
+#include <opencog/util/algorithm.h>
 #include <opencog/guile/SchemeSmob.h>
 #include <opencog/ure/forwardchainer/ForwardChainer.h>
 #include <opencog/ure/backwardchainer/BackwardChainer.h>
@@ -350,4 +352,30 @@ HandleSeq MinerUTestUtils::ure_surp(AtomSpace& as,
 			return lh->getTruthValue()->get_mean() > rh->getTruthValue()->get_mean();
 		});
 	return surp_results_seq;
+}
+
+HandleSeq MinerUTestUtils::populate_nodes(AtomSpace& as,
+                                          unsigned n,
+                                          Type type,
+                                          const std::string& prefix)
+{
+	// Create nodes i for i in [0, n)
+	HandleSeq nodes(n);
+	for (unsigned i = 0; i < n; i++)
+		nodes[i] = as.add_node(type, prefix + std::to_string(i));
+	return nodes;
+}
+
+HandleSeq MinerUTestUtils::populate_links(AtomSpace& as,
+                                          const HandleSeq& hs,
+                                          Type type,
+                                          unsigned arity,
+                                          double p)
+{
+	// Use set to ignore duplicate in case type is unordered
+	HandleSet links;
+	for (const HandleSeq& outgoing : cartesian_product(hs, arity))
+		if (biased_randbool(p))
+			links.insert(as.add_link(type, outgoing));
+	return HandleSeq(links.begin(), links.end());
 }

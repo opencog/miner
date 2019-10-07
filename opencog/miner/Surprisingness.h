@@ -23,11 +23,9 @@
 #ifndef OPENCOG_SURPRISINGNESS_H_
 #define OPENCOG_SURPRISINGNESS_H_
 
-#include <opencog/util/empty_string.h>
 #include <opencog/atoms/base/Handle.h>
 #include <opencog/atoms/core/LambdaLink.h>
 #include <opencog/atomspace/AtomSpace.h>
-#include <opencog/unify/Unify.h>
 #include <opencog/ure/BetaDistribution.h>
 
 namespace opencog
@@ -36,9 +34,6 @@ namespace opencog
 /**
  * Collection of tools to calculate pattern surprisingness.
  */
-
-typedef std::vector<HandleSeqSeq> HandleSeqSeqSeq;
-typedef Counter<HandleSeq, unsigned> HandleSeqUCounter;
 
 class Surprisingness {
 public:
@@ -352,63 +347,6 @@ public:
 	static double dst_from_interval(double l, double u, double v);
 
 	/**
-	 * Given a handle h and a sequence of sequences of handles, insert
-	 * h in front of each subsequence, duplicating each sequence with
-	 * its augmented subsequence. For instance
-	 *
-	 * h = D
-	 * hss = [[A],[B,C]]
-	 *
-	 * returns
-	 *
-	 * [[[D,A],[B,C]],[[A],[D,B,C]],[[A],[B,C],[D]]]
-	 */
-	static HandleSeqSeqSeq combinatorial_insert(const Handle& h,
-	                                            const HandleSeqSeq& hss);
-	static HandleSeqSeqSeq combinatorial_insert(const Handle& h,
-	                                            HandleSeqSeq::const_iterator from,
-	                                            HandleSeqSeq::const_iterator to);
-
-	/**
-	 * Given a HandleSeq hs, produce all partitions of hs. For instance
-	 * if hs is the following
-	 *
-	 * c = [A,B,C]
-	 *
-	 * return
-	 *
-	 * [[[A],[C],[B]],
-	 *  [[C,A],[B]],
-	 *  [[C],[B,A]],
-	 *  [[A],[C,B]],
-	 *  [[C,B,A]]]
-	 */
-	static HandleSeqSeqSeq partitions(const HandleSeq& hs);
-	static HandleSeqSeqSeq partitions(HandleSeq::const_iterator from,
-	                                  HandleSeq::const_iterator to);
-
-	/**
-	 * Like partitions but takes a pattern. Also the partition block
-	 * corresponding to the full set has been removed (since it is
-	 * already the block corresponding to the full pattern). For
-	 * instance
-	 *
-	 * pattern = Lambda
-	 *             And
-	 *               A
-	 *               B
-	 *               C
-	 *
-	 * return
-	 *
-	 * [[[A],[C],[B]],
-	 *  [[C,A],[B]],
-	 *  [[C],[B,A]],
-	 *  [[A],[C,B]]]
-	 */
-	static HandleSeqSeqSeq partitions_without_pattern(const Handle& pattern);
-
-	/**
 	 * Convert a partition block [A,B] into a pattern like
 	 *
 	 * Lambda
@@ -690,7 +628,7 @@ public:
 	                           const Handle& var);
 
 	/**
-	 * Tell whether 2 blocks/subpatterns are equivalent relatie to a
+	 * Tell whether 2 blocks/subpatterns are equivalent relative to a
 	 * given variable. Basically, whether both block are semantically
 	 * equivalent and var is in the same position in both of them.
 	 *
@@ -715,98 +653,6 @@ public:
 	                          const Handle& r_pat,
 	                          const Handle& var);
 
-	static HandleSeqUCounter::const_iterator find_equivalent(
-		const HandleSeqUCounter& partition_c,
-		const HandleSeq& block,
-		const Handle& var);
-	static HandleSeqUCounter::iterator find_equivalent(
-		HandleSeqUCounter& partition_c,
-		const HandleSeq& block,
-		const Handle& var);
-
-	/**
-	 * Tell whether the left block/subpattern is is syntactically more
-	 * abstract than the right block/subpattern relative to a given
-	 * variable.
-	 *
-	 * For instance
-	 *
-	 * l_blk = { List X Y Z }
-	 * r_blk = { List W A Z }
-	 *
-	 * l_blk is more abstract than r_blk relative to Z because the
-	 * matching values of Z in l_blk is a subset of the matching values
-	 * of Z in l_blk.
-	 */
-	static bool is_syntax_more_abstract(const HandleSeq& l_blk,
-	                                    const HandleSeq& r_blk,
-	                                    const Handle& var);
-
-	/**
-	 * List above but takes scope links instead of blocks (whether each
-	 * scope link has the conjunction of clauses of its block as body).
-	 *
-	 * TODO: for now, this code relies on unification. However it can
-	 * certainly be optimized by not relying on unification and being
-	 * re-implemented instead, and perhaps it could then be merged to
-	 * the unification code.
-	 */
-	static bool is_syntax_more_abstract(const Handle& l_pat,
-	                                    const Handle& r_pat,
-	                                    const Handle& var);
-
-	/**
-	 * Like is_syntax_more_abstract but takes into account a bit of
-	 * semantics as well (though none that requires data), in
-	 * particular it handles conjunctions of clauses such that l_pat is
-	 * more abstract if there exists a partition lp of l_pat (meaning a
-	 * partition of conjunctions of clauses in l_pat) such that there
-	 * exists a subset rs of r_pat (meaning a subset of clauses of
-	 * r_pat) such that rs is a syntactic specialization, relative to
-	 * var, of each block lb of lp.
-	 *
-	 * For instance
-	 *
-	 * l_pat = Lambda
-	 *           X Y Z
-	 *           And
-	 *             Inheritance
-	 *               X
-	 *               Z
-	 *             Inheritance
-	 *               Y
-	 *               Z
-	 *
-	 * r_pat = Lambda
-	 *           Z
-	 *           Inheritance
-	 *             A
-	 *             Z
-	 *
-	 * var = Z
-	 *
-	 * l_pat is indeed an abstraction of r_pat because there exists a
-	 * partition lp = { {Inheritance X Z}, {Inheritance Y Z} } such
-	 * that the subset { Inheritance A Z} is a syntactic specialization
-	 * of each block of lp.
-	 */
-	static bool is_more_abstract(const Handle& l_pat,
-	                             const Handle& r_pat,
-	                             const Handle& var);
-
-	/**
-	 * Like above but consider list of clauses instead of patterns.
-	 */
-	static bool is_more_abstract(const HandleSeq& l_blk,
-	                             const HandleSeq& r_blk,
-	                             const Handle& var);
-
-	/**
-	 * Like powerset but return a sequence of sequences instead of set
-	 * of sets. Discard the empty sequence.
-	 */
-	static HandleSeqSeq powerseq_without_empty(const HandleSeq& blk);
-
 	/**
 	 * Return true iff l_blk is strictly more abstract than r_blk
 	 * relative to var. That is more abstract and not equivalent.
@@ -816,96 +662,22 @@ public:
 	                                      const Handle& var);
 
 	/**
-	 * Return true iff var_val is a pair with the first element a
-	 * variable in vars, and the second element a value (non-variable).
-	 */
-	static bool is_value(const Unify::HandleCHandleMap::value_type& var_val,
-	                     const Variables& vars);
-
-	/**
 	 * Sort the partition such that if block A is strictly more
 	 * abstract than block B relative var, then A occurs before B.
 	 */
 	static void rank_by_abstraction(HandleSeqSeq& partition, const Handle& var);
 
 	/**
-	 * Copy all subpatterns/blocks where var appears. Also remove all
-	 * parts of the subpatterns that are not strongly connected with to
-	 * it relative to var.
-	 *
-	 * So for instance
-	 *
-	 * partition = { { Inheritance X Y, Inheritance Z A},
-	 *               { Inheritance X B, Inheritance Z Y} }
-	 *
-	 * var = Y
-	 *
-	 * returns
-	 *
-	 * { {Inheritance Z Y } }
-	 *
-	 * because
-	 *
-	 * 1. Y only appears in the second block
-	 *
-	 * 2. within that block
-	 *
-	 *    Inheritance X B
-	 *
-	 *    is not strongly connected to the component where Y appears.
-	 *
-	 * Ignoring non-strongly connected components allows to speed up
-	 * Surprisingness::value_count as well as covering more cases in
-	 * is_more_abstract.
-	 */
-	static HandleSeqSeq connected_subpatterns_with_var(const HandleSeqSeq& partition,
-	                                                   const Handle& var);
-	static HandleSeq connected_subpattern_with_var(const HandleSeq& blk,
-	                                               const Handle& var);
-
-	/**
-	 * Given subpatterns linked by a variable, count how many
-	 * subpatterns are equivalent with respect to this variable.
-	 *
-	 * For instance given patterns
-	 *
-	 * A = Inh X Y
-	 * B = Inh Y Z
-	 * C = Inh W Y
-	 *
-	 * A and C are equivalent with respect to Y, because all values
-	 * associated to Y in A and the same associated to Y in C, however
-	 * B is independent (occupies another block) because values
-	 * associated to Y in B are different than the values associated to
-	 * Y in A or C.
-	 *
-	 * Thus for this example it would return
-	 *
-	 * {A:2, C:1}
-	 *
-	 * TODO: this should be replaced by a structure considering not
-	 * only equivalence but also implication as well.
-	 */
-	static HandleSeqUCounter group_eq(const HandleSeqSeq& partition,
-	                                  const Handle& var);
-
-	/**
 	 * For each joint variable of pattern (variable that appears in
 	 * more than one partition block) calculate the probability
-	 * estimate of being assigned the same value across all blocks.
+	 * estimate of being assigned the same value across all
+	 * blocks. That implementation takes into account syntactical
+	 * abstraction between blocks in order to better estimate variable
+	 * occurance equality (see the comment above isurp).
 	 */
 	static double eq_prob(const HandleSeqSeq& partition,
 	                      const Handle& pattern,
 	                      const HandleSeq& db);
-
-	/**
-	 * Alternate implementation of eq_prob. Takes into syntactical
-	 * abstraction between blocks in order to better estimate variable
-	 * occurance equality (see the comment above isurp).
-	 */
-	static double eq_prob_alt(const HandleSeqSeq& partition,
-	                          const Handle& pattern,
-	                          const HandleSeq& db);
 
 	/**
 	 * Key of the empirical truth value
@@ -988,13 +760,6 @@ public:
 	 */
 	static void log_pdf(const BetaDistribution& bd, int bins);
 };
-
-/**
- * Given a partition, that is a sequence of blocks, where each
- * block is a sequence of handles, return
- */
-std::string oc_to_string(const HandleSeqSeqSeq& hsss,
-                         const std::string& indent=empty_string);
 
 } // ~namespace opencog
 

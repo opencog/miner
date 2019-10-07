@@ -455,7 +455,8 @@ Handle MinerUtils::mk_pattern_filtering_vardecl(const Handle& vardecl,
 Handle MinerUtils::mk_pattern(const Handle& vardecl,
                               const HandleSeq& clauses)
 {
-	return Handle(createLambdaLink(vardecl, mk_body(clauses)));
+	Handle body = mk_body(clauses);
+	return body ? Handle(createLambdaLink(vardecl, body)) : Handle::UNDEFINED;
 }
 
 HandleSeq MinerUtils::get_component_patterns(const Handle& pattern)
@@ -638,6 +639,7 @@ void MinerUtils::remove_useless_clauses(const Handle& vardecl, HandleSeq& clause
 {
 	remove_constant_clauses(vardecl, clauses);
 	remove_redundant_subclauses(clauses);
+	remove_abstract_clauses(clauses);
 }
 
 void MinerUtils::remove_constant_clauses(const Handle& vardecl, HandleSeq& clauses)
@@ -656,17 +658,8 @@ void MinerUtils::remove_redundant_subclauses(HandleSeq& clauses)
 {
 	// Check that each clause is not a subtree of another clause,
 	// remove it otherwise.
-	for (auto it = clauses.begin(); it != clauses.end();) {
-		// Take all clauses except *it
-		HandleSeq others(clauses.begin(), it);
-		others.insert(others.end(), std::next(it), clauses.end());
-
-		// Make sure *it is not a subtree of any other
-		if (is_unquoted_unscoped_in_any_tree(others, *it))
-			it = clauses.erase(it);
-		else
-			++it;
-	}
+	remove_if(clauses, [](const Handle& clause, const HandleSeq& others) {
+			return is_unquoted_unscoped_in_any_tree(others, clause); });
 }
 
 void MinerUtils::remove_redundant_clauses(HandleSeq& clauses)
@@ -676,6 +669,134 @@ void MinerUtils::remove_redundant_clauses(HandleSeq& clauses)
 	boost::erase(clauses,
 	             boost::unique<boost::return_found_end, HandleSeq, HandleEqual>
 	             (clauses, HandleEqual()));
+}
+
+void MinerUtils::remove_abstract_clauses(HandleSeq& clauses)
+{
+	// For each clause, for each variable of that clause, check whether
+	// such clause is an abstraction of all other clauses where such
+	// variable appears, if so, then it can be removed.
+	remove_if(clauses, &MinerUtils::is_more_abstract_foreach_var);
+}
+
+bool MinerUtils::has_only_joint_variables(const Handle& clause,
+                                          const HandleSeq& clauses)
+{
+	// TODO: See Surprisingness::joint_variables for help.
+	return false;
+}
+
+bool MinerUtils::is_blk_syntax_more_abstract(const HandleSeq& l_blk,
+                                             const HandleSeq& r_blk,
+                                             const Handle& var)
+{
+	Handle l_pat = MinerUtils::mk_pattern_no_vardecl(l_blk);
+	Handle r_pat = MinerUtils::mk_pattern_no_vardecl(r_blk);
+	return is_pat_syntax_more_abstract(l_pat, r_pat, var);
+}
+
+bool MinerUtils::is_pat_syntax_more_abstract(const Handle& l_pat,
+                                             const Handle& r_pat,
+                                             const Handle& var)
+{
+	Variables l_vars = MinerUtils::get_variables(l_pat);
+	Variables r_vars = MinerUtils::get_variables(r_pat);
+	Handle l_body = MinerUtils::get_body(l_pat);
+	Handle r_body = MinerUtils::get_body(r_pat);
+
+	// Let's first make sure that var is both in l_pat and r_pat
+	if (not l_vars.is_in_varset(var) or not r_vars.is_in_varset(var))
+		return false;
+
+	// Remove var from l_vars and r_vars to be considered as value
+	// rather than variable.
+	l_vars.erase(var);
+	r_vars.erase(var);
+
+	// Find all mappings from variables (except var) to terms.
+	//
+	// TODO: maybe this can be optimized by using matching instead of
+	// unification.
+	Unify unify(l_body, r_body, l_vars, r_vars);
+	Unify::SolutionSet sol = unify();
+
+	// If it is not satisfiable, l_pat is not an abstraction
+	//
+	// TODO: case of nary conjunctions additional care is needed
+	if (not sol.is_satisfiable())
+		return false;
+
+	Unify::TypedSubstitutions tsub = unify.typed_substitutions(sol, r_body);
+
+	// Check that for all mappings no variable in r_vars maps to a
+	// value (non-variable) or var (which is viewed as value here).
+	for (const auto& var2val_map : tsub)
+		for (const auto& var_val : var2val_map.first)
+			if (is_value(var_val, r_vars, var))
+				return false;
+	return true;
+}
+
+bool MinerUtils::is_pat_more_abstract(const Handle& l_pat,
+                                      const Handle& r_pat,
+                                      const Handle& var)
+{
+	HandleSeq l_clauses = MinerUtils::get_clauses(l_pat);
+	HandleSeq r_clauses = MinerUtils::get_clauses(r_pat);
+	HandleSeq l_scs = connected_subpattern_with_var(l_clauses, var);
+	HandleSeq r_scs = connected_subpattern_with_var(r_clauses, var);
+	return is_blk_more_abstract(l_scs, r_scs, var);
+}
+
+bool MinerUtils::is_blk_more_abstract(const HandleSeq& l_blk,
+                                      const HandleSeq& r_blk,
+                                      const Handle& var)
+{
+	using namespace boost::algorithm;
+	HandleSeqSeq rps = powerseq_without_empty(r_blk);
+	return any_of(partitions(l_blk), [&](const HandleSeqSeq& lp) {
+			return any_of(rps, [&](const HandleSeq& rs) {
+					return all_of(lp, [&](const HandleSeq& lb) {
+							return is_blk_syntax_more_abstract(lb, rs, var);
+						});
+				});
+		});
+}
+
+bool MinerUtils::is_more_abstract_foreach_var(const Handle& clause,
+                                              const HandleSeq& others)
+{
+	HandleSet vars = get_free_variables(clause);
+	for (const Handle& var : vars) {
+		// Filter in all other clauses containing var
+		HandleSeq ov;
+		for (const Handle& other : others)
+			if (is_free_in_tree(other, var))
+				ov.push_back(other);
+
+		// If var appears nowhere in others, then return false, because
+		// it means such pattern brings something about that variable
+		// that no other pattern brings, thus cannot be an abstraction.
+		if (ov.empty())
+			return false;
+
+		// Check if clause is an abstraction of each clause in ov
+		// relative to var
+		if (not boost::algorithm::all_of(ov, [&](const Handle& other) {
+					return is_blk_syntax_more_abstract({clause}, {other}, var); }))
+			return false;
+	}
+	return true;
+}
+
+HandleSeqSeq MinerUtils::powerseq_without_empty(const HandleSeq& blk)
+{
+	HandleSetSet pset = powerset(HandleSet(blk.begin(), blk.end()));
+	HandleSeqSeq pseq;
+	for (const HandleSet& set : pset)
+		if (not set.empty())
+			pseq.push_back(HandleSeq(set.begin(), set.end()));
+	return pseq;
 }
 
 Handle MinerUtils::alpha_convert(const Handle& pattern,
@@ -708,6 +829,101 @@ Handle MinerUtils::alpha_convert(const Handle& pattern,
 
 	// Reconstruct alpha converted pattern
 	return Handle(createLambdaLink(nvardecl, nbody));
+}
+
+bool MinerUtils::is_value(const Unify::HandleCHandleMap::value_type& var_val,
+                          const Variables& vars,
+                          const Handle& var)
+{
+	return vars.is_in_varset(var_val.first)
+		and (var_val.second == Unify::CHandle(var)
+		     or not var_val.second.is_free_variable());
+}
+
+HandleSeqSeq MinerUtils::connected_subpatterns_with_var(
+	const HandleSeqSeq& partition,
+	const Handle& var)
+{
+	HandleSeqSeq var_partition;
+	for (const HandleSeq& blk : partition) {
+		HandleSeq sc_blk = connected_subpattern_with_var(blk, var);
+		if (not sc_blk.empty()) {
+			var_partition.push_back(sc_blk);
+		}
+	}
+	return var_partition;
+}
+
+HandleSeq MinerUtils::connected_subpattern_with_var(const HandleSeq& blk,
+                                                    const Handle& var)
+{
+	if (not is_free_in_any_tree(blk, var))
+		return {};
+
+	HandleSeqSeq sccs = MinerUtils::get_components(blk);
+	for (const HandleSeq& scc : sccs)
+		if (is_free_in_any_tree(scc, var))
+			return scc;
+	return {};
+}
+
+HandleSeqSeqSeq MinerUtils::combinatorial_insert(const Handle& h,
+                                                 const HandleSeqSeq& hss)
+{
+	return combinatorial_insert(h, hss.begin(), hss.end());
+}
+
+HandleSeqSeqSeq MinerUtils::combinatorial_insert(const Handle& h,
+                                                 HandleSeqSeq::const_iterator from,
+                                                 HandleSeqSeq::const_iterator to)
+{
+	// Base case
+	if (from == to)
+		return {{{h}}};
+
+	// Recursive case
+	HandleSeq head = *from;       // Copy because will get modified
+	HandleSeqSeqSeq rst;
+	for (auto x : combinatorial_insert(h, ++from, to)) {
+		x.push_back(head);
+		rst.push_back(x);
+	}
+	head.push_back(h);
+	HandleSeqSeq fst(from, to);
+	fst.push_back(head);
+	rst.push_back(fst);
+	return rst; 
+}
+
+HandleSeqSeqSeq MinerUtils::partitions(const HandleSeq& hs)
+{
+	return partitions(hs.begin(), hs.end());
+}
+
+HandleSeqSeqSeq MinerUtils::partitions(HandleSeq::const_iterator from,
+                                       HandleSeq::const_iterator to)
+{
+	// Base case
+	if (from == to)
+		return {{}};
+
+	// Recursive case
+	Handle head = *from;
+	HandleSeqSeqSeq res;
+	for (const HandleSeqSeq& partition : partitions(++from, to)) {
+		HandleSeqSeqSeq subparts = combinatorial_insert(head, partition);
+		res.insert(res.end(), subparts.begin(), subparts.end());
+	}
+	return res;
+}
+
+HandleSeqSeqSeq MinerUtils::partitions_without_pattern(const Handle& pattern)
+{
+	HandleSeqSeqSeq prtns = partitions(MinerUtils::get_clauses(pattern));
+	prtns.resize(prtns.size() - 1);
+	// prtns.resize(1); // comment this output to only consider
+   //                  // singleton blocks (convenient for debugging)
+	return prtns;
 }
 
 Handle MinerUtils::expand_conjunction_disconnect(const Handle& cnjtion,
@@ -768,14 +984,15 @@ Handle MinerUtils::expand_conjunction_connect(const Handle& cnjtion,
 	HandleSeq nclauses = get_clauses(cnjtion_body);
 	append(nclauses, get_clauses_of_body(npat_body));
 
-	// Remove redundant subclauses. This can happen if there's only one
-	// variable to connect, then some subclause turn out to be
-	// redundant.
-	remove_redundant_subclauses(nclauses);
+	// get new variable declaration
+	Handle nvardecl = cnjtion_vars.get_vardecl();
+
+	// Remove useless clauses, such as constant, redundant or abstract
+	// clauses.
+	remove_useless_clauses(nvardecl, nclauses);
 
 	// Recreate expanded conjunction
-	Handle nvardecl = cnjtion_vars.get_vardecl(),
-		npattern = mk_pattern(nvardecl, nclauses);
+	Handle npattern = mk_pattern(nvardecl, nclauses);
 
 	return npattern;
 }
@@ -925,6 +1142,36 @@ double MinerUtils::support_mem(const Handle& pattern,
 		set_support(pattern, sup);
 	}
 	return sup;
+}
+
+void MinerUtils::remove_if(HandleSeq& clauses,
+                           std::function<bool(const Handle&, const HandleSeq&)> fun)
+{
+	for (auto it = clauses.begin(); it != clauses.end();) {
+		// Take all clauses except *it
+		HandleSeq others(clauses.begin(), it);
+		others.insert(others.end(), std::next(it), clauses.end());
+
+		// Remove if fun is true
+		if (fun(*it, others))
+			it = clauses.erase(it);
+		else
+			++it;
+	}
+}
+
+std::string oc_to_string(const HandleSeqSeqSeq& hsss,
+                         const std::string& indent)
+{
+	std::stringstream ss;
+	ss << indent << "size = " << hsss.size() << std::endl;
+	size_t i = 0;
+	for (const HandleSeqSeq& hss : hsss) {
+		ss << indent << "atoms sets[" << i << "]:" << std::endl
+		   << oc_to_string(hss, indent + oc_to_string_indent);
+		i++;
+	}
+	return ss.str();
 }
 
 } // namespace opencog

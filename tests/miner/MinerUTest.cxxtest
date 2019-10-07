@@ -31,6 +31,7 @@
 #include <opencog/util/random.h>
 #include <opencog/atoms/truthvalue/TruthValue.h>
 #include <opencog/atoms/truthvalue/SimpleTruthValue.h>
+#include <opencog/atoms/pattern/GetLink.h>
 #include <opencog/atomspace/AtomSpace.h>
 #include <opencog/miner/HandleTree.h>
 #include <opencog/miner/Miner.h>
@@ -60,7 +61,7 @@ private:
 	Handle X, Y, Z, W;
 
 	// Constants
-	Handle A, A1, A2, A3, B, C, C1, C2, C3, D, E, F, G, H;
+	Handle A, A1, A2, A3, B, C, C0, C1, C2, C3, D, E, F, G, H;
 
 	// Pattern miner rule base
 	Handle pm_rb;
@@ -141,7 +142,19 @@ public:
 	void tearDown();
 
 	// Auxiliary methods
-	void test_remove_useless_clauses();
+	void test_partitions();
+	void test_is_syntax_more_abstract_1();
+	void test_is_syntax_more_abstract_2();
+	void test_is_syntax_more_abstract_3();
+	void test_is_more_abstract_1();
+	void test_is_more_abstract_2();
+	void test_is_more_abstract_3();
+	// TODO: fix is_more_abstract to support that case
+	void xtest_is_more_abstract_4();
+	void test_is_more_abstract_foreach_var();
+	void test_remove_useless_clauses_1();
+	void test_remove_useless_clauses_2();
+	void test_remove_useless_clauses_3();
 	void test_compose_1();
 	void test_compose_2();
 	void test_compose_3();
@@ -158,6 +171,7 @@ public:
 	// Pattern miner
 	void test_A();
 	void test_AB();
+	void test_AB_redundant_cnj();
 	void test_AB_AC();
 	void test_AB_AC_BC();
 	void test_AB_ABC();
@@ -165,6 +179,7 @@ public:
 	void test_ABAB();
 	void test_AAAA();
 	void test_transitivity();
+	void test_long_transitivity();
 	void test_no_transitivity();
 	void test_evaluation();
 	void test_2conjuncts_1();
@@ -269,7 +284,7 @@ MinerUTest::MinerUTest() : _scm(&_as), _tmp_scm(&_tmp_as)
 	// Configure scheme load-paths that are common for all tests.
 	_scm.eval("(add-to-load-path \"" PROJECT_SOURCE_DIR
 	          "/tests/miner/scm\")");
-	
+
 	// Load modules
 	_scm.eval("(use-modules (opencog))");
 	std::string rs = _scm.eval("(use-modules (opencog miner))");
@@ -290,6 +305,7 @@ void MinerUTest::setUp()
 	A3 = an(CONCEPT_NODE, "A3");
 	B = an(CONCEPT_NODE, "B");
 	C = an(CONCEPT_NODE, "C");
+	C0 = an(CONCEPT_NODE, "C0");
 	C1 = an(CONCEPT_NODE, "C1");
 	C2 = an(CONCEPT_NODE, "C2");
 	C3 = an(CONCEPT_NODE, "C3");
@@ -314,7 +330,166 @@ void MinerUTest::tearDown()
 	_tmp_as.clear();
 }
 
-void MinerUTest::test_remove_useless_clauses()
+// Test partition({A,B,C})
+void MinerUTest::test_partitions()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
+	Handle A = an(CONCEPT_NODE, "A"),
+		B = an(CONCEPT_NODE, "B"),
+		C = an(CONCEPT_NODE, "C");
+	HandleSeqSeqSeq result = MinerUtils::partitions({A, B, C}),
+		expect = { { {A}, {C}, {B} },
+		           { {C,A}, {B} },
+		           { {C}, {B,A} },
+		           { {A}, {C,B} },
+		           { {C,B,A} } };
+
+	logger().debug() << "result = " << oc_to_string(result);
+	logger().debug() << "expect = " << oc_to_string(expect);
+
+	TS_ASSERT_EQUALS(result, expect);
+}
+
+void MinerUTest::test_is_syntax_more_abstract_1()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
+	HandleSeq l_blk{al(INHERITANCE_LINK, X, Y)};
+	HandleSeq r_blk{al(INHERITANCE_LINK, Y, Z)};
+
+	// Left block/subpattern is not syntactically more abstract than
+	// right block/subpattern, relative to Y.
+	TS_ASSERT(not MinerUtils::is_blk_syntax_more_abstract(l_blk, r_blk, Y));
+}
+
+void MinerUTest::test_is_syntax_more_abstract_2()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
+	HandleSeq l_blk{al(INHERITANCE_LINK, X, Y)};
+	HandleSeq r_blk{al(INHERITANCE_LINK, A, Y)};
+
+	// Left block/subpattern is syntactically more abstract than right
+	// block/subpattern, relative to Y.
+	TS_ASSERT(MinerUtils::is_blk_syntax_more_abstract(l_blk, r_blk, Y));
+}
+
+void MinerUTest::test_is_syntax_more_abstract_3()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
+	HandleSeq l_blk{al(LIST_LINK, Z, W, X)};
+	HandleSeq r_blk{al(LIST_LINK, X, Y, X)};
+
+	// Left block/subpattern is syntactically more abstract than
+	// right block/subpattern, relative to X.
+	TS_ASSERT(MinerUtils::is_blk_syntax_more_abstract(l_blk, r_blk, X));
+	// However the converse is not true.
+	TS_ASSERT(not MinerUtils::is_blk_syntax_more_abstract(r_blk, l_blk, X));
+}
+
+
+void MinerUTest::test_is_more_abstract_1()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
+	Handle l_pat = al(LAMBDA_LINK,
+	                  al(VARIABLE_LIST, X, Y, Z),
+	                  al(PRESENT_LINK,
+	                     al(INHERITANCE_LINK, X, Z),
+	                     al(INHERITANCE_LINK, Y, Z)));
+	Handle r_pat = al(LAMBDA_LINK,
+	                  Z,
+	                  al(INHERITANCE_LINK, C0, Z));
+
+	// Left pattern is more abstract than right pattern, relative to Z.
+	TS_ASSERT(MinerUtils::is_pat_more_abstract(l_pat, r_pat, Z));
+}
+
+void MinerUTest::test_is_more_abstract_2()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
+	Handle l_pat = al(LAMBDA_LINK,
+	                  al(VARIABLE_LIST, X, Y),
+	                  al(INHERITANCE_LINK, X, Z));
+	Handle r_pat = al(LAMBDA_LINK,
+	                  al(VARIABLE_LIST, X, Y, Z),
+	                  al(PRESENT_LINK,
+	                     al(INHERITANCE_LINK, X, C0),
+	                     al(INHERITANCE_LINK, Z, Y),
+	                     al(INHERITANCE_LINK, Z, C1)));
+
+	// Left pattern is more abstract than right pattern, relative to X.
+	TS_ASSERT(MinerUtils::is_pat_more_abstract(l_pat, r_pat, X));
+}
+
+void MinerUTest::test_is_more_abstract_3()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
+	Handle l_pat = al(LAMBDA_LINK,
+	                  al(VARIABLE_LIST, X, Y, Z),
+	                  al(PRESENT_LINK,
+	                     al(INHERITANCE_LINK, X, Y),
+	                     al(INHERITANCE_LINK, Z, C1)));
+	Handle r_pat = al(LAMBDA_LINK,
+	                  al(VARIABLE_LIST, X, Z),
+	                  al(PRESENT_LINK,
+	                     al(INHERITANCE_LINK, X, C0),
+	                     al(INHERITANCE_LINK, Z, Y)));
+
+	// Left pattern is more abstract than right pattern, relative to X.
+	TS_ASSERT(MinerUtils::is_pat_more_abstract(l_pat, r_pat, X));
+
+	// Left pattern is more abstract than right pattern, relative to Y.
+	TS_ASSERT(MinerUtils::is_pat_more_abstract(l_pat, r_pat, Y));
+}
+
+void MinerUTest::xtest_is_more_abstract_4()
+{
+	Handle l_pat = al(LAMBDA_LINK,
+	                  al(VARIABLE_LIST, X, Y, Z),
+	                  al(PRESENT_LINK,
+	                     al(INHERITANCE_LINK, X, Y),
+	                     al(INHERITANCE_LINK, Z, Y)));
+	// TODO: this seems bogus, X is not even in the body
+	Handle r_pat = al(LAMBDA_LINK,
+	                  al(VARIABLE_LIST, X, Z),
+	                  al(INHERITANCE_LINK, Z, C0));
+
+	// Left pattern is more abstract than right pattern, relative to X.
+	TS_ASSERT(MinerUtils::is_pat_more_abstract(l_pat, r_pat, X));
+
+	// Left pattern is more abstract than right pattern, relative to Y.
+	TS_ASSERT(MinerUtils::is_pat_more_abstract(l_pat, r_pat, Y));
+}
+
+void MinerUTest:: test_is_more_abstract_foreach_var()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
+	// No clause is more abstract than the others, thus nothing should
+	// be removed.
+	Handle
+		clause1 = al(INHERITANCE_LINK, X, Y),
+		clause2 = al(INHERITANCE_LINK, Y, Z),
+		clause3 = al(INHERITANCE_LINK, Z, W);
+
+	bool
+		result = MinerUtils::is_more_abstract_foreach_var(clause2,
+		                                                  { clause1, clause3 }),
+		expect = false;
+
+	logger().debug() << "result = " << result;
+	logger().debug() << "expect = " << expect;
+
+	// Check the result is as expected
+	TS_ASSERT_EQUALS(result, expect);
+}
+
+void MinerUTest::test_remove_useless_clauses_1()
 {
 	logger().info("BEGIN TEST: %s", __FUNCTION__);
 
@@ -326,6 +501,74 @@ void MinerUTest::test_remove_useless_clauses()
 	logger().debug() << "expected = " << oc_to_string(expected);
 
 	TS_ASSERT(content_eq(result, expected));
+}
+
+void MinerUTest:: test_remove_useless_clauses_2()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
+	// Clause 3 is more abstract than all clauses of the pattern and
+	// does not introduce new variables, therefore it is redundant and
+	// can be removed.
+	Handle
+		vardecl = al(VARIABLE_LIST, X, Y),
+		clause1 = al(INHERITANCE_LINK, X, C1),
+		clause2 = al(INHERITANCE_LINK, C2, Y),
+		clause3 = al(INHERITANCE_LINK, X, Y),
+		pattern = MinerUtils::mk_pattern(vardecl, {clause1, clause2, clause3});
+
+	Handle
+		reduced = MinerUtils::remove_useless_clauses(pattern),
+		expect = MinerUtils::mk_pattern(vardecl, {clause1, clause2});
+
+	logger().debug() << "pattern = " << oc_to_string(pattern);
+	logger().debug() << "reduced = " << oc_to_string(reduced);
+	logger().debug() << "expect = " << oc_to_string(expect);
+
+	// First check the result is as expected
+	TS_ASSERT(content_eq(reduced, expect));
+
+	// Second check that both pattern and result have the same matches
+	unsigned n_cpts = 100;
+	Type node_t = CONCEPT_NODE;
+	HandleSeq cpts = MinerUTestUtils::populate_nodes(_as, n_cpts, node_t, "C");
+	Type link_t = INHERITANCE_LINK;
+	MinerUTestUtils::populate_links(_as, cpts, link_t, 2, 0.1);
+	// logger().debug() << "_as = " << _as;
+	GetLinkPtr pattern_gl = createGetLink(HandleSeq{pattern});
+	Handle pattern_results = HandleCast(pattern_gl->execute(&_as));
+	GetLinkPtr reduced_gl = createGetLink(HandleSeq{reduced});
+	Handle reduced_results = HandleCast(pattern_gl->execute(&_as));
+
+	logger().debug() << "pattern_results = " << oc_to_string(pattern_results);
+	logger().debug() << "reduced_results = " << oc_to_string(reduced_results);
+
+	TS_ASSERT_EQUALS(pattern_results, reduced_results);
+}
+
+void MinerUTest:: test_remove_useless_clauses_3()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
+	// No clause is more abstract than the others, thus nothing should
+	// be removed.
+	Handle
+		vardecl = al(VARIABLE_LIST, X, Y, Z, W),
+		clause1 = al(INHERITANCE_LINK, X, Y),
+		clause2 = al(INHERITANCE_LINK, Y, Z),
+		clause3 = al(INHERITANCE_LINK, Z, W),
+		pattern = MinerUtils::mk_pattern(vardecl, {clause1, clause2, clause3});
+
+	Handle
+		reduced = MinerUtils::remove_useless_clauses(pattern),
+		expect = pattern;
+
+	logger().debug() << "pattern = " << oc_to_string(pattern);
+	logger().debug() << "reduced = " << oc_to_string(reduced);
+	logger().debug() << "expect = " << oc_to_string(expect);
+
+	// Check the result is as expected
+	TS_ASSERT(content_eq(reduced, expect));
 }
 
 void MinerUTest::test_compose_1()
@@ -676,6 +919,57 @@ void MinerUTest::test_AB()
 	TS_ASSERT(content_eq(ure_results, ure_expected));
 }
 
+void MinerUTest::test_AB_redundant_cnj()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
+	// Like test_AB but look for 3-conjuncts patterns. Test that the
+	// solution set does not contain
+	//
+	// (LambdaLink
+	//   (VariableList
+	//     (VariableNode "$X")
+	//     (VariableNode "$Y")
+	//   )
+	//   (PresentLink
+	//     (InheritanceLink
+	//       (ConceptNode "A")
+	//       (VariableNode "$Y")
+	//     )
+	//     (InheritanceLink
+	//       (VariableNode "$X")
+	//       (VariableNode "$Y")
+	//     )
+	//     (InheritanceLink
+	//       (VariableNode "$X")
+	//       (ConceptNode "B")
+	//     )
+	//   )
+	// )
+	//
+	// as such pattern should be removed by the conjunction expansion
+	// rule (via MinerUTest::remove_useless_clauses).
+
+	// Define db
+	Handle InhAB = al(INHERITANCE_LINK, A, B);
+	HandleSeq db{InhAB};
+
+	// Run URE pattern miner without enforcing specialization (which is
+	// necessary to mine transitivity).
+	int ms = 1;
+	Handle results = ure_pm(db, ms, 50, top, true, 3, 2, 2, false);
+	HandleSeq clauses = {al(INHERITANCE_LINK, A, Y),
+	                     al(INHERITANCE_LINK, Y, B),
+	                     al(INHERITANCE_LINK, X, Y)};
+	Handle no_expect = mk_minsup_eval(ms,
+	                                  MinerUtils::mk_pattern_no_vardecl(clauses));
+
+	logger().debug() << "results = " << oc_to_string(results->getOutgoingSet());
+	logger().debug() << "no_expect = " << oc_to_string(no_expect);
+
+	TS_ASSERT(not is_in(no_expect, results->getOutgoingSet()));
+}
+
 void MinerUTest::test_AB_AC()
 {
 	logger().info("BEGIN TEST: %s", __FUNCTION__);
@@ -689,18 +983,6 @@ void MinerUTest::test_AB_AC()
 	Handle VarXY = al(VARIABLE_LIST, X, Y),
 		InhXY = al(INHERITANCE_LINK, X, Y),
 		InhAY = al(INHERITANCE_LINK, A, Y);
-
-	// NEXT TODO: get rid of the C++ pattern miner, as it is not used at all
-
-	// // Run C++ pattern miner (using _as for testing more diverse
-	// // content)
-	// HandleTree cpp_results = cpp_pm(_as, 2);
-	// Handle cpp_expected = MinerUtils::mk_pattern(Y, {InhAY});
-
-	// logger().debug() << "cpp_results = " << oc_to_string(cpp_results);
-	// logger().debug() << "cpp_expected = " << oc_to_string(cpp_expected);
-
-	// TS_ASSERT(content_is_in(cpp_expected, cpp_results));
 
 	// Run URE pattern miner (using _as for testing more diverse
 	// content)
@@ -930,6 +1212,8 @@ void MinerUTest::test_AAAA()
 
 void MinerUTest::test_transitivity()
 {
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
 	// Mine transitivity pattern using incremental conjunction
 	// expansion. Check with and without enforce specialization.
 
@@ -954,8 +1238,49 @@ void MinerUTest::test_transitivity()
 	TS_ASSERT(is_in(expected, results->getOutgoingSet()));
 }
 
+void MinerUTest::test_long_transitivity()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
+	// Mine transitivity pattern using incremental conjunction
+	// expansion. Check with and without enforce specialization.
+
+	// Define db
+	Handle
+		InhAB = al(INHERITANCE_LINK, A, B),
+		InhBC = al(INHERITANCE_LINK, B, C),
+		InhCD = al(INHERITANCE_LINK, C, D);
+	HandleSeq db{InhAB, InhBC, InhCD};
+
+	// Run URE pattern miner without enforcing specialization (which is
+	// necessary to mine transitivity).
+	int ms = 1;
+	int max_iteration = 50;
+	bool conjunction_expansion = true;
+	unsigned max_conjuncts = 3;
+	unsigned max_variables = 4;
+	unsigned max_cnjexp_variables = 4;
+	bool enforce_specialization = false;
+	double complexity_penalty = 1.0;
+	Handle results = ure_pm(db, ms, max_iteration, top, conjunction_expansion,
+	                        max_conjuncts, max_variables, max_cnjexp_variables,
+	                        enforce_specialization, complexity_penalty);
+	HandleSeq clauses = {al(INHERITANCE_LINK, X, Y),
+	                     al(INHERITANCE_LINK, Y, Z),
+	                     al(INHERITANCE_LINK, Z, W)};
+	Handle expected = mk_minsup_eval(ms,
+	                                 MinerUtils::mk_pattern_no_vardecl(clauses));
+
+	logger().debug() << "results = " << oc_to_string(results);
+	logger().debug() << "expected = " << oc_to_string(expected);
+
+	TS_ASSERT(is_in(expected, results->getOutgoingSet()));
+}
+
 void MinerUTest::test_no_transitivity()
 {
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
 	// Like test_transitivity but enforce specialization, thus should
 	// miss the transitivity pattern.
 
@@ -1520,8 +1845,12 @@ void MinerUTest::test_vqa()
 		_tmp_scm.eval("(load-from-path \"QA_knowledge_base_v2_no_duplicates.scm\")");
 	logger().debug() << "rs = " << rs;
 
-	// Start from top, conjunctions will be grown incrementally
-	Handle initpat = top;
+	// Start from (Member X Y), conjunctions will be grown
+	// incrementally.
+	Handle
+		VarXY = al(VARIABLE_LIST, X, Y),
+		MemXY = al(MEMBER_LINK, X, Y),
+		initpat = MinerUtils::mk_pattern(VarXY, {MemXY});
 
 	// The pattern of interest looks like
 	//
@@ -1546,7 +1875,6 @@ void MinerUTest::test_vqa()
 	// TODO: find a better pattern of interest
 	Handle
 		VarXYZ = al(VARIABLE_LIST, X, Y, Z),
-		MemXY = al(MEMBER_LINK, X, Y),
 		MemZY = al(MEMBER_LINK, Z, Y),
 		expected = MinerUtils::mk_pattern(VarXYZ, {MemXY, MemZY});
 
@@ -1555,26 +1883,26 @@ void MinerUTest::test_vqa()
 	// Run URE pattern miner
 	bool conjunction_expansion = true;
 	int minsup = 500;
-	int max_iteration = 20;
+	int max_iteration = 5;
 	unsigned max_conjuncts = 2;
-	unsigned max_variables = UINT_MAX;
-	unsigned max_cnjexp_variables = UINT_MAX;
+	unsigned max_variables = 3;
+	unsigned max_cnjexp_variables = 3;
 	bool enforce_specialization = false;
 	double complexity_penalty = 1;
-	Handle ure_results = ure_pm(_tmp_as, minsup, max_iteration,
-	                            initpat,
-	                            conjunction_expansion,
-	                            max_conjuncts,
-	                            max_variables,
-	                            max_cnjexp_variables,
-	                            enforce_specialization,
-	                            complexity_penalty),
-		ure_expected = mk_minsup_eval(minsup, expected);
+	Handle results = ure_pm(_tmp_as, minsup, max_iteration,
+	                        initpat,
+	                        conjunction_expansion,
+	                        max_conjuncts,
+	                        max_variables,
+	                        max_cnjexp_variables,
+	                        enforce_specialization,
+	                        complexity_penalty),
+		expect = mk_minsup_eval(minsup, expected);
 
-	logger().debug() << "ure_results = " << oc_to_string(ure_results);
-	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
+	logger().debug() << "results = " << oc_to_string(results->getOutgoingSet());
+	logger().debug() << "expect = " << oc_to_string(expect);
 
-	TS_ASSERT(is_in(ure_expected, ure_results->getOutgoingSet()));
+	TS_ASSERT(is_in(expect, results->getOutgoingSet()));
 }
 
 #undef al

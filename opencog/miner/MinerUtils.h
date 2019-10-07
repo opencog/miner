@@ -23,12 +23,19 @@
 #ifndef OPENCOG_MINER_UTILS_H_
 #define OPENCOG_MINER_UTILS_H_
 
+#include <opencog/util/empty_string.h>
 #include <opencog/atoms/base/Handle.h>
+#include <opencog/unify/Unify.h>
+
+#include <boost/algorithm/cxx11/all_of.hpp>
+#include <boost/algorithm/cxx11/any_of.hpp>
 
 #include "Valuations.h"
 
 namespace opencog
 {
+
+typedef std::vector<HandleSeqSeq> HandleSeqSeqSeq;
 
 /**
  * Collection of static methods for the pattern miner.
@@ -412,11 +419,242 @@ public:
 	static void remove_redundant_clauses(HandleSeq& clauses);
 
 	/**
+	 * Remove clauses that are more abstract than all other clauses,
+	 * thus should not change the semantics of the pattern.
+	 *
+	 * For instance given the clauses
+	 *
+	 *     (Inheritance (Variable "$X") (Concept "pet"))
+	 *     (Inheritance (Concept "cat") (Variable "$Y"))
+	 *     (Inheritance (Variable "$X") (Variable "$Y")))
+	 *
+	 * the last one is more abstract than either of the first 2, thus
+	 * can be removed.
+	 */
+	static void remove_abstract_clauses(HandleSeq& clauses);
+
+	/**
+	 * Return true iff clause includes only joint variables.
+	 *
+	 * For instance given
+	 *
+	 * clause = (Inheritance (Variable "$X") (Variable "$Y"))
+	 *
+	 * clauses = { (Inheritance (Variable "$X") (Concept "pet"))
+	 *             (Inheritance (Concept "cat") (Variable "$Y")) }
+	 *
+	 * return true because all variables of clause are joint with
+	 * clauses.
+	 */
+	static bool has_only_joint_variables(const Handle& clause,
+	                                     const HandleSeq& clauses);
+
+	/**
+	 * Tell whether the left block/subpattern is is syntactically more
+	 * abstract than the right block/subpattern relative to a given
+	 * variable.
+	 *
+	 * For instance
+	 *
+	 * l_blk = { List X Y Z }
+	 * r_blk = { List W A Z }
+	 *
+	 * l_blk is more abstract than r_blk relative to Z because the
+	 * matching values of Z in l_blk is a subset of the matching values
+	 * of Z in l_blk.
+	 *
+	 * Warning to future developers: this method and the one below have
+	 * different names (that one uses `blk` while the one below uses
+	 * `pat` because gcc is not able to disambiguating them. For
+	 * instance in is_pat_syntax_more_abstract({lp}, {rp}, var) gcc
+	 * will not understand that {lp} and {rp} are meant as being
+	 * HandleSeqs. Not sure why that is the case, maybe because {} is
+	 * not exclusive to intializer_list.
+	 */
+	static bool is_blk_syntax_more_abstract(const HandleSeq& l_blk,
+	                                        const HandleSeq& r_blk,
+	                                        const Handle& var);
+
+	/**
+	 * List above but takes scope links instead of blocks (whether each
+	 * scope link has the conjunction of clauses of its block as body).
+	 *
+	 * TODO: for now, this code relies on unification. However it can
+	 * certainly be optimized by not relying on unification and being
+	 * re-implemented instead, and perhaps it could then be merged to
+	 * the unification code.
+	 */
+	static bool is_pat_syntax_more_abstract(const Handle& l_pat,
+	                                        const Handle& r_pat,
+	                                        const Handle& var);
+
+	/**
+	 * Like is_syntax_more_abstract but takes into account a bit of
+	 * semantics as well (though none that requires data), in
+	 * particular it handles conjunctions of clauses such that l_pat is
+	 * more abstract if there exists a partition lp of l_pat (meaning a
+	 * partition of conjunctions of clauses in l_pat) such that there
+	 * exists a subset rs of r_pat (meaning a subset of clauses of
+	 * r_pat) such that rs is a syntactic specialization, relative to
+	 * var, of each block lb of lp.
+	 *
+	 * For instance
+	 *
+	 * l_pat = Lambda
+	 *           X Y Z
+	 *           And
+	 *             Inheritance
+	 *               X
+	 *               Z
+	 *             Inheritance
+	 *               Y
+	 *               Z
+	 *
+	 * r_pat = Lambda
+	 *           Z
+	 *           Inheritance
+	 *             A
+	 *             Z
+	 *
+	 * var = Z
+	 *
+	 * l_pat is indeed an abstraction of r_pat because there exists a
+	 * partition lp = { {Inheritance X Z}, {Inheritance Y Z} } such
+	 * that the subset { Inheritance A Z} is a syntactic specialization
+	 * of each block of lp.
+	 */
+	static bool is_pat_more_abstract(const Handle& l_pat,
+	                                 const Handle& r_pat,
+	                                 const Handle& var);
+
+	/**
+	 * Like above but consider list of clauses (i.e. block) instead of
+	 * patterns.
+	 */
+	static bool is_blk_more_abstract(const HandleSeq& l_blk,
+	                                 const HandleSeq& r_blk,
+	                                 const Handle& var);
+
+	/**
+	 * Return true iff for each variable v in clause, let o(v) be all
+	 * clauses containing v, clause is more abstract than any clauses
+	 * in o(v) relative to v.
+	 */
+	static bool is_more_abstract_foreach_var(const Handle& clause,
+	                                         const HandleSeq& others);
+
+	/**
+	 * Like powerset but return a sequence of sequences instead of set
+	 * of sets. Discard the empty sequence.
+	 */
+	static HandleSeqSeq powerseq_without_empty(const HandleSeq& blk);
+
+
+	/**
 	 * Alpha convert pattern so that none of its variables collide with
 	 * the variables in other_vars.
 	 */
 	static Handle alpha_convert(const Handle& pattern,
 	                            const Variables& other_vars);
+
+	/**
+	 * Return true iff var_val is a pair with the first element a
+	 * variable in vars, and the second element a value (non-variable).
+	 */
+	static bool is_value(const Unify::HandleCHandleMap::value_type& var_val,
+	                     const Variables& vars, const Handle& var);
+
+	/**
+	 * Copy all subpatterns/blocks where var appears. Also remove all
+	 * parts of the subpatterns that are not strongly connected with to
+	 * it relative to var.
+	 *
+	 * So for instance
+	 *
+	 * partition = { { Inheritance X Y, Inheritance Z A},
+	 *               { Inheritance X B, Inheritance Z Y} }
+	 *
+	 * var = Y
+	 *
+	 * returns
+	 *
+	 * { {Inheritance Z Y } }
+	 *
+	 * because
+	 *
+	 * 1. Y only appears in the second block
+	 *
+	 * 2. within that block
+	 *
+	 *    Inheritance X B
+	 *
+	 *    is not strongly connected to the component where Y appears.
+	 *
+	 * Ignoring non-strongly connected components allows to speed up
+	 * Surprisingness::value_count as well as covering more cases in
+	 * is_more_abstract.
+	 */
+	static HandleSeqSeq connected_subpatterns_with_var(const HandleSeqSeq& partition,
+	                                                   const Handle& var);
+	static HandleSeq connected_subpattern_with_var(const HandleSeq& blk,
+	                                               const Handle& var);
+
+	/**
+	 * Given a handle h and a sequence of sequences of handles, insert
+	 * h in front of each subsequence, duplicating each sequence with
+	 * its augmented subsequence. For instance
+	 *
+	 * h = D
+	 * hss = [[A],[B,C]]
+	 *
+	 * returns
+	 *
+	 * [[[D,A],[B,C]],[[A],[D,B,C]],[[A],[B,C],[D]]]
+	 */
+	static HandleSeqSeqSeq combinatorial_insert(const Handle& h,
+	                                            const HandleSeqSeq& hss);
+	static HandleSeqSeqSeq combinatorial_insert(const Handle& h,
+	                                            HandleSeqSeq::const_iterator from,
+	                                            HandleSeqSeq::const_iterator to);
+
+	/**
+	 * Given a HandleSeq hs, produce all partitions of hs. For instance
+	 * if hs is the following
+	 *
+	 * c = [A,B,C]
+	 *
+	 * return
+	 *
+	 * [[[A],[C],[B]],
+	 *  [[C,A],[B]],
+	 *  [[C],[B,A]],
+	 *  [[A],[C,B]],
+	 *  [[C,B,A]]]
+	 */
+	static HandleSeqSeqSeq partitions(const HandleSeq& hs);
+	static HandleSeqSeqSeq partitions(HandleSeq::const_iterator from,
+	                                  HandleSeq::const_iterator to);
+
+	/**
+	 * Like partitions but takes a pattern. Also the partition block
+	 * corresponding to the full set has been removed (since it is
+	 * already the block corresponding to the full pattern). For
+	 * instance
+	 *
+	 * pattern = Lambda
+	 *             And
+	 *               A
+	 *               B
+	 *               C
+	 *
+	 * return
+	 *
+	 * [[[A],[C],[B]],
+	 *  [[C,A],[B]],
+	 *  [[C],[B,A]],
+	 *  [[A],[C,B]]]
+	 */
+	static HandleSeqSeqSeq partitions_without_pattern(const Handle& pattern);
 
 	/**
 	 * Construct the conjunction of 2 patterns. If cnjtion is a
@@ -541,7 +779,24 @@ public:
 	static double support_mem(const Handle& pattern,
 	                          const HandleSeq& db,
 	                          unsigned ms);
+
+	/**
+	 * Remove every element of clauses such that
+	 *
+	 * fun(element, clauses - {element})
+	 *
+	 * returns true.
+	 */
+	static void remove_if(HandleSeq& clauses,
+	                      std::function<bool(const Handle&, const HandleSeq&)> fun);
 };
+
+/**
+ * Given a partition, that is a sequence of blocks, where each
+ * block is a sequence of handles, return
+ */
+std::string oc_to_string(const HandleSeqSeqSeq& hsss,
+                         const std::string& indent=empty_string);
 
 } // ~namespace opencog
 
