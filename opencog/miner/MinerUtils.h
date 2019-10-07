@@ -431,12 +431,10 @@ public:
 	 * the last one is more abstract than either of the first 2, thus
 	 * can be removed.
 	 */
-	static void remove_abstract_clauses(const Handle& vardecl,
-	                                    HandleSeq& clauses);
+	static void remove_abstract_clauses(HandleSeq& clauses);
 
 	/**
-	 * Return true iff clause does not introduce new variables already
-	 * in clauses.
+	 * Return true iff clause includes only joint variables.
 	 *
 	 * For instance given
 	 *
@@ -445,10 +443,11 @@ public:
 	 * clauses = { (Inheritance (Variable "$X") (Concept "pet"))
 	 *             (Inheritance (Concept "cat") (Variable "$Y")) }
 	 *
-	 * all variables in clause appear in clauses so it returns true.
+	 * return true because all variables of clause are joint with
+	 * clauses.
 	 */
-	static bool no_new_variables(const Handle& clause,
-	                             const HandleSeq& clauses);
+	static bool has_only_joint_variables(const Handle& clause,
+	                                     const HandleSeq& clauses);
 
 	/**
 	 * Tell whether the left block/subpattern is is syntactically more
@@ -463,10 +462,18 @@ public:
 	 * l_blk is more abstract than r_blk relative to Z because the
 	 * matching values of Z in l_blk is a subset of the matching values
 	 * of Z in l_blk.
+	 *
+	 * Warning to future developers: this method and the one below have
+	 * different names (that one uses `blk` while the one below uses
+	 * `pat` because gcc is not able to disambiguating them. For
+	 * instance in is_pat_syntax_more_abstract({lp}, {rp}, var) gcc
+	 * will not understand that {lp} and {rp} are meant as being
+	 * HandleSeqs. Not sure why that is the case, maybe because {} is
+	 * not exclusive to intializer_list.
 	 */
-	static bool is_syntax_more_abstract(const HandleSeq& l_blk,
-	                                    const HandleSeq& r_blk,
-	                                    const Handle& var);
+	static bool is_blk_syntax_more_abstract(const HandleSeq& l_blk,
+	                                        const HandleSeq& r_blk,
+	                                        const Handle& var);
 
 	/**
 	 * List above but takes scope links instead of blocks (whether each
@@ -477,9 +484,9 @@ public:
 	 * re-implemented instead, and perhaps it could then be merged to
 	 * the unification code.
 	 */
-	static bool is_syntax_more_abstract(const Handle& l_pat,
-	                                    const Handle& r_pat,
-	                                    const Handle& var);
+	static bool is_pat_syntax_more_abstract(const Handle& l_pat,
+	                                        const Handle& r_pat,
+	                                        const Handle& var);
 
 	/**
 	 * Like is_syntax_more_abstract but takes into account a bit of
@@ -516,16 +523,25 @@ public:
 	 * that the subset { Inheritance A Z} is a syntactic specialization
 	 * of each block of lp.
 	 */
-	static bool is_more_abstract(const Handle& l_pat,
-	                             const Handle& r_pat,
-	                             const Handle& var);
+	static bool is_pat_more_abstract(const Handle& l_pat,
+	                                 const Handle& r_pat,
+	                                 const Handle& var);
 
 	/**
-	 * Like above but consider list of clauses instead of patterns.
+	 * Like above but consider list of clauses (i.e. block) instead of
+	 * patterns.
 	 */
-	static bool is_more_abstract(const HandleSeq& l_blk,
-	                             const HandleSeq& r_blk,
-	                             const Handle& var);
+	static bool is_blk_more_abstract(const HandleSeq& l_blk,
+	                                 const HandleSeq& r_blk,
+	                                 const Handle& var);
+
+	/**
+	 * Return true iff for each variable v in clause, let o(v) be all
+	 * clauses containing v, clause is more abstract than any clauses
+	 * in o(v) relative to v.
+	 */
+	static bool is_more_abstract_foreach_var(const Handle& clause,
+	                                         const HandleSeq& others);
 
 	/**
 	 * Like powerset but return a sequence of sequences instead of set
@@ -546,7 +562,7 @@ public:
 	 * variable in vars, and the second element a value (non-variable).
 	 */
 	static bool is_value(const Unify::HandleCHandleMap::value_type& var_val,
-	                     const Variables& vars);
+	                     const Variables& vars, const Handle& var);
 
 	/**
 	 * Copy all subpatterns/blocks where var appears. Also remove all
@@ -763,6 +779,16 @@ public:
 	static double support_mem(const Handle& pattern,
 	                          const HandleSeq& db,
 	                          unsigned ms);
+
+	/**
+	 * Remove every element of clauses such that
+	 *
+	 * fun(element, clauses - {element})
+	 *
+	 * returns true.
+	 */
+	static void remove_if(HandleSeq& clauses,
+	                      std::function<bool(const Handle&, const HandleSeq&)> fun);
 };
 
 /**

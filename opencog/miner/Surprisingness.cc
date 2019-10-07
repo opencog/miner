@@ -527,7 +527,7 @@ bool Surprisingness::is_strictly_more_abstract(const HandleSeq& l_blk,
                                                const Handle& var)
 {
 	return not is_equivalent(l_blk, r_blk, var)
-		and MinerUtils::is_more_abstract(l_blk, r_blk, var);
+		and MinerUtils::is_blk_more_abstract(l_blk, r_blk, var);
 }
 
 void Surprisingness::rank_by_abstraction(HandleSeqSeq& partition, const Handle& var)
@@ -569,7 +569,9 @@ double Surprisingness::eq_prob(const HandleSeqSeq& partition,
 			// specialized abstraction.
 			int i = j-1;
 			while (0 <= i)
-				if (MinerUtils::is_more_abstract(var_partition[i], var_partition[j], var))
+				if (MinerUtils::is_blk_more_abstract(var_partition[i],
+				                                     var_partition[j],
+				                                     var))
 					break;
 				else i--;
 
