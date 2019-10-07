@@ -32,7 +32,7 @@ The mozi-ai example is provided with a small dataset. If you wish to
 use that small sample dataset, first decrompress it
 
 ```bash
-zx -d kbs/mozi-ai-sample.scm
+xz -d kbs/mozi-ai-sample.scm.xz
 ```
 
 Once decompressed you may directly jump to the Run Pattern Miner
