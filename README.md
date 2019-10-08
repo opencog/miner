@@ -1,4 +1,4 @@
-# Miner-ci-test
+# Miner-ci-test 
 
 [![CircleCI](https://circleci.com/gh/opencog/miner.svg?style=svg)](https://circleci.com/gh/opencog/miner)
 
