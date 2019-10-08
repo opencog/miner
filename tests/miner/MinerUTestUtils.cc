@@ -306,11 +306,11 @@ void MinerUTestUtils::configure_optional_rules(SchemeEval& scm,
 	std::string call = "(configure-optional-rules (Concept \"pm-rbs\")";
 	call += " #:conjunction-expansion #";
 	call += conjunction_expansion ? "t" : "f";
-	call += " #:max-conjuncts ";
+	call += " #:maximum-conjuncts ";
 	call += std::to_string(max_conjuncts);
-	call += " #:max-variables ";
+	call += " #:maximum-variables ";
 	call += std::to_string(max_variables);
-	call += " #:max-cnjexp-variables ";
+	call += " #:maximum-cnjexp-variables ";
 	call += std::to_string(max_cnjexp_variables);
 	call += " #:enforce-specialization ";
 	call += enforce_specialization ? "#t" : "#f";

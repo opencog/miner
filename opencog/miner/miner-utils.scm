@@ -21,9 +21,33 @@
 (use-modules (opencog logger))
 (use-modules (srfi srfi-1))
 
+;; Place this helper on top because it is used by
+;; default-initial-pattern
+(define (top)
+"
+  Insert the top abstraction in the current atomspace
+
+  (Lambda (Variable \"$X\") (Variable \"$X\"))
+"
+  (let ((top-arg (Variable "$top-arg")))
+    (Lambda top-arg (Present top-arg))))
+
+;; Default parameter values
+(define default-minimum-support 10)
+(define default-minimum-frequency -1)
+(define default-initial-pattern (top))
+(define default-maximum-iterations 100)
+(define default-complexity-penalty 1)
+(define default-conjunction-expansion #t)
+(define default-enforce-specialization #t)
+(define default-maximum-conjuncts 3)
+(define default-maximum-variables 3)
+(define default-maximum-cnjexp-variables 2)
+(define default-surprisingness 'isurp)
+
 ;; For some crazy reason I need to repaste absolutely-true here while
 ;; it is already defined in ure.
-(define-public (absolutely-true A)
+(define (absolutely-true A)
 "
   Return TrueTV iff A's TV is TrueTV
 "
@@ -73,15 +97,6 @@
   to their tv strengths.
 "
   (sort lst greater-tv-strength))
-
-(define (top)
-"
-  Insert the top abstraction in the current atomspace
-
-  (Lambda (Variable \"$X\") (Variable \"$X\"))
-"
-  (let ((top-arg (Variable "$top-arg")))
-    (Lambda top-arg (Present top-arg))))
 
 (define (random-db-cpt)
 "
@@ -151,8 +166,8 @@
   ;; Maybe remove, nothing is mandatory anymore
   *unspecified*)
 
-(define (configure-shallow-specialization-rule pm-rbs unary max-variables)
-  (define mv (min 9 max-variables))
+(define (configure-shallow-specialization-rule pm-rbs unary maximum-variables)
+  (define mv (min 9 maximum-variables))
 
   ;; Load and associate mandatory rules to pm-rbs
   ;; (load-from-path (mk-full-rule-path "shallow-specialization.scm"))
@@ -169,11 +184,11 @@
 (define (configure-conjunction-expansion-rules pm-rbs
                                                conjunction-expansion
                                                enforce-specialization
-                                               max-conjuncts
-                                               max-cnjexp-variables)
-  (define mv (min 9 max-cnjexp-variables))
+                                               maximum-conjuncts
+                                               maximum-cnjexp-variables)
+  (define mv (min 9 maximum-cnjexp-variables))
 
-  (if (and conjunction-expansion (< 1 max-conjuncts))
+  (if (and conjunction-expansion (< 1 maximum-conjuncts))
       ;; (load-from-path (mk-full-rule-path "conjunction-expansion.scm"))
       (let* ((namify (lambda (i)
                        (string-append "conjunction-expansion-"
@@ -194,11 +209,11 @@
              ;; of shallow specialization.
              (tvfy (lambda (i) (stv (* 0.5 (- 1 (* 0.1 i))) conf)))
              (rulify (lambda (i) (definify i) (list (aliasify i) (tvfy i))))
-             (rules (if (or (<= max-conjuncts 0) (< 9 max-conjuncts))
+             (rules (if (or (<= maximum-conjuncts 0) (< 9 maximum-conjuncts))
                         ;; No maximum conjuncts
                         (list (rulify 0))
-                        ;; At most max-conjuncts conjuncts
-                        (map rulify (iota-plus-one (- max-conjuncts 1))))))
+                        ;; At most maximum-conjuncts conjuncts
+                        (map rulify (iota-plus-one (- maximum-conjuncts 1))))))
         (ure-add-rules pm-rbs rules))))
 
 (define (false-tv? tv)
@@ -206,41 +221,41 @@
 
 (define* (configure-optional-rules pm-rbs
                                    #:key
-                                   (conjunction-expansion #t)
-                                   (enforce-specialization #t)
-                                   (max-conjuncts 3)
-                                   (max-variables 3)
-                                   (max-cnjexp-variables 2))
+                                   (conjunction-expansion default-conjunction-expansion)
+                                   (enforce-specialization default-enforce-specialization)
+                                   (maximum-conjuncts default-maximum-conjuncts)
+                                   (maximum-variables default-maximum-variables)
+                                   (maximum-cnjexp-variables default-maximum-cnjexp-variables))
 
   ;; Load shallow specialization, either unary, if
   ;; conjunction-expansion is enabled, or not
   (configure-shallow-specialization-rule pm-rbs
                                          conjunction-expansion
-                                         max-variables)
+                                         maximum-variables)
 
   ;; Load conjunction-expansion and associate to pm-rbs
   (configure-conjunction-expansion-rules pm-rbs
                                          conjunction-expansion
                                          enforce-specialization
-                                         max-conjuncts
-                                         (min max-variables max-cnjexp-variables)))
+                                         maximum-conjuncts
+                                         (min maximum-variables maximum-cnjexp-variables)))
 
 (define* (configure-rules pm-rbs
                           #:key
-                          (conjunction-expansion #t)
-                          (enforce-specialization #t)
-                          (max-conjuncts 3)
-                          (max-variables 3)
-                          (max-cnjexp-variables 2))
+                          (conjunction-expansion default-conjunction-expansion)
+                          (enforce-specialization default-enforce-specialization)
+                          (maximum-conjuncts default-maximum-conjuncts)
+                          (maximum-variables default-maximum-variables)
+                          (maximum-cnjexp-variables default-maximum-cnjexp-variables))
   (configure-mandatory-rules pm-rbs)
   (configure-optional-rules pm-rbs
                             #:conjunction-expansion conjunction-expansion
                             #:enforce-specialization enforce-specialization
-                            #:max-conjuncts max-conjuncts
-                            #:max-variables max-variables
-                            #:max-cnjexp-variables max-cnjexp-variables))
+                            #:maximum-conjuncts maximum-conjuncts
+                            #:maximum-variables maximum-variables
+                            #:maximum-cnjexp-variables maximum-cnjexp-variables))
 
-(define* (configure-surprisingness surp-rbs mode max-conjuncts)
+(define* (configure-surprisingness surp-rbs mode maximum-conjuncts)
   ;; Add surprisingness rules
   (let* ((namify (lambda (i) (string-append (symbol->string mode) "-"
                                             (number->string i)
@@ -256,7 +271,7 @@
                                  (aliasify i)
                                  (rule-gen i))))
          (rulify (lambda (i) (definify i) (aliasify i)))
-         (rules (map rulify (cdr (iota-plus-one max-conjuncts)))))
+         (rules (map rulify (cdr (iota-plus-one maximum-conjuncts)))))
     (ure-add-rules surp-rbs rules))
 
   ;; In case of jsdsurp we also need emp, est and jsd rules
@@ -280,13 +295,13 @@
 
 (define* (configure-miner pm-rbs
                           #:key
-                          (maximum-iterations 1000)
-                          (complexity-penalty 1)
-                          (conjunction-expansion #t)
-                          (enforce-specialization #t)
-                          (max-conjuncts 3)
-                          (max-variables 3)
-                          (max-cnjexp-variables 2))
+                          (maximum-iterations default-maximum-iterations)
+                          (complexity-penalty default-complexity-penalty)
+                          (conjunction-expansion default-conjunction-expansion)
+                          (enforce-specialization default-enforce-specialization)
+                          (maximum-conjuncts default-maximum-conjuncts)
+                          (maximum-variables default-maximum-variables)
+                          (maximum-cnjexp-variables default-maximum-cnjexp-variables))
 "
   Given a Concept node representing a rule based system for the
   pattern miner. Automatically configure it with the appropriate
@@ -297,13 +312,13 @@
                           #:complexity-penalty cp
                           #:conjunction-expansion ce
                           #:enforce-specialization es
-                          #:max-conjuncts mc)
-                          #:max-variables mv
-                          #:max-cnjexp-variables mcev)
+                          #:maximum-conjuncts mc
+                          #:maximum-variables mv
+                          #:maximum-cnjexp-variables mcev)
 
   pm-rbs: Concept node of the rule-based system to configure
 
-  mi: [optional, default=1000] Maximum number of iterations allocated.
+  mi: [optional, default=100] Maximum number of iterations allocated.
       If negative then the pattern miner keeps running till all patterns
       have been exhausted (not recommended unless you know what you're doing).
 
@@ -339,9 +354,9 @@
   (configure-rules pm-rbs
                    #:conjunction-expansion conjunction-expansion
                    #:enforce-specialization enforce-specialization
-                   #:max-conjuncts max-conjuncts
-                   #:max-variables max-variables
-                   #:max-cnjexp-variables max-cnjexp-variables)
+                   #:maximum-conjuncts maximum-conjuncts
+                   #:maximum-variables maximum-variables
+                   #:maximum-cnjexp-variables maximum-cnjexp-variables)
 
   ;; Set parameters
   (ure-set-maximum-iterations pm-rbs maximum-iterations)
@@ -350,7 +365,7 @@
   ;; If there is no conjunction expansion then each rule is
   ;; deterministic, thus no need to retry exhausted sources
   (ure-set-fc-retry-exhausted-sources pm-rbs (and conjunction-expansion
-                                                  (< 1 max-conjuncts))))
+                                                  (< 1 maximum-conjuncts))))
 
 (define (minsup-eval pattern db ms)
 "
@@ -495,34 +510,69 @@
 
 (define* (cog-mine db
                    #:key
-                   (minsup 10)
-                   (minfreq -1)
-                   (initpat (top))
-                   (maximum-iterations 1000)
-                   (complexity-penalty 1)
-                   (conjunction-expansion #t)
-                   (enforce-specialization #t)
-                   (max-conjuncts 3)
-                   (max-variables 3)
-                   (max-cnjexp-variables 2)
-                   (surprisingness 'isurp))
+                   ;; Minimum support
+                   (minsup default-minimum-support)
+                   (minimum-support default-minimum-support)
+
+                   ;; Minimum frequency
+                   (minfreq default-minimum-frequency)
+                   (minimum-frequency default-minimum-frequency)
+
+                   ;; Initial pattern
+                   (initpat default-initial-pattern)
+                   (initial-pattern default-initial-pattern)
+
+                   ;; Maximum number of iterations
+                   (maxiter default-maximum-iterations)
+                   (maximum-iterations default-maximum-iterations)
+
+                   ;; Complexity penalty
+                   (cpxpnlt default-complexity-penalty)
+                   (complexity-penalty default-complexity-penalty)
+
+                   ;; Conjunction expansion
+                   (cnjexp default-conjunction-expansion)
+                   (conjunction-expansion default-conjunction-expansion)
+
+                   ;; Enforce specialization
+                   (enfspec default-enforce-specialization)
+                   (enforce-specialization default-enforce-specialization)
+
+                   ;; Maximum number of conjunctions
+                   (maxcnj default-maximum-conjuncts)
+                   (max-conjuncts default-maximum-conjuncts)
+                   (maximum-conjuncts default-maximum-conjuncts)
+
+                   ;; Maximum number of variables
+                   (maxvar default-maximum-variables)
+                   (max-variables default-maximum-variables)
+                   (maximum-variables default-maximum-variables)
+
+                   ;; Maximum number of variables in conjunction expansion
+                   (maxcevar default-maximum-cnjexp-variables)
+                   (max-cnjexp-variables default-maximum-cnjexp-variables)
+                   (maximum-cnjexp-variables default-maximum-cnjexp-variables)
+
+                   ;; Surprisingness measure
+                   (surp default-surprisingness)
+                   (surprisingness default-surprisingness))
 "
   Mine patterns in db (data trees, a.k.a. grounded hypergraphs) with minimum
   support ms, optionally using mi iterations and starting from the initial
   pattern initpat.
 
   Usage: (cog-mine db
-                   #:minsup ms
-                   #:minfreq mf
-                   #:initpat ip
-                   #:maximum-iterations mi
-                   #:complexity-penalty cp
-                   #:conjunction-expansion ce
-                   #:enforce-specializtion es
-                   #:max-conjuncts mc
-                   #:max-variables mv
-                   #:max-cnjexp-variables mcev
-                   #:surprisingness su)
+                   #:minimum-support ms             (or #:minsup ms)
+                   #:minimum-frequency mf           (or #:minfreq mf)
+                   #:initial-pattern ip             (or #:initpat ip)
+                   #:maximum-iterations mi          (or #:maxiter mi)
+                   #:complexity-penalty cp          (or #:cpxpnlt cp)
+                   #:conjunction-expansion ce       (or #:cnjexp ce)
+                   #:enforce-specialization es      (or #:enfspec es)
+                   #:maximum-conjuncts mc           (or #:maxcnj mc)
+                   #:maximum-variables mv           (or #:maxvar mv)
+                   #:maximum-cnjexp-variables mcev  (or #:maxcevar mcev)
+                   #:surprisingness su              (or #:surp su))
 
   db: Collection of data trees to mine. It can be given in 3 forms
 
@@ -563,7 +613,7 @@
   ip: [optional, default=(top)] Initial pattern to start the search from.
       All mined patterns will be specializations of this pattern.
 
-  mi: [optional, default=1000] Maximum number of iterations allocated.
+  mi: [optional, default=100] Maximum number of iterations allocated.
       If negative then the pattern miner keeps running till all patterns
       have been exhausted (not recommended unless you know what you're doing).
 
@@ -644,6 +694,85 @@
      enable incremental conjunction expansion, see the
      #:conjunction-expansion option.
 "
+  (define (diff? x y) (not (equal? x y)))
+  (define (num-diff? x y) (not (= (to-number x) (to-number y))))
+
+  ;; Set mininum frequency
+  (define mf
+    (to-number
+     (cond ((num-diff? minimum-frequency default-minimum-frequency) minimum-frequency)
+           ((num-diff? minfreq default-minimum-frequency) minfreq)
+           (else default-minimum-frequency))))
+
+  ;; Set minimum support
+  (define (get-minimum-support db-size)
+    (if (<= 0 mf)
+        (ceiling (* mf db-size))
+        (to-number
+         (cond ((num-diff? minimum-support default-minimum-support) minimum-support)
+               ((num-diff? minsup default-minimum-support) minsup)
+               (else default-minimum-support)))))
+
+  ;; Set initial pattern, a function to use the current atomspace at
+  ;; the time of being called
+  (define (get-initial-pattern)
+    (cond ((diff? initial-pattern default-initial-pattern) initial-pattern)
+          ((diff? initpat default-initial-pattern) initpat)
+          (else default-initial-pattern)))
+
+  ;; Set maximum iterations
+  (define mi
+    (to-number
+     (cond ((num-diff? maximum-iterations default-maximum-iterations) maximum-iterations)
+           ((num-diff? maxiter default-maximum-iterations) maxiter)
+           (else default-maximum-iterations))))
+
+  ;; Set complexity penalty
+  (define cp
+    (to-number
+     (cond ((num-diff? complexity-penalty default-complexity-penalty) complexity-penalty)
+           ((num-diff? cpxpnlt default-complexity-penalty) cpxpnlt)
+           (else default-complexity-penalty))))
+
+  ;; Set conjunction expansion
+  (define ce
+    (cond ((diff? conjunction-expansion default-conjunction-expansion) conjunction-expansion)
+          ((diff? cnjexp default-conjunction-expansion) cnjexp)
+          (else default-conjunction-expansion)))
+
+  ;; Set enforce specialization
+  (define es
+    (cond ((diff? enforce-specialization default-enforce-specialization) enforce-specialization)
+          ((diff? enfspec default-enforce-specialization) enfspec)
+          (else default-enforce-specialization)))
+
+  ;; Set maximum conjunctions
+  (define mc
+    (cond ((diff? maximum-conjuncts default-maximum-conjuncts) maximum-conjuncts)
+          ((diff? max-conjuncts default-maximum-conjuncts) max-conjuncts)
+          ((diff? maxcnj default-maximum-conjuncts) maxcnj)
+          (else default-maximum-conjuncts)))
+
+  ;; Set maximum variables
+  (define mv
+    (cond ((diff? maximum-variables default-maximum-variables) maximum-variables)
+          ((diff? max-variables default-maximum-variables) max-variables)
+          ((diff? maxvar default-maximum-variables) maxvar)
+          (else default-maximum-variables)))
+
+  ;; Set maximum variables in conjunction expansion
+  (define mcev
+    (cond ((diff? maximum-cnjexp-variables default-maximum-cnjexp-variables) maximum-cnjexp-variables)
+          ((diff? max-cnjexp-variables default-maximum-cnjexp-variables) max-cnjexp-variables)
+          ((diff? maxcevar default-maximum-cnjexp-variables) maxcevar)
+          (else default-maximum-cnjexp-variables)))
+
+  ;; Set surprisingness
+  (define su
+    (cond ((diff? surprisingness default-surprisingness) surprisingness)
+          ((diff? surp default-surprisingness) surp)
+          (else default-surprisingness)))
+
   (let* (;; Create a temporary child atomspace for the URE
          (tmp-as (cog-new-atomspace (cog-atomspace)))
          (parent-as (cog-set-atomspace! tmp-as))
@@ -656,11 +785,10 @@
                      ;; Otherwise db is already a concept
                      db))
          (db-size (get-cardinality db-cpt))
-         (mf (to-number minfreq))
-         (ms (if (<= 0 mf) (ceiling (* mf db-size)) (to-number minsup)))
+         (ms (get-minimum-support db-size))
          (ms-n (to-number-node ms))
          ;; Check that the initial pattern has enough support
-         (es (cog-enough-support? initpat db-cpt ms-n)))
+         (es (cog-enough-support? (get-initial-pattern) db-cpt ms-n)))
     (if (not es)
         ;; The initial pattern doesn't have enough support, thus the
         ;; solution set is empty.
@@ -671,16 +799,16 @@
         ;; The initial pattern has enough support, let's configure the
         ;; rule engine and run the pattern mining query
         (let* (;; Configure pattern miner forward chainer
-               (source (minsup-eval-true initpat db-cpt ms-n))
+               (source (minsup-eval-true (get-initial-pattern) db-cpt ms-n))
                (miner-rbs (random-miner-rbs-cpt))
                (cfg-m (configure-miner miner-rbs
-                                       #:maximum-iterations maximum-iterations
-                                       #:complexity-penalty complexity-penalty
-                                       #:conjunction-expansion conjunction-expansion
-                                       #:enforce-specialization enforce-specialization
-                                       #:max-conjuncts max-conjuncts
-                                       #:max-variables max-variables
-                                       #:max-cnjexp-variables max-cnjexp-variables))
+                                       #:maximum-iterations mi
+                                       #:complexity-penalty cp
+                                       #:conjunction-expansion ce
+                                       #:enforce-specialization es
+                                       #:maximum-conjuncts mc
+                                       #:maximum-variables mv
+                                       #:maximum-cnjexp-variables mcev))
 
                ;; Run pattern miner in a forward way
                (results (cog-fc miner-rbs source))
@@ -688,7 +816,7 @@
                (patterns (fetch-patterns db-cpt ms-n))
                (patterns-lst (cog-outgoing-set patterns)))
 
-          (if (equal? surprisingness 'none)
+          (if (equal? su 'none)
 
               ;; No surprisingness, simple return the pattern list
               (let* ((parent-patterns-lst (cog-cp parent-as patterns-lst)))
@@ -699,11 +827,9 @@
               (let*
                   ;; Configure surprisingness backward chainer
                   ((surp-rbs (random-surprisingness-rbs-cpt))
-                   (target (surp-target surprisingness db-cpt))
+                   (target (surp-target su db-cpt))
                    (vardecl (surp-vardecl))
-                   (cfg-s (configure-surprisingness surp-rbs
-                                                    surprisingness
-                                                    max-conjuncts))
+                   (cfg-s (configure-surprisingness surp-rbs su mc))
 
                    ;; Run surprisingness in a backward way
                    (surp-res (cog-bc surp-rbs target #:vardecl vardecl))
@@ -717,6 +843,7 @@
 
 (define (export-miner-utils)
   (export
+    absolutely-true
     iota-plus-one
     top
     random-db-cpt
