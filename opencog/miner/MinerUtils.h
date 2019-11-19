@@ -140,10 +140,10 @@ public:
 	static Handle shallow_abstract_of_val(const Handle& value);
 
 	/**
-	 * Wrap a VariableList around a variable list, if more than one
+	 * Wrap a VariableSet around a list of variables if more than one
 	 * variable, otherwise return that one variable.
 	 */
-	static Handle variable_list(const HandleSeq& vars);
+	static Handle variable_set(const HandleSeq& vars);
 
 	/**
 	 * Wrap a LambdaLink around a vardecl and body.

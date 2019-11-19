@@ -207,7 +207,7 @@ Handle MinerUtils::shallow_abstract_of_val(const Handle& value)
 
 	Type tt = value->get_type();
 	HandleSeq rnd_vars = gen_rand_variables(value->get_arity());
-	Handle vardecl = variable_list(rnd_vars);
+	Handle vardecl = variable_set(rnd_vars);
 
 	// TODO: this can probably be simplified using PresentLink, would
 	// entail to have RewriteLink::beta_reduce support PresentLink.
@@ -252,9 +252,9 @@ Handle MinerUtils::shallow_abstract_of_val(const Handle& value)
 	return lambda(vardecl, createLink(rnd_vars, tt));
 }
 
-Handle MinerUtils::variable_list(const HandleSeq& vars)
+Handle MinerUtils::variable_set(const HandleSeq& vars)
 {
-	return vars.size() == 1 ? vars[0] : Handle(createVariableList(vars));
+	return vars.size() == 1 ? vars[0] : Handle(createVariableSet(vars));
 }
 
 Handle MinerUtils::lambda(const Handle& vardecl, const Handle& body)

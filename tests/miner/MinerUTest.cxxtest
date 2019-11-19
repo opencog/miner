@@ -279,7 +279,7 @@ MinerUTest::MinerUTest() : _scm(&_as), _tmp_scm(&_tmp_as)
 	ure_logger().set_level(Logger::INFO);
 	ure_logger().set_timestamp_flag(false);
 	// ure_logger().set_sync_flag(true);
-	// ure_logger().set_print_to_stdout_flag(false);
+	// ure_logger().set_print_to_stdout_flag(true);
 
 	// Configure scheme load-paths that are common for all tests.
 	_scm.eval("(add-to-load-path \"" PROJECT_SOURCE_DIR
@@ -620,7 +620,7 @@ void MinerUTest::test_compose_3()
 {
 	logger().info("BEGIN TEST: %s", __FUNCTION__);
 
-	Handle VarXY = al(VARIABLE_LIST, X, Y);
+	Handle VarXY = al(VARIABLE_SET, X, Y);
 	Handle pattern =
 		MinerUtils::mk_pattern_no_vardecl({al(IMPLICATION_LINK, X, Y)});
 
@@ -666,7 +666,7 @@ void MinerUTest::test_expand_conjunction_disconnect()
 	logger().info("BEGIN TEST: %s", __FUNCTION__);
 
 	Handle result = MinerUtils::expand_conjunction_disconnect(top, top),
-		expected = MinerUtils::mk_pattern(al(VARIABLE_LIST, X, Y), {X, Y});
+		expected = MinerUtils::mk_pattern(al(VARIABLE_SET, X, Y), {X, Y});
 
 	logger().debug() << "result = " << oc_to_string(result);
 	logger().debug() << "expected = " << oc_to_string(expected);
@@ -1007,7 +1007,7 @@ void MinerUTest::test_AB_AC_BC()
 	HandleSeq db{A, B, C, InhAB, InhAC, InhBC};
 
 	// Define pattern parts
-	Handle VarXY = al(VARIABLE_LIST, X, Y),
+	Handle VarXY = al(VARIABLE_SET, X, Y),
 		InhXY = al(INHERITANCE_LINK, X, Y),
 		InhAY = al(INHERITANCE_LINK, A, Y),
 		InhXC = al(INHERITANCE_LINK, X, C);
@@ -1047,7 +1047,7 @@ void MinerUTest::test_AB_ABC()
 	HandleSeq db{A, B, C, InhAB, InhABC};
 
 	// Define pattern parts
-	Handle VarXY = al(VARIABLE_LIST, X, Y),
+	Handle VarXY = al(VARIABLE_SET, X, Y),
 		InhXY = al(INHERITANCE_LINK, X, Y),
 		InhAY = al(INHERITANCE_LINK, A, Y);
 
@@ -1136,7 +1136,7 @@ void MinerUTest::test_ABAB()
 	HandleSeq db{ImpABAB, ImpBCBC};
 
 	// Define pattern parts
-	Handle VarXY = al(VARIABLE_LIST, X, Y),
+	Handle VarXY = al(VARIABLE_SET, X, Y),
 		InhXY = al(INHERITANCE_LINK, X, Y),
 		ImpXY = al(IMPLICATION_LINK, X, Y);
 
@@ -1422,7 +1422,7 @@ void MinerUTest::test_2conjuncts_3()
 	HandleSeq db{InhAB, InhBC1, InhBC2};
 
 	// Define pattern parts
-	Handle VarXYZ = al(VARIABLE_LIST, X, Y, Z),
+	Handle VarXYZ = al(VARIABLE_SET, X, Y, Z),
 		InhXY = al(INHERITANCE_LINK, X, Y),
 		InhYZ = al(INHERITANCE_LINK, Y, Z);
 
@@ -1459,7 +1459,7 @@ void MinerUTest::test_2conjuncts_4()
 	HandleSeq db{InhA1B, InhA2B, InhBC1, InhBC2};
 
 	// Define pattern parts
-	Handle VarXYZ = al(VARIABLE_LIST, X, Y, Z),
+	Handle VarXYZ = al(VARIABLE_SET, X, Y, Z),
 		InhXY = al(INHERITANCE_LINK, X, Y),
 		InhYZ = al(INHERITANCE_LINK, Y, Z);
 
