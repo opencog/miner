@@ -1255,7 +1255,7 @@ void MinerUTest::test_long_transitivity()
 	// Run URE pattern miner without enforcing specialization (which is
 	// necessary to mine transitivity).
 	int ms = 1;
-	int max_iteration = 50;
+	int max_iteration = 100;
 	bool conjunction_expansion = true;
 	unsigned max_conjuncts = 3;
 	unsigned max_variables = 4;
