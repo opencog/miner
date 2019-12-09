@@ -284,53 +284,6 @@ Handle MinerUtils::compose(const Handle& pattern, const HandleMap& var2pat)
 	return pattern;
 }
 
-Handle MinerUtils::vardecl_compose(const Handle& vardecl, const HandleMap& var2subdecl)
-{
-	OC_ASSERT((bool)vardecl, "Not implemented");
-
-	Type t = vardecl->get_type();
-
-	// Base cases
-
-	if (t == VARIABLE_NODE) {
-		auto it = var2subdecl.find(vardecl);
-		// Compose if the variable maps to another variable
-		// declaration
-		if (it != var2subdecl.end())
-			return it->second;
-		return vardecl;
-	}
-
-	// Recursive cases
-
-	if (t == VARIABLE_LIST) {
-		HandleSeq oset;
-		for (const Handle& h : vardecl->getOutgoingSet()) {
-			Handle nh = vardecl_compose(h, var2subdecl);
-			if (nh) {
-				if (nh->get_type() == VARIABLE_LIST)
-					for (const Handle nhc : nh->getOutgoingSet())
-						oset.push_back(nhc);
-				else
-					oset.push_back(nh);
-			}
-		}
-
-		if (oset.empty())
-			return Handle::UNDEFINED;
-		if (oset.size() == 1)
-			return oset[0];
-		return createLink(oset, t);
-	}
-	else if (t == TYPED_VARIABLE_LINK) {
-		return vardecl_compose(vardecl->getOutgoingAtom(0), var2subdecl);
-	}
-	else {
-		OC_ASSERT(false, "Not implemented");
-		return Handle::UNDEFINED;
-	}
-}
-
 HandleSeq MinerUtils::get_db(const Handle& db_cpt)
 {
 	// Retrieve all members of db_cpt

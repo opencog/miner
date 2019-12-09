@@ -177,23 +177,6 @@ public:
 	static Handle compose(const Handle& pattern, const HandleMap& var2pat);
 
 	/**
-	 * TODO replace by RewriteLink::beta_reduce
-	 *
-	 * Given a variable declaration, and a mapping from variables to
-	 * variable declaration, produce a new variable declaration, as
-	 * obtained by compositing the pattern with the sub-patterns.
-	 *
-	 * If a variable in vardecl is missing in var2vardecl, then
-	 * vardecl is untouched. But if a variable maps to the undefined
-	 * Handle, then it is removed from the resulting variable
-	 * declaration. That happens in cases where the variable maps to a
-	 * constant pattern, i.e. a value. In such case composition
-	 * amounts to application.
-	 */
-	static Handle vardecl_compose(const Handle& vardecl,
-	                              const HandleMap& var2subdecl);
-
-	/**
 	 * Given a db concept node, retrieve all its members
 	 */
 	static HandleSeq get_db(const Handle& db_cpt);
