@@ -67,7 +67,7 @@ public:
 	 *  {
 	 *    ;; Shallow abstractions of X
 	 *    { (Lambda
-	 *        (VariableList
+	 *        (VariableSet
 	 *          (Variable "$X1")
 	 *          (Variable "$X2"))
 	 *        (Inheritance
@@ -100,7 +100,7 @@ public:
 	 * ms = 2
 	 *
 	 * front_shallow_abstract(valuations) = { (Lambda
-	 *                                          (VariableList
+	 *                                          (VariableSet
 	 *                                            (Variable "$X1")
 	 *                                            (Variable "$X2"))
 	 *                                          (Inheritance
@@ -120,7 +120,7 @@ public:
 	 *
 	 * 1. itself if it is nullary (see is_nullary)
 	 *
-	 * 2. (Lambda (VariableList X1 ... Xn) (L X1 ... Xn) if it is a
+	 * 2. (Lambda (VariableSet X1 ... Xn) (L X1 ... Xn) if it is a
 	 *    link of arity n.
 	 *
 	 * For instance, with
@@ -128,7 +128,7 @@ public:
 	 * dt = (Inheritance (Concept "a") (Concept "b"))
 	 *
 	 * shallow_patterns(dt) = (Lambda
-	 *                          (VariableList
+	 *                          (VariableSet
 	 *                            (Variable "$X1")
 	 *                            (Variable "$X2"))
 	 *                          (Inheritance

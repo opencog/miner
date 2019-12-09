@@ -37,7 +37,7 @@
          (emp (emp-eval pattern db))
          (est (est-eval pattern db)))
   (Bind
-    (VariableList
+    (VariableSet
       pattern-decl
       db-decl)
     (And

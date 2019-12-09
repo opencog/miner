@@ -33,7 +33,7 @@
 #include <opencog/atoms/core/LambdaLink.h>
 #include <opencog/atoms/core/RewriteLink.h>
 #include <opencog/atoms/core/PresentLink.h>
-#include <opencog/atoms/core/VariableList.h>
+#include <opencog/atoms/core/VariableSet.h>
 #include <opencog/atoms/core/NumberNode.h>
 #include <opencog/atoms/core/FindUtils.h>
 #include <opencog/atoms/core/TypeUtils.h>
@@ -598,7 +598,7 @@ void MinerUtils::remove_useless_clauses(const Handle& vardecl, HandleSeq& clause
 void MinerUtils::remove_constant_clauses(const Handle& vardecl, HandleSeq& clauses)
 {
 	// Get Variables
-	VariableListPtr vl = createVariableList(vardecl);
+	VariableSetPtr vl = createVariableSet(vardecl);
 	const HandleSet& vars = vl->get_variables().varset;
 
 	// Remove constant clauses

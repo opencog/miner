@@ -43,7 +43,7 @@
          ;; Clauses
          (minsup-pattern (minsup-eval pattern db ms)))
   (Bind
-    (VariableList
+    (VariableSet
       pattern-decl
       db-decl
       ms-decl)

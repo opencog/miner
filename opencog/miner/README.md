@@ -64,9 +64,10 @@ program that matches all atoms in the AtomSpace.
 
 As another example, a pattern matching only `Inheritance` links would
 look like
+
 ```scheme
 (Lambda
-  (VariableList
+  (VariableSet
     (Variable "$X")
     (Variable "$Y"))
   (Present
@@ -75,8 +76,19 @@ look like
       (Variable "$Y"))))
 ```
 
-Or, slightly more specialized, a pattern matching only `Inheritance`
-links with same first and second argument would look like
+Note: `VariableSet` can be used instead of `VariableList` when the
+order of the variables in the variable declaration is irrelevant.
+That is most certainly the case for the pattern miner as the only
+thing that matters in that application is the frequency of the
+pattern.  For that reason we strongly recommend to use `VariableSet`
+whenever possible, such as for instance in the definition of the
+initial pattern. Doing so is likely to speed up the search by many
+folds.
+
+Or, a slight specialization of the pattern above, matching only
+`Inheritance` links with the same first and second argument would look
+like
+
 ```scheme
 (Lambda
   (Variable "$X")
@@ -111,9 +123,10 @@ associated values produce matching data trees (or in order words data
 trees in the satisfying set of the pattern).
 
 For instance if `P` is
+
 ```scheme
 (Lambda
-  (VariableList
+  (VariableSet
     (Variable "$X")
     (Variable "$Y"))
   (Present
@@ -140,6 +153,7 @@ and `T` is
 ```
 
 then the satisfying set of `P` over `T` is
+
 ```scheme
 (Inheritance
   (Concept "A")
@@ -211,9 +225,10 @@ Another example, if the valuation set is the following singleton
 {(Variable "$X")->(Implication (Predicate "P") (Predicate "Q"))}
 ```
 its shallow abstraction over its single variable `(Variable "$X")` is
+
 ```scheme
 (Lambda
-  (VariableList
+  (VariableSet
     (Variable "$Z")
     (Variable "$W"))
   (Present
@@ -337,6 +352,7 @@ Given all specializations (6 in total in this iteration example), we
 now need to calculate the support of each of them against `T`, and
 only the one reaching the minimum support can be added back to the
 population of patterns `C`. Out of these 6 only one has enough support
+
 ```scheme
 (Lambda
   (Variable "$Y")
@@ -423,7 +439,7 @@ specialization. For instance the conjunction of the following patterns
 
 ```scheme
 (Lambda
-  (VariableList
+  (VariableSet
     (Variable "$X")
     (Variable "$Y"))
   (Present
@@ -434,7 +450,7 @@ specialization. For instance the conjunction of the following patterns
 
 ```scheme
 (Lambda
-  (VariableList
+  (VariableSet
     (Variable "$Y")
     (Variable "$Z"))
   (Present
@@ -447,8 +463,9 @@ using `(Variable "$Y")` as connector, result into
 
 ```scheme
 (Lambda
-  (VariableList
+  (VariableSet
     (Variable "$X")
+    (Variable "$Y"))
     (Variable "$Z"))
   (Present
     (Inheritance
@@ -616,15 +633,18 @@ Usage
 
 To invoke the pattern miner, within guile, you first need to import
 the `miner` module
+
 ```scheme
 (use-modules (opencog miner))
 ```
 
 Then, simply call `cog-mine` on your database with a given minimum
 support
+
 ```scheme
 (cog-mine db #:minsup ms)
 ```
+
 where `db` is either
 1. a Scheme list of atoms
 2. an Atomese List or Set of atoms
@@ -635,12 +655,14 @@ where `db` is either
 `cog-mine` automatically configures the rule engine, calls it, returns
 its results and removes the atoms that were temporarily created. The
 results have the following form
+
 ```scheme
 (Set
   P1
   ...
   Pn)
 ```
+
 where `P1` to `Pn` are the patterns discovered by the pattern miner.
 
 In addition `cog-mine` accepts multiple options such as

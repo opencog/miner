@@ -35,8 +35,9 @@
   (define ms (Variable "$ms"))
   ;; Types
   (define VariableT (Type "VariableNode"))
+  (define VariableSetT (Type "VariableSet"))
   (define VariableListT (Type "VariableList"))
-  (define varT (TypeChoice VariableT VariableListT))
+  (define varT (TypeChoice VariableT VariableSetT VariableListT))
   (define NumberT (Type "NumberNode"))
   (define ConceptT (Type "ConceptNode"))
   ;; Typed declations
@@ -55,7 +56,7 @@
              (jsd-e (jsd-eval f db))
              (surp-e (surp-eval 'jsdsurp f db)))
         (Bind
-          (VariableList
+          (VariableSet
             typed-f-vardecl
             cnj-bodies
             typed-db
