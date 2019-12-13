@@ -144,9 +144,9 @@ std::string SCValuations::to_string(const std::string& indent) const
 {
 	std::stringstream ss;
 	ss << indent << "variables:" << std::endl
-	   << oc_to_string(variables, indent + OC_TO_STRING_INDENT)
+	   << oc_to_string(variables, indent + OC_TO_STRING_INDENT) << std::endl
 		<< indent << "valuations:" << std::endl
-	   << oc_to_string(valuations, indent + OC_TO_STRING_INDENT)
+		<< oc_to_string(valuations, indent + OC_TO_STRING_INDENT) << std::endl
 	   << indent << "_var_idx = " << _var_idx;
 	return ss.str();
 }
@@ -241,7 +241,7 @@ std::string Valuations::to_string(const std::string& indent) const
 	std::stringstream ss;
 	ss << indent << "size = " << size() << std::endl
 		<< indent << "variables:" << std::endl
-	   << oc_to_string(variables, indent + OC_TO_STRING_INDENT)
+	   << oc_to_string(variables, indent + OC_TO_STRING_INDENT) << std::endl
 	   << indent << "scvaluations set:" << std::endl
 	   << oc_to_string(scvs, indent + OC_TO_STRING_INDENT) << std::endl
 	   << indent << "_var_idx = " << _var_idx;

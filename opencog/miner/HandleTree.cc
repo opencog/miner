@@ -116,7 +116,7 @@ bool all_nodes_in(const HandleSet& cash, HandleTree::iterator it)
 std::string oc_to_string(const HandleTree& ht, const std::string& indent)
 {
 	std::stringstream ss;
-	ss << indent << "size = " << ht.size() << std::endl;
+	ss << indent << "size = " << ht.size();
 	unsigned i = 0;
 	for (HandleTree::iterator it = ht.begin(); it != ht.end(); ++it)
 	{
@@ -124,7 +124,8 @@ std::string oc_to_string(const HandleTree& ht, const std::string& indent)
 		std::string node_indent = indent;
 		dorepeat(depth)
 			node_indent += OC_TO_STRING_INDENT;
-		ss << node_indent << "atom[" << i << ",depth=" << ht.depth(it) << "]:"
+		ss << std::endl << node_indent
+		   << "atom[" << i << ",depth=" << ht.depth(it) << "]:"
 		   << std::endl << oc_to_string(*it, node_indent + OC_TO_STRING_INDENT);
 		++i;
 	}
@@ -135,10 +136,11 @@ std::string oc_to_string(const HandleMapTree& hmt, const std::string& indent)
 {
 	// TODO: show the hierarchy
 	std::stringstream ss;
-	ss << indent << "size = " << hmt.size() << std::endl;
+	ss << indent << "size = " << hmt.size();
 	unsigned i = 0;
 	for (HandleMapTree::iterator it = hmt.begin(); it != hmt.end(); ++it) {
-		ss << indent << "handle map[" << i << ",depth=" << hmt.depth(it) << "]:"
+		ss << std::endl << indent
+		   << "handle map[" << i << ",depth=" << hmt.depth(it) << "]:"
 		   << std::endl << oc_to_string(*it, indent + OC_TO_STRING_INDENT);
 		++i;
 	}
@@ -148,11 +150,11 @@ std::string oc_to_string(const HandleMapTree& hmt, const std::string& indent)
 std::string oc_to_string(const HandleHandleTreeMap& hhtm, const std::string& indent)
 {
 	std::stringstream ss;
-	ss << indent << "size = " << hhtm.size() << std::endl;
+	ss << indent << "size = " << hhtm.size();
 	unsigned i = 0;
 	for (const auto& hht : hhtm) {
-		ss << indent << "atom[" << i << "]:" << std::endl
-		   << oc_to_string(hht.first, indent + OC_TO_STRING_INDENT);
+		ss << std::endl << indent << "atom[" << i << "]:" << std::endl
+		   << oc_to_string(hht.first, indent + OC_TO_STRING_INDENT) << std::endl;
 		ss << indent << "handle tree[" << i << "]:" << std::endl
 		   << oc_to_string(hht.second, indent + OC_TO_STRING_INDENT);
 		++i;

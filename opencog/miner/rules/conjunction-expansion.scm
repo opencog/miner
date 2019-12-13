@@ -24,7 +24,7 @@
 ;;   Predicate "minsup"
 ;;   List
 ;;     Lambda
-;;       VariableList
+;;       VariableSet
 ;;         <f-vardecl>
 ;;         <g-vardecl>
 ;;       And
@@ -38,7 +38,7 @@
 ;; variables are properly alpha-converted to avoid any variable name
 ;; collision. Finally,
 ;;
-;; VariableList
+;; VariableSet
 ;;   <f-vardecl>
 ;;   <g-vardecl>
 ;;
@@ -112,7 +112,7 @@
              (f (Quote (Lambda (Unquote f-vardecl) (Unquote f-body))))
              (minsup-f (minsup-eval f db ms)))
         (Bind
-          (VariableList
+          (VariableSet
             f-vardecl-decl
             g-vardecl-decl
             f-body-decl
@@ -153,7 +153,7 @@
                                (Present (map Unquote f-conjuncts)))))
              (minsup-f (minsup-eval f db ms)))
       (Bind
-        (VariableList
+        (VariableSet
           f-vardecl-decl
           g-vardecl-decl
           f-conjuncts-decls

@@ -477,7 +477,7 @@
   For instance (conjunct-pattern 3), creates
 
   (Lambda
-    (VariableList
+    (VariableSet
       (Variable \"$X-1\")
       (Variable \"$X-2\")
       (Variable \"$X-3\"))
@@ -487,7 +487,7 @@
       (Variable \"$X-3\")))
 "
   (let* ((vars (gen-variables "$X" nconj))
-         (var-lst (VariableList vars))
+         (var-lst (VariableSet vars))
          (var-conj (Present vars)))
     (Lambda var-lst var-conj)))
 

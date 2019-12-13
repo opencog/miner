@@ -33,6 +33,7 @@
 #include <opencog/atoms/core/LambdaLink.h>
 #include <opencog/atoms/core/RewriteLink.h>
 #include <opencog/atoms/core/PresentLink.h>
+#include <opencog/atoms/core/VariableSet.h>
 #include <opencog/atoms/core/VariableList.h>
 #include <opencog/atoms/core/NumberNode.h>
 #include <opencog/atoms/core/FindUtils.h>
@@ -47,6 +48,8 @@
 #include <boost/range/algorithm/sort.hpp>
 #include <boost/range/algorithm_ext/erase.hpp>
 #include <boost/numeric/conversion/cast.hpp>
+#include <boost/algorithm/cxx11/all_of.hpp>
+#include <boost/algorithm/cxx11/any_of.hpp>
 
 namespace opencog
 {
@@ -282,53 +285,6 @@ Handle MinerUtils::compose(const Handle& pattern, const HandleMap& var2pat)
 	if (RewriteLinkPtr sc = RewriteLinkCast(pattern))
 		return remove_useless_clauses(sc->beta_reduce(var2pat));
 	return pattern;
-}
-
-Handle MinerUtils::vardecl_compose(const Handle& vardecl, const HandleMap& var2subdecl)
-{
-	OC_ASSERT((bool)vardecl, "Not implemented");
-
-	Type t = vardecl->get_type();
-
-	// Base cases
-
-	if (t == VARIABLE_NODE) {
-		auto it = var2subdecl.find(vardecl);
-		// Compose if the variable maps to another variable
-		// declaration
-		if (it != var2subdecl.end())
-			return it->second;
-		return vardecl;
-	}
-
-	// Recursive cases
-
-	if (t == VARIABLE_LIST) {
-		HandleSeq oset;
-		for (const Handle& h : vardecl->getOutgoingSet()) {
-			Handle nh = vardecl_compose(h, var2subdecl);
-			if (nh) {
-				if (nh->get_type() == VARIABLE_LIST)
-					for (const Handle nhc : nh->getOutgoingSet())
-						oset.push_back(nhc);
-				else
-					oset.push_back(nh);
-			}
-		}
-
-		if (oset.empty())
-			return Handle::UNDEFINED;
-		if (oset.size() == 1)
-			return oset[0];
-		return createLink(oset, t);
-	}
-	else if (t == TYPED_VARIABLE_LINK) {
-		return vardecl_compose(vardecl->getOutgoingAtom(0), var2subdecl);
-	}
-	else {
-		OC_ASSERT(false, "Not implemented");
-		return Handle::UNDEFINED;
-	}
 }
 
 HandleSeq MinerUtils::get_db(const Handle& db_cpt)
@@ -645,7 +601,7 @@ void MinerUtils::remove_useless_clauses(const Handle& vardecl, HandleSeq& clause
 void MinerUtils::remove_constant_clauses(const Handle& vardecl, HandleSeq& clauses)
 {
 	// Get Variables
-	VariableListPtr vl = createVariableList(vardecl);
+	VariableSetPtr vl = createVariableSet(vardecl);
 	const HandleSet& vars = vl->get_variables().varset;
 
 	// Remove constant clauses
@@ -1164,10 +1120,10 @@ std::string oc_to_string(const HandleSeqSeqSeq& hsss,
                          const std::string& indent)
 {
 	std::stringstream ss;
-	ss << indent << "size = " << hsss.size() << std::endl;
+	ss << indent << "size = " << hsss.size();
 	size_t i = 0;
 	for (const HandleSeqSeq& hss : hsss) {
-		ss << indent << "atoms sets[" << i << "]:" << std::endl
+		ss << std::endl << indent << "atoms sets[" << i << "]:" << std::endl
 		   << oc_to_string(hss, indent + oc_to_string_indent);
 		i++;
 	}

@@ -9,7 +9,7 @@
 ;;   Predicate "minsup"
 ;;   List
 ;;     Lambda
-;;       VariableList
+;;       VariableSet
 ;;         <x1>
 ;;         ...
 ;;         <xn>
@@ -30,7 +30,7 @@
 ;;         Predicate "minsup"
 ;;         List
 ;;           Lambda
-;;             VariableList
+;;             VariableSet
 ;;               <x1>
 ;;               ...
 ;;               <xn>
@@ -67,7 +67,7 @@
          ;; Clauses
          (minsup-g (minsup-eval g db ms)))
   (Bind
-    (VariableList
+    (VariableSet
       g-decl
       db-decl
       ms-decl)

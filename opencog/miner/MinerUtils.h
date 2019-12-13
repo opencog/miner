@@ -27,9 +27,6 @@
 #include <opencog/atoms/base/Handle.h>
 #include <opencog/unify/Unify.h>
 
-#include <boost/algorithm/cxx11/all_of.hpp>
-#include <boost/algorithm/cxx11/any_of.hpp>
-
 #include "Valuations.h"
 
 namespace opencog
@@ -67,7 +64,7 @@ public:
 	 *  {
 	 *    ;; Shallow abstractions of X
 	 *    { (Lambda
-	 *        (VariableList
+	 *        (VariableSet
 	 *          (Variable "$X1")
 	 *          (Variable "$X2"))
 	 *        (Inheritance
@@ -100,7 +97,7 @@ public:
 	 * ms = 2
 	 *
 	 * front_shallow_abstract(valuations) = { (Lambda
-	 *                                          (VariableList
+	 *                                          (VariableSet
 	 *                                            (Variable "$X1")
 	 *                                            (Variable "$X2"))
 	 *                                          (Inheritance
@@ -120,7 +117,7 @@ public:
 	 *
 	 * 1. itself if it is nullary (see is_nullary)
 	 *
-	 * 2. (Lambda (VariableList X1 ... Xn) (L X1 ... Xn) if it is a
+	 * 2. (Lambda (VariableSet X1 ... Xn) (L X1 ... Xn) if it is a
 	 *    link of arity n.
 	 *
 	 * For instance, with
@@ -128,7 +125,7 @@ public:
 	 * dt = (Inheritance (Concept "a") (Concept "b"))
 	 *
 	 * shallow_patterns(dt) = (Lambda
-	 *                          (VariableList
+	 *                          (VariableSet
 	 *                            (Variable "$X1")
 	 *                            (Variable "$X2"))
 	 *                          (Inheritance
@@ -175,23 +172,6 @@ public:
 	 * declaration.
 	 */
 	static Handle compose(const Handle& pattern, const HandleMap& var2pat);
-
-	/**
-	 * TODO replace by RewriteLink::beta_reduce
-	 *
-	 * Given a variable declaration, and a mapping from variables to
-	 * variable declaration, produce a new variable declaration, as
-	 * obtained by compositing the pattern with the sub-patterns.
-	 *
-	 * If a variable in vardecl is missing in var2vardecl, then
-	 * vardecl is untouched. But if a variable maps to the undefined
-	 * Handle, then it is removed from the resulting variable
-	 * declaration. That happens in cases where the variable maps to a
-	 * constant pattern, i.e. a value. In such case composition
-	 * amounts to application.
-	 */
-	static Handle vardecl_compose(const Handle& vardecl,
-	                              const HandleMap& var2subdecl);
 
 	/**
 	 * Given a db concept node, retrieve all its members
@@ -476,7 +456,7 @@ public:
 	                                        const Handle& var);
 
 	/**
-	 * List above but takes scope links instead of blocks (whether each
+	 * Like above but takes scope links instead of blocks (whether each
 	 * scope link has the conjunction of clauses of its block as body).
 	 *
 	 * TODO: for now, this code relies on unification. However it can
