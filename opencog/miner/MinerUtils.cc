@@ -1117,10 +1117,10 @@ std::string oc_to_string(const HandleSeqSeqSeq& hsss,
                          const std::string& indent)
 {
 	std::stringstream ss;
-	ss << indent << "size = " << hsss.size() << std::endl;
+	ss << indent << "size = " << hsss.size();
 	size_t i = 0;
 	for (const HandleSeqSeq& hss : hsss) {
-		ss << indent << "atoms sets[" << i << "]:" << std::endl
+		ss << std::endl << indent << "atoms sets[" << i << "]:" << std::endl
 		   << oc_to_string(hss, indent + oc_to_string_indent);
 		i++;
 	}
