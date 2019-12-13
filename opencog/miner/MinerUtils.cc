@@ -34,6 +34,7 @@
 #include <opencog/atoms/core/RewriteLink.h>
 #include <opencog/atoms/core/PresentLink.h>
 #include <opencog/atoms/core/VariableSet.h>
+#include <opencog/atoms/core/VariableList.h>
 #include <opencog/atoms/core/NumberNode.h>
 #include <opencog/atoms/core/FindUtils.h>
 #include <opencog/atoms/core/TypeUtils.h>
@@ -47,6 +48,8 @@
 #include <boost/range/algorithm/sort.hpp>
 #include <boost/range/algorithm_ext/erase.hpp>
 #include <boost/numeric/conversion/cast.hpp>
+#include <boost/algorithm/cxx11/all_of.hpp>
+#include <boost/algorithm/cxx11/any_of.hpp>
 
 namespace opencog
 {

@@ -27,9 +27,6 @@
 #include <opencog/atoms/base/Handle.h>
 #include <opencog/unify/Unify.h>
 
-#include <boost/algorithm/cxx11/all_of.hpp>
-#include <boost/algorithm/cxx11/any_of.hpp>
-
 #include "Valuations.h"
 
 namespace opencog
@@ -459,7 +456,7 @@ public:
 	                                        const Handle& var);
 
 	/**
-	 * List above but takes scope links instead of blocks (whether each
+	 * Like above but takes scope links instead of blocks (whether each
 	 * scope link has the conjunction of clauses of its block as body).
 	 *
 	 * TODO: for now, this code relies on unification. However it can

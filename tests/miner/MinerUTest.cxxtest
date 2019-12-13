@@ -96,7 +96,7 @@ private:
 	 * Make
 	 *
 	 * (Lambda
-	 *   (VariableList X1 ... Xn)
+	 *   (VariableSet X1 ... Xn)
 	 *   (Present X1 ... Xn))
 	 */
 	Handle mk_nconjunct(unsigned n);
@@ -143,14 +143,14 @@ public:
 
 	// Auxiliary methods
 	void test_partitions();
-	void test_is_syntax_more_abstract_1();
-	void test_is_syntax_more_abstract_2();
-	void test_is_syntax_more_abstract_3();
-	void test_is_more_abstract_1();
-	void test_is_more_abstract_2();
-	void test_is_more_abstract_3();
-	// TODO: fix is_more_abstract to support that case
-	void xtest_is_more_abstract_4();
+	void test_is_blk_syntax_more_abstract_1();
+	void test_is_blk_syntax_more_abstract_2();
+	void test_is_blk_syntax_more_abstract_3();
+	void test_is_pat_syntax_more_abstract();
+	void test_is_pat_more_abstract_1();
+	void test_is_pat_more_abstract_2();
+	void test_is_pat_more_abstract_3();
+	void xtest_is_pat_more_abstract_4(); // TODO: fix is_pat_more_abstract
 	void test_is_more_abstract_foreach_var();
 	void test_remove_useless_clauses_1();
 	void test_remove_useless_clauses_2();
@@ -351,7 +351,7 @@ void MinerUTest::test_partitions()
 	TS_ASSERT_EQUALS(result, expect);
 }
 
-void MinerUTest::test_is_syntax_more_abstract_1()
+void MinerUTest::test_is_blk_syntax_more_abstract_1()
 {
 	logger().info("BEGIN TEST: %s", __FUNCTION__);
 
@@ -363,7 +363,7 @@ void MinerUTest::test_is_syntax_more_abstract_1()
 	TS_ASSERT(not MinerUtils::is_blk_syntax_more_abstract(l_blk, r_blk, Y));
 }
 
-void MinerUTest::test_is_syntax_more_abstract_2()
+void MinerUTest::test_is_blk_syntax_more_abstract_2()
 {
 	logger().info("BEGIN TEST: %s", __FUNCTION__);
 
@@ -375,7 +375,7 @@ void MinerUTest::test_is_syntax_more_abstract_2()
 	TS_ASSERT(MinerUtils::is_blk_syntax_more_abstract(l_blk, r_blk, Y));
 }
 
-void MinerUTest::test_is_syntax_more_abstract_3()
+void MinerUTest::test_is_blk_syntax_more_abstract_3()
 {
 	logger().info("BEGIN TEST: %s", __FUNCTION__);
 
@@ -389,13 +389,25 @@ void MinerUTest::test_is_syntax_more_abstract_3()
 	TS_ASSERT(not MinerUtils::is_blk_syntax_more_abstract(r_blk, l_blk, X));
 }
 
+void MinerUTest::test_is_pat_syntax_more_abstract()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
 
-void MinerUTest::test_is_more_abstract_1()
+	Handle
+		clause1 = al(EVALUATION_LINK, X, Y),
+		clause2 = al(EVALUATION_LINK, X, al(LIST_LINK, Z, A)),
+		pat1 = MinerUtils::mk_pattern_no_vardecl({clause1}),
+		pat2 = MinerUtils::mk_pattern_no_vardecl({clause2});
+
+	TS_ASSERT(MinerUtils::is_pat_syntax_more_abstract(pat1, pat2, X));
+}
+
+void MinerUTest::test_is_pat_more_abstract_1()
 {
 	logger().info("BEGIN TEST: %s", __FUNCTION__);
 
 	Handle l_pat = al(LAMBDA_LINK,
-	                  al(VARIABLE_LIST, X, Y, Z),
+	                  al(VARIABLE_SET, X, Y, Z),
 	                  al(PRESENT_LINK,
 	                     al(INHERITANCE_LINK, X, Z),
 	                     al(INHERITANCE_LINK, Y, Z)));
@@ -407,15 +419,15 @@ void MinerUTest::test_is_more_abstract_1()
 	TS_ASSERT(MinerUtils::is_pat_more_abstract(l_pat, r_pat, Z));
 }
 
-void MinerUTest::test_is_more_abstract_2()
+void MinerUTest::test_is_pat_more_abstract_2()
 {
 	logger().info("BEGIN TEST: %s", __FUNCTION__);
 
 	Handle l_pat = al(LAMBDA_LINK,
-	                  al(VARIABLE_LIST, X, Y),
+	                  al(VARIABLE_SET, X, Y),
 	                  al(INHERITANCE_LINK, X, Z));
 	Handle r_pat = al(LAMBDA_LINK,
-	                  al(VARIABLE_LIST, X, Y, Z),
+	                  al(VARIABLE_SET, X, Y, Z),
 	                  al(PRESENT_LINK,
 	                     al(INHERITANCE_LINK, X, C0),
 	                     al(INHERITANCE_LINK, Z, Y),
@@ -425,17 +437,17 @@ void MinerUTest::test_is_more_abstract_2()
 	TS_ASSERT(MinerUtils::is_pat_more_abstract(l_pat, r_pat, X));
 }
 
-void MinerUTest::test_is_more_abstract_3()
+void MinerUTest::test_is_pat_more_abstract_3()
 {
 	logger().info("BEGIN TEST: %s", __FUNCTION__);
 
 	Handle l_pat = al(LAMBDA_LINK,
-	                  al(VARIABLE_LIST, X, Y, Z),
+	                  al(VARIABLE_SET, X, Y, Z),
 	                  al(PRESENT_LINK,
 	                     al(INHERITANCE_LINK, X, Y),
 	                     al(INHERITANCE_LINK, Z, C1)));
 	Handle r_pat = al(LAMBDA_LINK,
-	                  al(VARIABLE_LIST, X, Z),
+	                  al(VARIABLE_SET, X, Z),
 	                  al(PRESENT_LINK,
 	                     al(INHERITANCE_LINK, X, C0),
 	                     al(INHERITANCE_LINK, Z, Y)));
@@ -447,16 +459,16 @@ void MinerUTest::test_is_more_abstract_3()
 	TS_ASSERT(MinerUtils::is_pat_more_abstract(l_pat, r_pat, Y));
 }
 
-void MinerUTest::xtest_is_more_abstract_4()
+void MinerUTest::xtest_is_pat_more_abstract_4()
 {
 	Handle l_pat = al(LAMBDA_LINK,
-	                  al(VARIABLE_LIST, X, Y, Z),
+	                  al(VARIABLE_SET, X, Y, Z),
 	                  al(PRESENT_LINK,
 	                     al(INHERITANCE_LINK, X, Y),
 	                     al(INHERITANCE_LINK, Z, Y)));
 	// TODO: this seems bogus, X is not even in the body
 	Handle r_pat = al(LAMBDA_LINK,
-	                  al(VARIABLE_LIST, X, Z),
+	                  al(VARIABLE_SET, X, Z),
 	                  al(INHERITANCE_LINK, Z, C0));
 
 	// Left pattern is more abstract than right pattern, relative to X.
@@ -466,7 +478,7 @@ void MinerUTest::xtest_is_more_abstract_4()
 	TS_ASSERT(MinerUtils::is_pat_more_abstract(l_pat, r_pat, Y));
 }
 
-void MinerUTest:: test_is_more_abstract_foreach_var()
+void MinerUTest::test_is_more_abstract_foreach_var()
 {
 	logger().info("BEGIN TEST: %s", __FUNCTION__);
 
@@ -511,7 +523,7 @@ void MinerUTest:: test_remove_useless_clauses_2()
 	// does not introduce new variables, therefore it is redundant and
 	// can be removed.
 	Handle
-		vardecl = al(VARIABLE_LIST, X, Y),
+		vardecl = al(VARIABLE_SET, X, Y),
 		clause1 = al(INHERITANCE_LINK, X, C1),
 		clause2 = al(INHERITANCE_LINK, C2, Y),
 		clause3 = al(INHERITANCE_LINK, X, Y),
@@ -553,7 +565,7 @@ void MinerUTest:: test_remove_useless_clauses_3()
 	// No clause is more abstract than the others, thus nothing should
 	// be removed.
 	Handle
-		vardecl = al(VARIABLE_LIST, X, Y, Z, W),
+		vardecl = al(VARIABLE_SET, X, Y, Z, W),
 		clause1 = al(INHERITANCE_LINK, X, Y),
 		clause2 = al(INHERITANCE_LINK, Y, Z),
 		clause3 = al(INHERITANCE_LINK, Z, W),
@@ -576,7 +588,7 @@ void MinerUTest::test_compose_1()
 	logger().info("BEGIN TEST: %s", __FUNCTION__);
 
 	Handle InhYB = al(INHERITANCE_LINK, Y, B),
-		pattern = MinerUtils::mk_pattern(al(VARIABLE_LIST, X, Y), {X, InhYB}),
+		pattern = MinerUtils::mk_pattern(al(VARIABLE_SET, X, Y), {X, InhYB}),
 		subpat = A;
 
 	Handle npat = MinerUtils::compose(pattern, {{Y, subpat}}),
@@ -592,7 +604,7 @@ void MinerUTest::test_compose_2()
 {
 	logger().info("BEGIN TEST: %s", __FUNCTION__);
 
-	Handle VarXY = al(VARIABLE_LIST, X, Y),
+	Handle VarXY = al(VARIABLE_SET, X, Y),
 		pattern = al(LAMBDA_LINK,
 		             VarXY,
 		             al(PRESENT_LINK,
@@ -685,7 +697,7 @@ void MinerUTest::test_expand_conjunction_1()
 	HandleSeq db{InhAB, InhBC};
 
 	Handle InhXY = al(INHERITANCE_LINK, X, Y),
-		VarXY = al(VARIABLE_LIST, X, Y),
+		VarXY = al(VARIABLE_SET, X, Y),
 		p1 = al(LAMBDA_LINK,
 		        VarXY,
 		        al(AND_LINK, InhXY, InhXY)),
@@ -741,7 +753,7 @@ void MinerUTest::test_expand_conjunction_3()
 	HandleSeq db{InhAB, InhBC};
 
 	Handle InhXY = al(INHERITANCE_LINK, X, Y),
-		VarXY = al(VARIABLE_LIST, X, Y),
+		VarXY = al(VARIABLE_SET, X, Y),
 		pat = MinerUtils::mk_pattern(VarXY, {InhXY});
 
 	HandleSet results = MinerUtils::expand_conjunction(pat, pat, db, 1,
@@ -751,8 +763,8 @@ void MinerUTest::test_expand_conjunction_3()
 		InhZX = al(INHERITANCE_LINK, Z, X),
 		InhYW = al(INHERITANCE_LINK, Y, W),
 		InhZY = al(INHERITANCE_LINK, Z, Y),
-		VarXYW = al(VARIABLE_LIST, X, Y, W),
-		VarXYZ = al(VARIABLE_LIST, X, Y, Z),
+		VarXYW = al(VARIABLE_SET, X, Y, W),
+		VarXYZ = al(VARIABLE_SET, X, Y, Z),
 		InhXYXW = MinerUtils::mk_pattern(VarXYW, {InhXY, InhXW}),
 		InhXYZX = MinerUtils::mk_pattern(VarXYZ, {InhXY, InhZX}),
 		InhXYYW = MinerUtils::mk_pattern(VarXYW, {InhXY, InhYW}),
@@ -783,7 +795,7 @@ void MinerUTest::test_expand_conjunction_4()
 
 	Handle InhXY = al(INHERITANCE_LINK, X, Y),
 		LstXY = al(LIST_LINK, X, Y),
-		VarXY = al(VARIABLE_LIST, X, Y),
+		VarXY = al(VARIABLE_SET, X, Y),
 		p1 = al(LAMBDA_LINK,
 		        VarXY,
 		        InhXY),
@@ -798,7 +810,7 @@ void MinerUTest::test_expand_conjunction_4()
 		InhZY = al(INHERITANCE_LINK, Z, Y),
 		LstXZ = al(LIST_LINK, X, Z),
 		LstZY = al(LIST_LINK, Z, Y),
-		VarXYZ = al(VARIABLE_LIST, X, Y, Z),
+		VarXYZ = al(VARIABLE_SET, X, Y, Z),
 		InhXYLstXZ = MinerUtils::mk_pattern(VarXYZ,
 		                                    {InhXY, LstXZ}),
 		InhXYLstZY = MinerUtils::mk_pattern(VarXYZ,
@@ -823,7 +835,7 @@ void MinerUTest::test_shallow_abstract()
 	logger().debug() << "rs = " << rs;
 
 	// Define pattern
-	Handle VarXZW = al(VARIABLE_LIST, X, Z, W),
+	Handle VarXZW = al(VARIABLE_SET, X, Z, W),
 		ugly = an(CONCEPT_NODE, "ugly");
 	HandleSeq clauses = {al(INHERITANCE_LINK, X, ugly),
 	                     al(INHERITANCE_LINK, X, Z),
@@ -857,9 +869,13 @@ void MinerUTest::test_shallow_abstract()
 		man = an(CONCEPT_NODE, "man"),
 		soda_drinker = an(CONCEPT_NODE, "soda drinker"),
 		woman = an(CONCEPT_NODE, "woman");
-	HandleSetSeq expect{ { Abe, Alaura, Allen, Cason, Davion,
+	// Expected shallow abstractions
+	HandleSetSeq expect{ // Values for X
+	                     { Abe, Alaura, Allen, Cason, Davion,
 	                       Emily, Hessley, Lily, Lucy, Sophia },
-	                     { soda_drinker, W, ugly, man, human, woman },
+	                     // Values for W. Z comes from variable factorization.
+	                     { soda_drinker, Z, ugly, man, human, woman },
+	                     // Values for Z. No variable factorization as last one.
 	                     { soda_drinker, ugly, man, human, woman } };
 
 	logger().debug() << "result = " << oc_to_string(result);
@@ -872,6 +888,8 @@ void MinerUTest::test_A()
 {
 	logger().info("BEGIN TEST: %s", __FUNCTION__);
 
+	// Test db size < minsup, thus expected result should be empty
+
 	// Run C++ pattern miner
 	HandleTree cpp_results = cpp_pm({A}, 2),
 		cpp_expected;
@@ -882,8 +900,7 @@ void MinerUTest::test_A()
 	TS_ASSERT(content_eq(cpp_results, cpp_expected));
 
 	// Run URE pattern miner
-	Handle ure_results = ure_pm({A}, 2, 10), // TODO remove max_iter
-	                                         // when possible
+	Handle ure_results = ure_pm({A}, 2),
 		ure_expected = al(SET_LINK);
 
 	logger().debug() << "ure_results = " << oc_to_string(ure_results);
@@ -910,7 +927,7 @@ void MinerUTest::test_AB()
 	TS_ASSERT(content_eq(cpp_results, cpp_expected));
 
 	// Run URE pattern miner
-	Handle ure_results = ure_pm({A, B}, 2, 10),
+	Handle ure_results = ure_pm({A, B}, 2),
 		ure_expected = mk_minsup_evals(2, {top});
 
 	logger().debug() << "ure_results = " << oc_to_string(ure_results);
@@ -927,7 +944,7 @@ void MinerUTest::test_AB_redundant_cnj()
 	// solution set does not contain
 	//
 	// (LambdaLink
-	//   (VariableList
+	//   (VariableSet
 	//     (VariableNode "$X")
 	//     (VariableNode "$Y")
 	//   )
@@ -980,13 +997,13 @@ void MinerUTest::test_AB_AC()
 	HandleSeq db{InhAB, InhAC};
 
 	// Define pattern parts
-	Handle VarXY = al(VARIABLE_LIST, X, Y),
+	Handle VarXY = al(VARIABLE_SET, X, Y),
 		InhXY = al(INHERITANCE_LINK, X, Y),
 		InhAY = al(INHERITANCE_LINK, A, Y);
 
 	// Run URE pattern miner (using _as for testing more diverse
 	// content)
-	Handle ure_results = ure_pm(_as, 2, 10),
+	Handle ure_results = ure_pm(_as, 2),
 		expected_pattern = MinerUtils::mk_pattern(Y, {InhAY}),
 		ure_expected = mk_minsup_eval(2, expected_pattern);
 
@@ -1348,7 +1365,7 @@ void MinerUTest::test_2conjuncts_1()
 	HandleSeq db{InhAB, InhBC1, InhBC2};
 
 	// Define pattern parts
-	Handle VarXY = al(VARIABLE_LIST, X, Y),
+	Handle VarXY = al(VARIABLE_SET, X, Y),
 		InhXA = al(INHERITANCE_LINK, X, A),
 		InhAY = al(INHERITANCE_LINK, A, Y);
 
@@ -1381,8 +1398,8 @@ void MinerUTest::test_2conjuncts_2()
 	HandleSeq db{AB, BC1, BC2};
 
 	// Define pattern parts
-	Handle VarXYZ = al(VARIABLE_LIST, X, Y, Z),
-		VarXYZW = al(VARIABLE_LIST, X, Y, Z, W),
+	Handle VarXYZ = al(VARIABLE_SET, X, Y, Z),
+		VarXYZW = al(VARIABLE_SET, X, Y, Z, W),
 		InhXY = al(INHERITANCE_LINK, X, Y),
 		InhYZ = al(INHERITANCE_LINK, Y, Z),
 		InhZW = al(INHERITANCE_LINK, Z, W);
@@ -1499,8 +1516,8 @@ void MinerUTest::test_2conjuncts_5()
 	HandleSeq db{InhA1B, InhA2B, InhBC1, InhBC2};
 
 	// Define pattern parts
-	Handle VarXYZ = al(VARIABLE_LIST, X, Y, Z),
-		VarXYZW = al(VARIABLE_LIST, X, Y, Z, W),
+	Handle VarXYZ = al(VARIABLE_SET, X, Y, Z),
+		VarXYZW = al(VARIABLE_SET, X, Y, Z, W),
 		InhXY = al(INHERITANCE_LINK, X, Y),
 		InhYZ = al(INHERITANCE_LINK, Y, Z),
 		InhZW = al(INHERITANCE_LINK, Z, W);
@@ -1539,7 +1556,7 @@ void MinerUTest::test_InferenceControl()
 	// Define initpat
 	//
 	// Lambda
-	//   VariableList
+	//   VariableSet
 	//     Variable "$T"
 	//     Variable "$A"
 	//     Variable "$L"
@@ -1572,7 +1589,7 @@ void MinerUTest::test_InferenceControl()
 		VarA = an(VARIABLE_NODE, "$A"),
 		VarL = an(VARIABLE_NODE, "$L"),
 		VarB = an(VARIABLE_NODE, "$B"),
-		vardecl = al(VARIABLE_LIST, VarT, VarA, VarL, VarB);
+		vardecl = al(VARIABLE_SET, VarT, VarA, VarL, VarB);
 	HandleSeq clauses = {al(EXECUTION_LINK,
 	                        expand,
 	                        al(LIST_LINK, VarA, VarL, de_rule),
@@ -1588,11 +1605,11 @@ void MinerUTest::test_InferenceControl()
 	// The pattern of interest looks like
 	//
 	// Lambda
-	//   VariableList
-	//   Variable "$T"
-	//   Variable "$A"
-	//   Variable "$X"
-	//   Variable "$B"
+	//   VariableSet
+	//     Variable "$T"
+	//     Variable "$A"
+	//     Variable "$X"
+	//     Variable "$B"
 	// And
 	//   Execution
 	//     Schema "expand"
@@ -1615,7 +1632,7 @@ void MinerUTest::test_InferenceControl()
 	//       Variable "$B"
 	//       Variable "$T"
 	Handle a = an(CONCEPT_NODE, "a"),
-		expected_vardecl = al(VARIABLE_LIST, VarT, VarA, X, VarB);
+		expected_vardecl = al(VARIABLE_SET, VarT, VarA, X, VarB);
 	HandleSeq
 		expected_clauses = {al(EXECUTION_LINK,
 		                       expand,
@@ -1663,7 +1680,7 @@ void MinerUTest::test_SodaDrinker()
 	logger().debug() << "rs = " << rs;
 
 	// Define initial pattern (to speed up mining)
-	Handle VarXYZW = al(VARIABLE_LIST, X, Y, Z, W);
+	Handle VarXYZW = al(VARIABLE_SET, X, Y, Z, W);
 	HandleSeq clauses = {al(INHERITANCE_LINK, X, Y),
 	                     al(INHERITANCE_LINK, X, Z),
 	                     al(INHERITANCE_LINK, X, W)};
@@ -1697,7 +1714,7 @@ void MinerUTest::test_SodaDrinker()
 	TS_ASSERT(content_is_in(expected, cpp_results));
 
 	// Run URE pattern miner
-	Handle ure_results = ure_pm(_tmp_as, 5, 100, initpat),
+	Handle ure_results = ure_pm(_tmp_as, 5, 500, initpat),
 		ure_expected = mk_minsup_eval(5, expected);
 
 	logger().debug() << "ure_results = " << oc_to_string(ure_results);
@@ -1792,7 +1809,7 @@ void MinerUTest::xtest_lojban()
 		X1 = tmp_an(VARIABLE_NODE, "$X1"),
 		X2 = tmp_an(VARIABLE_NODE, "$X2"),
 		Z2 = tmp_an(VARIABLE_NODE, "$Z2"),
-		VARS = tmp_al(VARIABLE_LIST, X1, X2, Z2, P1, P3);
+		VARS = tmp_al(VARIABLE_SET, X1, X2, Z2, P1, P3);
 	HandleSeq clauses = { tmp_al(EVALUATION_LINK, P1, tmp_al(LIST_LINK, X1, X2)),
 	                      tmp_al(EVALUATION_LINK, P3, tmp_al(LIST_LINK, X1, Z2)) };
 	Handle initpat = MinerUtils::mk_pattern(VARS, clauses);
@@ -1848,14 +1865,14 @@ void MinerUTest::test_vqa()
 	// Start from (Member X Y), conjunctions will be grown
 	// incrementally.
 	Handle
-		VarXY = al(VARIABLE_LIST, X, Y),
+		VarXY = al(VARIABLE_SET, X, Y),
 		MemXY = al(MEMBER_LINK, X, Y),
 		initpat = MinerUtils::mk_pattern(VarXY, {MemXY});
 
 	// The pattern of interest looks like
 	//
 	// (LambdaLink
-	//   (VariableList
+	//   (VariableSet
 	//     (VariableNode "$PM-24b2cd09")
 	//     (VariableNode "$PM-1b1cc2ca")
 	//     (VariableNode "$PM-24b2cd09-1de71072")
@@ -1874,11 +1891,11 @@ void MinerUTest::test_vqa()
 	//
 	// TODO: find a better pattern of interest
 	Handle
-		VarXYZ = al(VARIABLE_LIST, X, Y, Z),
+		VarXYZ = al(VARIABLE_SET, X, Y, Z),
 		MemZY = al(MEMBER_LINK, Z, Y),
-		expected = MinerUtils::mk_pattern(VarXYZ, {MemXY, MemZY});
+		expect_pat = MinerUtils::mk_pattern(VarXYZ, {MemXY, MemZY});
 
-	logger().debug() << "expected = " << oc_to_string(expected);
+	logger().debug() << "expect_pat = " << oc_to_string(expect_pat);
 
 	// Run URE pattern miner
 	bool conjunction_expansion = true;
@@ -1897,7 +1914,7 @@ void MinerUTest::test_vqa()
 	                        max_cnjexp_variables,
 	                        enforce_specialization,
 	                        complexity_penalty),
-		expect = mk_minsup_eval(minsup, expected);
+		expect = mk_minsup_eval(minsup, expect_pat);
 
 	logger().debug() << "results = " << oc_to_string(results->getOutgoingSet());
 	logger().debug() << "expect = " << oc_to_string(expect);
