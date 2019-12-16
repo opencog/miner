@@ -10,17 +10,16 @@ Given the KB
 ```
 (Inheritance
   (Concept "A")
-  (Concept "B")))
+  (Concept "B"))
 (Inheritance
   (Concept "B")
-  (Concept "C")))
+  (Concept "C"))
 (Inheritance
   (Concept "D")
-  (Concept "E")))
+  (Concept "E"))
 (Inheritance
   (Concept "E")
-  (Concept "F")))
-
+  (Concept "F"))
 ```
 
 find pattern
