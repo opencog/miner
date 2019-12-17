@@ -12,7 +12,7 @@ Problem and Terminology
 The pattern miner attempts to solve the problem of finding frequent
 patterns in the AtomSpace. The terminology used here is similar to the
 one defined in this [overview](#chi2005) and the algorithm mimics the
-typical algorithms of the subtree mining litterature with the
+typical algorithms of the subtree mining literature with the
 additional twist that patterns are Atomese programs.
 
 Let us recall the important terms
@@ -37,7 +37,7 @@ Let us recall the important terms
 Algorithm
 ---------
 
-Patterm mining operates by searching the space of pattern trees,
+Pattern mining operates by searching the space of pattern trees,
 typically starting from the most abstract pattern, the one that
 encompass all data trees, construct specializations of it, retain
 those that have enough support (support equal to or above the minimum
@@ -208,7 +208,7 @@ The last one comes the fact that in the last valuation of `V`, the
 value associated to `(Variable "$Y")` is equal to the value associated
 to `(Variable "$X")` as well, `(Concept "D")`, allowing to capture a
 connection between `(Variable "$Y")` and `(Variable "$X")` as
-potentional pattern specialization.
+potential pattern specialization.
 
 Likewise the shallow abstractions of `(Variable "$Y")` would be
 
@@ -236,7 +236,7 @@ its shallow abstraction over its single variable `(Variable "$X")` is
       (Variable "$Z")
       (Variable "$W"))))
 ```
-because it corresponds to a pattern matching its value.
+because it corresponds to a pattern matching value.
 
 #### Step 4: Specialize with Shallow Abstractions
 
@@ -270,7 +270,7 @@ To carry out the composition `Put` is used as follows
     (Variable "$Y")))
 ```
 
-to substitute (or beta-reducebeta-reduce, as defined in the Lambda
+to substitute (or beta-reduce, as defined in the Lambda
 Calculus) `(Variable "$X")` by `(Concept "A")`, `(Concept "D")` and
 `(Variable "$Y")` in `P`, producing
 
@@ -364,7 +364,7 @@ population of patterns `C`. Out of these 6 only one has enough support
 
 The others can be safely discarded because, according to the a priori
 property, none of their subsequent specializations will reach the
-minumum support.
+minimum support.
 
 One may notice that already in Step 4 we can avoid creating shallow
 abstractions that we know will result into specializations that do not
@@ -379,8 +379,8 @@ On top of that basic algorithm one can add various heuristics. We will
 present one in particular called here *Incremental Conjunction
 Expansion*.
 
-A conjunction is the combination of different multiple patterns, for
-instance. For instance given patterns
+A conjunction is the combination of different multiple patterns. For
+instance given patterns
 
 ```scheme
 (Lambda
@@ -465,7 +465,7 @@ using `(Variable "$Y")` as connector, result into
 (Lambda
   (VariableSet
     (Variable "$X")
-    (Variable "$Y"))
+    (Variable "$Y")
     (Variable "$Z"))
   (Present
     (Inheritance
@@ -504,7 +504,7 @@ conjunction (connected by `(Variable "$X")`) however has a count of 9
 (3*3 for considering all combinations of `A`s and `C`s). Thus the
 conjunction cannot be a specialization. Therefore the a priori
 property cannot apply to it. For that reason any use of the a priori
-property will result in excessive pruning of the search. One one hand
+property will result in excessive pruning of the search. On one hand
 it can speed it up, but on the other hand it makes the pattern miner
 less open-ended as some desired patterns might be missed. To see that
 assume that the minimum support is set to 9, in that case such a
@@ -512,7 +512,7 @@ conjunction above should be accepted, however because the incremental
 conjunction expansion will only combine patterns with minimal support
 (both 6 here) such combination will be missed.
 
-### Unified Rule Engine Implemenation
+### Unified Rule Engine Implementation
 
 #### Motivation
 
@@ -532,7 +532,7 @@ mechanisms.
 #### Forward or Backward?
 
 There are at least two ways to implement this algorithm in the URE, a
-way which is more amenable to barckward chaining and another one more
+way which is more amenable to backward chaining and another one more
 amenable to forward chaining. The current implementation uses forward
 chaining but both ways are presented here.
 
