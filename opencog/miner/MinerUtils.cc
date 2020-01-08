@@ -292,7 +292,7 @@ HandleSeq MinerUtils::get_db(const Handle& db_cpt)
 	// Retrieve all members of db_cpt
 	HandleSeq db;
 	IncomingSet member_links = db_cpt->getIncomingSetByType(MEMBER_LINK);
-	for (const LinkPtr l : member_links) {
+	for (const Handle& l : member_links) {
 		Handle member = l->getOutgoingAtom(0);
 		if (member != db_cpt)
 			db.push_back(member);
