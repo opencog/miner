@@ -647,8 +647,8 @@
         by the conjunction expansion rule.
 
   su: [optional, default='isurp] After running the pattern miner,
-      patterns can be ranked according to some surprisingness measure.
-      The following surported modes are:
+      patterns can be ranked according to a surprisingness measure.
+      The following supported modes are:
 
       'isurp-old:  Verbatim port of Shujing I-Surprisingness.
 
@@ -665,6 +665,11 @@
                    the truth value estimate is calculated.
 
       'none:       No surprisingness measure is applied.
+
+      If a surprisingness measure is selected then the pattern miner returns
+      a (scheme) list of patterns each wrapped in an evaluation link with
+      a predicate indicating their surprisingness. Otherwise, if 'none
+      is selected then it returns a (scheme) list of patterns.
 
   Under the hood it will create a rule base and a query for the rule
   engine, configure it according to the user's options and run it.
@@ -794,7 +799,7 @@
         ;; solution set is empty.
         (begin (cog-set-atomspace! parent-as)
                ;; TODO: delete tmp-as
-               (Set))
+               (list))
 
         ;; The initial pattern has enough support, let's configure the
         ;; rule engine and run the pattern mining query
