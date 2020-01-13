@@ -799,7 +799,7 @@
         ;; solution set is empty.
         (begin (cog-set-atomspace! parent-as)
                ;; TODO: delete tmp-as
-               (Set))
+               (list))
 
         ;; The initial pattern has enough support, let's configure the
         ;; rule engine and run the pattern mining query
