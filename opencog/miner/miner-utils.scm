@@ -42,6 +42,7 @@
 (define default-enforce-specialization #t)
 (define default-maximum-conjuncts 3)
 (define default-maximum-variables 3)
+(define default-maximum-spcial-conjuncts 1)
 (define default-maximum-cnjexp-variables 2)
 (define default-surprisingness 'isurp)
 
@@ -166,20 +167,30 @@
   ;; Maybe remove, nothing is mandatory anymore
   *unspecified*)
 
-(define (configure-shallow-specialization-rule pm-rbs unary maximum-variables)
+(define (configure-shallow-specialization-rules pm-rbs
+                                                maximum-variables
+                                                maximum-spcial-conjuncts)
   (define mv (min 9 maximum-variables))
 
-  ;; Load and associate mandatory rules to pm-rbs
-  ;; (load-from-path (mk-full-rule-path "shallow-specialization.scm"))
-  (let* ((rule-name (string-append "shallow-specialization-"
-                                   (if unary "unary-" "")
-                                   "mv-" (number->string mv)
-                                   "-rule"))
-         (rule-alias (DefinedSchema rule-name))
-         (rule-tv (stv 0.9 1)))
-    ;; Add definition
-    (DefineLink rule-alias (gen-shallow-specialization-rule unary mv))
-    (ure-add-rule pm-rbs rule-alias rule-tv)))
+  ;; Only define such rules if maximum-spcial-conjuncts if above 0
+  (if (< 0 maximum-spcial-conjuncts)
+
+      ;; Load and associate mandatory rules to pm-rbs
+      ;; (load-from-path (mk-full-rule-path "shallow-specialization.scm"))
+      (let* ((namify (lambda (i)
+                       (string-append "shallow-specialization-"
+                                      (string-append (number->string i) "ary-")
+                                      "mv-" (number->string mv)
+                                      "-rule")))
+             (aliasify (lambda (i) (DefinedSchema (namify i))))
+             (definify (lambda (i)
+                         (DefineLink
+                           (aliasify i)
+                           (gen-shallow-specialization-rule i mv))))
+             (rule-tv (stv 0.9 1))
+             (rulify (lambda (i) (definify i) (list (aliasify i) rule-tv)))
+             (rules (map rulify (iota-plus-one maximum-spcial-conjuncts))))
+        (ure-add-rules pm-rbs rules))))
 
 (define (configure-conjunction-expansion-rules pm-rbs
                                                conjunction-expansion
@@ -203,7 +214,7 @@
                          (DefineLink
                            (aliasify i)
                            (gen-conjunction-expansion-rule i mv enforce-specialization))))
-             (conf 1)    ; TODO: make this use configurable
+             (conf 1)    ; TODO: make this user configurable
              ;; The more arity the expansion the lower its
              ;; priority. Makes sure it's priority is also below that
              ;; of shallow specialization.
@@ -225,13 +236,13 @@
                                    (enforce-specialization default-enforce-specialization)
                                    (maximum-conjuncts default-maximum-conjuncts)
                                    (maximum-variables default-maximum-variables)
+                                   (maximum-spcial-conjuncts default-maximum-spcial-conjuncts)
                                    (maximum-cnjexp-variables default-maximum-cnjexp-variables))
 
-  ;; Load shallow specialization, either unary, if
-  ;; conjunction-expansion is enabled, or not
-  (configure-shallow-specialization-rule pm-rbs
-                                         conjunction-expansion
-                                         maximum-variables)
+  ;; Load shallow specialization and associate to pm-rbs
+  (configure-shallow-specialization-rules pm-rbs
+                                          maximum-variables
+                                          maximum-spcial-conjuncts)
 
   ;; Load conjunction-expansion and associate to pm-rbs
   (configure-conjunction-expansion-rules pm-rbs
@@ -246,6 +257,7 @@
                           (enforce-specialization default-enforce-specialization)
                           (maximum-conjuncts default-maximum-conjuncts)
                           (maximum-variables default-maximum-variables)
+                          (maximum-spcial-conjuncts default-maximum-spcial-conjuncts)
                           (maximum-cnjexp-variables default-maximum-cnjexp-variables))
   (configure-mandatory-rules pm-rbs)
   (configure-optional-rules pm-rbs
@@ -253,6 +265,7 @@
                             #:enforce-specialization enforce-specialization
                             #:maximum-conjuncts maximum-conjuncts
                             #:maximum-variables maximum-variables
+                            #:maximum-spcial-conjuncts maximum-spcial-conjuncts
                             #:maximum-cnjexp-variables maximum-cnjexp-variables))
 
 (define* (configure-surprisingness surp-rbs mode maximum-conjuncts)
@@ -301,6 +314,7 @@
                           (enforce-specialization default-enforce-specialization)
                           (maximum-conjuncts default-maximum-conjuncts)
                           (maximum-variables default-maximum-variables)
+                          (maximum-spcial-conjuncts default-maximum-spcial-conjuncts)
                           (maximum-cnjexp-variables default-maximum-cnjexp-variables))
 "
   Given a Concept node representing a rule based system for the
@@ -314,6 +328,7 @@
                           #:enforce-specialization es
                           #:maximum-conjuncts mc
                           #:maximum-variables mv
+                          #:maximum-spcial-conjuncts mspc
                           #:maximum-cnjexp-variables mcev)
 
   pm-rbs: Concept node of the rule-based system to configure
@@ -356,6 +371,7 @@
                    #:enforce-specialization enforce-specialization
                    #:maximum-conjuncts maximum-conjuncts
                    #:maximum-variables maximum-variables
+                   #:maximum-spcial-conjuncts maximum-spcial-conjuncts
                    #:maximum-cnjexp-variables maximum-cnjexp-variables)
 
   ;; Set parameters
@@ -408,6 +424,16 @@
     (List
       pattern
       db)))
+
+(define (get-cnj-arity pattern)
+"
+  Given a pattern, return its number of conjuncts
+"
+  (define body (get-body pattern))
+  (if (or (eq? (cog-type? body) 'PresentLink)
+          (eq? (cog-type? body) 'AndLink))
+      (cog-arity body)
+      1))
 
 (define (get-members C)
 "
@@ -548,6 +574,11 @@
                    (max-variables default-maximum-variables)
                    (maximum-variables default-maximum-variables)
 
+                   ;; Maximum number of conjuncts specialization can be applied to
+                   (maxspcjn default-maximum-spcial-conjuncts)
+                   (max-spcial-conjuncts default-maximum-spcial-conjuncts)
+                   (maximum-spcial-conjuncts default-maximum-spcial-conjuncts)
+
                    ;; Maximum number of variables in conjunction expansion
                    (maxcevar default-maximum-cnjexp-variables)
                    (max-cnjexp-variables default-maximum-cnjexp-variables)
@@ -571,6 +602,7 @@
                    #:enforce-specialization es      (or #:enfspec es)
                    #:maximum-conjuncts mc           (or #:maxcnj mc)
                    #:maximum-variables mv           (or #:maxvar mv)
+                   #:maximum-spcial-conjuncts mspc  (or #:maxspcjn mspc)
                    #:maximum-cnjexp-variables mcev  (or #:maxcevar mcev)
                    #:surprisingness su              (or #:surp su))
 
@@ -642,6 +674,14 @@
   mv: [optional, default=3] Maximum number of variables that the resulting
       patterns can contain. As of now mv cannot be set above 9 (which
       should be more than enough).
+
+  mspc: [optional, default=1] Maximum number of conjuncts of a pattern
+        to apply shallow specialization to, which can be very expensive
+        when applied to patterns with more than 1 conjunct.
+        Any value between 0 and the number of conjuncts of the initial
+        pattern (excluded) will disable shallow specialization. So make
+        sure to properly adjust that parameter if you provide an initial
+        pattern (unless you which to disable shallow specialization).
 
   mcev: [optional, default=2] Maximum number of variables in patterns produced
         by the conjunction expansion rule.
@@ -721,9 +761,19 @@
   ;; Set initial pattern, a function to use the current atomspace at
   ;; the time of being called
   (define (get-initial-pattern)
-    (cond ((diff? initial-pattern default-initial-pattern) initial-pattern)
-          ((diff? initpat default-initial-pattern) initpat)
-          (else default-initial-pattern)))
+    (define (add-default-vardecl ip)
+      (if (< 1 (cog-arity ip))
+          ;; The variable declaration is already there
+          ip
+          ;; Need to add a default variable declaration
+          (let* ((body (cog-outgoing-atom ip 0)))
+            (Lambda (VariableSet (cog-free-variables body)) body))))
+    (let* ((ip (cond ((diff? initial-pattern default-initial-pattern) initial-pattern)
+                     ((diff? initpat default-initial-pattern) initpat)
+                     (else default-initial-pattern))))
+      ;; If the initial pattern is missing a variable declaration, add
+      ;; a default one, as the miner rules require one.
+      (add-default-vardecl ip)))
 
   ;; Set maximum iterations
   (define mi
@@ -764,6 +814,13 @@
           ((diff? max-variables default-maximum-variables) max-variables)
           ((diff? maxvar default-maximum-variables) maxvar)
           (else default-maximum-variables)))
+
+  ;; Set maximum number of conjuncts specialization can be applied to
+  (define mspc
+    (cond ((diff? maximum-spcial-conjuncts default-maximum-spcial-conjuncts) maximum-spcial-conjuncts)
+          ((diff? max-spcial-conjuncts default-maximum-spcial-conjuncts) max-spcial-conjuncts)
+          ((diff? maxspcjn default-maximum-spcial-conjuncts) maxspcjn)
+          (else default-maximum-spcial-conjuncts)))
 
   ;; Set maximum variables in conjunction expansion
   (define mcev
@@ -813,6 +870,7 @@
                                        #:enforce-specialization es
                                        #:maximum-conjuncts mc
                                        #:maximum-variables mv
+                                       #:maximum-spcial-conjuncts mspc
                                        #:maximum-cnjexp-variables mcev))
 
                ;; Run pattern miner in a forward way

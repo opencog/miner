@@ -110,6 +110,7 @@ private:
 	              bool conjunction_expansion=false,
 	              unsigned max_conjuncts=UINT_MAX,
 	              unsigned max_variables=UINT_MAX,
+	              unsigned max_spcial_conjuncts=1,
 	              unsigned max_cnjexp_variables=UINT_MAX,
 	              bool enforce_specialization=true,
 	              double complexity_penalty=0.0);
@@ -118,6 +119,7 @@ private:
 	              bool conjunction_expansion=false,
 	              unsigned max_conjuncts=UINT_MAX,
 	              unsigned max_variables=UINT_MAX,
+	              unsigned max_spcial_conjuncts=1,
 	              unsigned max_cnjexp_variables=UINT_MAX,
 	              bool enforce_specialization=true,
 	              double complexity_penalty=0.0);
@@ -218,6 +220,7 @@ Handle MinerUTest::ure_pm(const AtomSpace& db_as, int minsup,
                           bool conjunction_expansion,
                           unsigned max_conjuncts,
                           unsigned max_variables,
+                          unsigned max_spcial_conjuncts,
                           unsigned max_cnjexp_variables,
                           bool enforce_specialization,
                           double complexity_penalty)
@@ -226,6 +229,7 @@ Handle MinerUTest::ure_pm(const AtomSpace& db_as, int minsup,
 	                               maximum_iterations, initpat,
 	                               conjunction_expansion,
 	                               max_conjuncts, max_variables,
+	                               max_spcial_conjuncts,
 	                               max_cnjexp_variables,
 	                               enforce_specialization, complexity_penalty);
 }
@@ -235,6 +239,7 @@ Handle MinerUTest::ure_pm(const HandleSeq& db, int minsup,
                           bool conjunction_expansion,
                           unsigned max_conjuncts,
                           unsigned max_variables,
+                          unsigned max_spcial_conjuncts,
                           unsigned max_cnjexp_variables,
                           bool enforce_specialization,
                           double complexity_penalty)
@@ -243,6 +248,7 @@ Handle MinerUTest::ure_pm(const HandleSeq& db, int minsup,
 	                               maximum_iterations, initpat,
 	                               conjunction_expansion,
 	                               max_conjuncts, max_variables,
+	                               max_spcial_conjuncts,
 	                               max_cnjexp_variables,
 	                               enforce_specialization, complexity_penalty);
 }
@@ -974,7 +980,15 @@ void MinerUTest::test_AB_redundant_cnj()
 	// Run URE pattern miner without enforcing specialization (which is
 	// necessary to mine transitivity).
 	int ms = 1;
-	Handle results = ure_pm(db, ms, 50, top, true, 3, 2, 2, false);
+	int mi = 50;
+	bool cnj_exp = false;
+	unsigned max_cnjs = 3;
+	unsigned max_vars = 2;
+	unsigned max_spcial_cnjs = 1;
+	unsigned max_cnjexp_vars = 2;
+	bool enforce_spcial = false;
+	Handle results = ure_pm(db, ms, mi, top, cnj_exp, max_cnjs, max_vars,
+	                        max_spcial_cnjs, max_cnjexp_vars, enforce_spcial);
 	HandleSeq clauses = {al(INHERITANCE_LINK, A, Y),
 	                     al(INHERITANCE_LINK, Y, B),
 	                     al(INHERITANCE_LINK, X, Y)};
@@ -1243,7 +1257,15 @@ void MinerUTest::test_transitivity()
 	// Run URE pattern miner without enforcing specialization (which is
 	// necessary to mine transitivity).
 	int ms = 1;
-	Handle results = ure_pm(db, ms, 50, top, true, 2, 3, 3, false);
+	unsigned max_conjuncts = 2;
+	unsigned max_variables = 3;
+	unsigned max_spcial_conjuncts = 1;
+	unsigned max_cnjexp_variables = 3;
+	bool enforce_specialization = false;
+	Handle results = ure_pm(db, ms, 50, top, true,
+	                        max_conjuncts, max_variables,
+	                        max_spcial_conjuncts, max_cnjexp_variables,
+	                        enforce_specialization);
 	HandleSeq clauses = {al(INHERITANCE_LINK, X, Y),
 	                     al(INHERITANCE_LINK, Y, Z)};
 	Handle expected = mk_minsup_eval(ms,
@@ -1276,11 +1298,13 @@ void MinerUTest::test_long_transitivity()
 	bool conjunction_expansion = true;
 	unsigned max_conjuncts = 3;
 	unsigned max_variables = 4;
+	unsigned max_spcial_conjuncts = 1;
 	unsigned max_cnjexp_variables = 4;
 	bool enforce_specialization = false;
 	double complexity_penalty = 1.0;
 	Handle results = ure_pm(db, ms, max_iteration, top, conjunction_expansion,
-	                        max_conjuncts, max_variables, max_cnjexp_variables,
+	                        max_conjuncts, max_variables,
+	                        max_spcial_conjuncts, max_cnjexp_variables,
 	                        enforce_specialization, complexity_penalty);
 	HandleSeq clauses = {al(INHERITANCE_LINK, X, Y),
 	                     al(INHERITANCE_LINK, Y, Z),
@@ -1417,7 +1441,14 @@ void MinerUTest::test_2conjuncts_2()
 	TS_ASSERT(content_is_in(cpp_expected, cpp_results));
 
 	// Run URE pattern miner
-	Handle ure_results = ure_pm(db, 2, 2, initpat),
+	int ms = 2;
+	int mi = 2;
+	bool cnj_exp = false;
+	unsigned max_cnjs = 2;
+	unsigned max_vars = 3;
+	unsigned max_spcial_cnjs = 2;
+	Handle ure_results = ure_pm(db, ms, mi, initpat, cnj_exp,
+	                            max_cnjs, max_vars, max_spcial_cnjs),
 		ure_expected = mk_minsup_eval(2,
 		                              MinerUtils::mk_pattern(VarXYZ,
 		                                                     {InhXY, InhYZ}));
@@ -1453,7 +1484,14 @@ void MinerUTest::test_2conjuncts_3()
 	TS_ASSERT(content_is_in(cpp_expected, cpp_results));
 
 	// Run URE pattern miner
-	Handle ure_results = ure_pm(db, 2, 50, mk_nconjunct(2)),
+	int ms = 2;
+	int mi = 50;
+	bool cnj_exp = false;
+	unsigned max_cnjs = 2;
+	unsigned max_vars = 4;
+	unsigned max_spcial_cnjs = 2;
+	Handle ure_results = ure_pm(db, ms, mi, mk_nconjunct(2), cnj_exp,
+	                            max_cnjs, max_vars, max_spcial_cnjs),
 		ure_expected = mk_minsup_eval(2,
 		                              MinerUtils::mk_pattern(VarXYZ,
 		                                                     {InhXY, InhYZ}));
@@ -1490,7 +1528,14 @@ void MinerUTest::test_2conjuncts_4()
 	TS_ASSERT(content_is_in(cpp_expected, cpp_results));
 
 	// Run URE pattern miner
-	Handle ure_results = ure_pm(db, 4, 100, mk_nconjunct(2)),
+	int ms = 4;
+	int mi = 100;
+	bool cnj_exp = false;
+	unsigned max_cnjs = 2;
+	unsigned max_vars = 4;
+	unsigned max_spcial_cnjs = 2;
+	Handle ure_results = ure_pm(db, ms, mi, mk_nconjunct(2), cnj_exp,
+	                            max_cnjs, max_vars, max_spcial_cnjs),
 		ure_expected = mk_minsup_eval(4,
 		                              MinerUtils::mk_pattern(VarXYZ,
 		                                                     {InhXY, InhYZ}));
@@ -1661,7 +1706,14 @@ void MinerUTest::test_InferenceControl()
 	TS_ASSERT(content_is_in(expected, cpp_results));
 
 	// Run URE pattern miner
-	Handle ure_results = ure_pm(_tmp_as, 2, 100, initpat),
+	int ms = 2;
+	int mi = 100;
+	bool cnj_exp = false;
+	unsigned max_cnjs = 3;
+	unsigned max_vars = 5;
+	unsigned max_spcial_cnjs = 3;
+	Handle ure_results = ure_pm(_tmp_as, ms, mi, initpat, cnj_exp,
+	                            max_cnjs, max_vars, max_spcial_cnjs),
 		ure_expected = mk_minsup_eval(2, expected);
 
 	logger().debug() << "ure_results = " << oc_to_string(ure_results);
@@ -1714,7 +1766,14 @@ void MinerUTest::test_SodaDrinker()
 	TS_ASSERT(content_is_in(expected, cpp_results));
 
 	// Run URE pattern miner
-	Handle ure_results = ure_pm(_tmp_as, 5, 500, initpat),
+	int ms = 5;
+	int mi = 200;
+	bool cnj_exp = false;
+	unsigned max_cnjs = 3;
+	unsigned max_vars = 4;
+	unsigned max_spcial_cnjs = 3;
+	Handle ure_results = ure_pm(_tmp_as, ms, mi, initpat, cnj_exp,
+	                            max_cnjs, max_vars, max_spcial_cnjs),
 		ure_expected = mk_minsup_eval(5, expected);
 
 	logger().debug() << "ure_results = " << oc_to_string(ure_results);
@@ -1745,6 +1804,7 @@ void MinerUTest::test_SodaDrinker_incremental()
 	bool conjunction_expansion = true;
 	unsigned max_conjuncts = 3;
 	unsigned max_variables = 2;
+	unsigned max_spcial_conjuncts = 1;
 	unsigned max_cnjexp_variables = 1;
 	bool enforce_specialization = true;
 	double complexity_penalty = 1;
@@ -1753,9 +1813,8 @@ void MinerUTest::test_SodaDrinker_incremental()
 	Handle ure_results = ure_pm(_tmp_as, minsup, max_iteration,
 	                            initpat,
 	                            conjunction_expansion,
-	                            max_conjuncts,
-	                            max_variables,
-	                            max_cnjexp_variables,
+	                            max_conjuncts, max_variables,
+	                            max_spcial_conjuncts, max_cnjexp_variables,
 	                            enforce_specialization,
 	                            complexity_penalty);
 
@@ -1903,15 +1962,15 @@ void MinerUTest::test_vqa()
 	int max_iteration = 5;
 	unsigned max_conjuncts = 2;
 	unsigned max_variables = 3;
+	unsigned max_spcial_conjuncts = 1;
 	unsigned max_cnjexp_variables = 3;
 	bool enforce_specialization = false;
 	double complexity_penalty = 1;
 	Handle results = ure_pm(_tmp_as, minsup, max_iteration,
 	                        initpat,
 	                        conjunction_expansion,
-	                        max_conjuncts,
-	                        max_variables,
-	                        max_cnjexp_variables,
+	                        max_conjuncts, max_variables,
+	                        max_spcial_conjuncts, max_cnjexp_variables,
 	                        enforce_specialization,
 	                        complexity_penalty),
 		expect = mk_minsup_eval(minsup, expect_pat);

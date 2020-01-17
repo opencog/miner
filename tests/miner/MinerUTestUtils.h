@@ -137,7 +137,7 @@ public:
 	 *
 	 * (Lambda
 	 *   (VariableList X1 ... Xn)
-	 *   (And X1 ... Xn))
+	 *   (Present X1 ... Xn))
 	 *
 	 * to as.
 	 */
@@ -181,6 +181,7 @@ public:
 	                     bool conjunction_expansion=false,
 	                     unsigned max_conjuncts=UINT_MAX,
 	                     unsigned max_variables=UINT_MAX,
+	                     unsigned max_spcial_conjuncts=1,
 	                     unsigned max_cnjexp_variables=UINT_MAX,
 	                     bool enforce_specialization=true,
 	                     double complexity_penalty=0.0);
@@ -193,6 +194,7 @@ public:
 	                     bool conjunction_expansion=false,
 	                     unsigned max_conjuncts=UINT_MAX,
 	                     unsigned max_variables=UINT_MAX,
+	                     unsigned max_spcial_conjuncts=1,
 	                     unsigned max_cnjexp_variables=UINT_MAX,
 	                     bool enforce_specialization=true,
 	                     double complexity_penalty=0.0);
@@ -281,6 +283,7 @@ public:
 	                                     bool conjunction_expansion,
 	                                     unsigned max_conjuncts=UINT_MAX,
 	                                     unsigned max_variables=UINT_MAX,
+	                                     unsigned max_spcial_conjuncts=1,
 	                                     unsigned max_cnjexp_variables=UINT_MAX,
 	                                     bool enforce_specialization=false);
 	static void configure_surprisingness(SchemeEval& scm,
@@ -319,6 +322,11 @@ public:
 	                                Type type,
 	                                unsigned arity,
 	                                double p);
+
+	/**
+	 * Add a default variable declaration if pattern is missing one.
+	 */
+	static Handle add_default_vardecl(const Handle& pattern);
 };
 
 } // ~namespace opencog
