@@ -29,6 +29,7 @@
 #include <opencog/util/random.h>
 #include <opencog/util/algorithm.h>
 #include <opencog/guile/SchemeSmob.h>
+#include <opencog/atoms/core/LambdaLink.h>
 #include <opencog/ure/forwardchainer/ForwardChainer.h>
 #include <opencog/ure/backwardchainer/BackwardChainer.h>
 
@@ -119,7 +120,10 @@ Handle MinerUTestUtils::add_abs_true_eval(AtomSpace& as, const Handle& h)
 
 Handle MinerUTestUtils::add_nconjunct(AtomSpace& as, unsigned n)
 {
-	return al(LAMBDA_LINK, al(AND_LINK, add_variables(as, "$X-", n)));
+	HandleSeq vars = add_variables(as, "$X-", n);
+	return al(LAMBDA_LINK,
+	          al(VARIABLE_SET, vars),
+	          al(PRESENT_LINK, vars));
 }
 
 Handle MinerUTestUtils::add_variable(AtomSpace& as,
@@ -149,6 +153,7 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
                                bool conjunction_expansion,
                                unsigned max_conjuncts,
                                unsigned max_variables,
+                               unsigned max_spcial_conjuncts,
                                unsigned max_cnjexp_variables,
                                bool enforce_specialization,
                                double complexity_penalty)
@@ -158,7 +163,7 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
 	                          opencog::ATOM, true);
 	return ure_pm(as, scm, pm_rb, db, minsup, maximum_iterations, initpat,
 	              conjunction_expansion, max_conjuncts, max_variables,
-	              max_cnjexp_variables,
+	              max_spcial_conjuncts, max_cnjexp_variables,
 	              enforce_specialization, complexity_penalty);
 }
 
@@ -172,6 +177,7 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
                                bool conjunction_expansion,
                                unsigned max_conjuncts,
                                unsigned max_variables,
+                               unsigned max_spcial_conjuncts,
                                unsigned max_cnjexp_variables,
                                bool enforce_specialization,
                                double complexity_penalty)
@@ -180,9 +186,12 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
 	for (const Handle& dt : db)
 		al(MEMBER_LINK, dt, add_db_cpt(as));
 
-	// If init is not defined then use top
+	// If initpat is not defined then use top
 	if (not initpat)
 		initpat = add_top(as);
+
+	// Add a variable default declaration if needed
+	initpat = add_default_vardecl(initpat);
 
 	// Add the axiom that initpat has enough support, and use it as
 	// source for the forward chainer
@@ -193,8 +202,12 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
 		return al(SET_LINK);
 
 	// Add incremental conjunction expansion if necessary
-	configure_optional_rules(scm, conjunction_expansion, max_conjuncts,
-	                         max_variables, max_cnjexp_variables,
+	configure_optional_rules(scm,
+	                         conjunction_expansion,
+	                         max_conjuncts,
+	                         max_variables,
+	                         max_spcial_conjuncts,
+	                         max_cnjexp_variables,
 	                         enforce_specialization);
 
 	// Otherwise prepare the source
@@ -300,6 +313,7 @@ void MinerUTestUtils::configure_optional_rules(SchemeEval& scm,
                                                bool conjunction_expansion,
                                                unsigned max_conjuncts,
                                                unsigned max_variables,
+                                               unsigned max_spcial_conjuncts,
                                                unsigned max_cnjexp_variables,
                                                bool enforce_specialization)
 {
@@ -310,6 +324,8 @@ void MinerUTestUtils::configure_optional_rules(SchemeEval& scm,
 	call += std::to_string(max_conjuncts);
 	call += " #:maximum-variables ";
 	call += std::to_string(max_variables);
+	call += " #:maximum-spcial-conjuncts ";
+	call += std::to_string(max_spcial_conjuncts);
 	call += " #:maximum-cnjexp-variables ";
 	call += std::to_string(max_cnjexp_variables);
 	call += " #:enforce-specialization ";
@@ -378,4 +394,13 @@ HandleSeq MinerUTestUtils::populate_links(AtomSpace& as,
 		if (biased_randbool(p))
 			links.insert(as.add_link(type, outgoing));
 	return HandleSeq(links.begin(), links.end());
+}
+
+Handle MinerUTestUtils::add_default_vardecl(const Handle& pattern)
+{
+	if (1 < pattern->get_arity())
+		return pattern;
+	Handle vardecl = ScopeLinkCast(pattern)->get_variables().get_vardecl();
+	Handle body = pattern->getOutgoingAtom(0);
+	return HandleCast(createLambdaLink(vardecl, body));
 }
