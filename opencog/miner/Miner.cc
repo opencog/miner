@@ -49,7 +49,7 @@ MinerParameters::MinerParameters(unsigned ms, unsigned iconjuncts,
 	// Provide initial pattern if none
 	if (not initpat) {
 		HandleSeq vars = MinerUtils::gen_rand_variables(initconjuncts);
-		Handle vardecl = MinerUtils::variable_list(vars);
+		Handle vardecl = MinerUtils::variable_set(vars);
 		Handle body = MinerUtils::mk_body(vars);
 		initpat = MinerUtils::lambda(vardecl, body);
 	}

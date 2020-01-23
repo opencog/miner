@@ -137,7 +137,7 @@ public:
 	 *
 	 * (Lambda
 	 *   (VariableList X1 ... Xn)
-	 *   (And X1 ... Xn))
+	 *   (Present X1 ... Xn))
 	 *
 	 * to as.
 	 */
@@ -181,6 +181,7 @@ public:
 	                     bool conjunction_expansion=false,
 	                     unsigned max_conjuncts=UINT_MAX,
 	                     unsigned max_variables=UINT_MAX,
+	                     unsigned max_spcial_conjuncts=1,
 	                     unsigned max_cnjexp_variables=UINT_MAX,
 	                     bool enforce_specialization=true,
 	                     double complexity_penalty=0.0);
@@ -193,6 +194,7 @@ public:
 	                     bool conjunction_expansion=false,
 	                     unsigned max_conjuncts=UINT_MAX,
 	                     unsigned max_variables=UINT_MAX,
+	                     unsigned max_spcial_conjuncts=1,
 	                     unsigned max_cnjexp_variables=UINT_MAX,
 	                     bool enforce_specialization=true,
 	                     double complexity_penalty=0.0);
@@ -281,6 +283,7 @@ public:
 	                                     bool conjunction_expansion,
 	                                     unsigned max_conjuncts=UINT_MAX,
 	                                     unsigned max_variables=UINT_MAX,
+	                                     unsigned max_spcial_conjuncts=1,
 	                                     unsigned max_cnjexp_variables=UINT_MAX,
 	                                     bool enforce_specialization=false);
 	static void configure_surprisingness(SchemeEval& scm,
@@ -297,6 +300,33 @@ public:
 	                          const Handle& surp_rb,
 	                          const std::string& mode,
 	                          unsigned max_conjuncts);
+
+	/**
+	 * Populate the given atomspace with n nodes of a given type, named
+	 * prefix + std::to_string(i) with i in [0, n).
+	 *
+	 * The handles of the populated atoms.
+	 */
+	static HandleSeq populate_nodes(AtomSpace& as,
+	                                unsigned n,
+	                                Type type,
+	                                const std::string& prefix);
+
+	/**
+	 * Populate the given atomspace by creating links of a given type
+	 * and arity with probability p between any arity handles from
+	 * hs. Return the handles of the populated atoms.
+	 */
+	static HandleSeq populate_links(AtomSpace& as,
+	                                const HandleSeq& hs,
+	                                Type type,
+	                                unsigned arity,
+	                                double p);
+
+	/**
+	 * Add a default variable declaration if pattern is missing one.
+	 */
+	static Handle add_default_vardecl(const Handle& pattern);
 };
 
 } // ~namespace opencog
