@@ -425,16 +425,6 @@
       pattern
       db)))
 
-(define (get-cnj-arity pattern)
-"
-  Given a pattern, return its number of conjuncts
-"
-  (define body (get-body pattern))
-  (if (or (eq? (cog-type? body) 'PresentLink)
-          (eq? (cog-type? body) 'AndLink))
-      (cog-arity body)
-      1))
-
 (define (get-members C)
 "
   Given a concept node C, return all its members
