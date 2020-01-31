@@ -12,7 +12,7 @@ Problem and Terminology
 The pattern miner attempts to solve the problem of finding frequent
 patterns in the AtomSpace. The terminology used here is similar to the
 one defined in this [overview](#chi2005) and the algorithm mimics the
-typical algorithms of the subtree mining litterature with the
+typical algorithms of the subtree mining literature with the
 additional twist that patterns are Atomese programs.
 
 Let us recall the important terms
@@ -37,7 +37,7 @@ Let us recall the important terms
 Algorithm
 ---------
 
-Patterm mining operates by searching the space of pattern trees,
+Pattern mining operates by searching the space of pattern trees,
 typically starting from the most abstract pattern, the one that
 encompass all data trees, construct specializations of it, retain
 those that have enough support (support equal to or above the minimum
@@ -64,9 +64,10 @@ program that matches all atoms in the AtomSpace.
 
 As another example, a pattern matching only `Inheritance` links would
 look like
+
 ```scheme
 (Lambda
-  (VariableList
+  (VariableSet
     (Variable "$X")
     (Variable "$Y"))
   (Present
@@ -75,8 +76,19 @@ look like
       (Variable "$Y"))))
 ```
 
-Or, slightly more specialized, a pattern matching only `Inheritance`
-links with same first and second argument would look like
+Note: `VariableSet` can be used instead of `VariableList` when the
+order of the variables in the variable declaration is irrelevant.
+That is most certainly the case for the pattern miner as the only
+thing that matters in that application is the frequency of the
+pattern.  For that reason we strongly recommend to use `VariableSet`
+whenever possible, such as for instance in the definition of the
+initial pattern. Doing so is likely to speed up the search by many
+folds.
+
+Or, a slight specialization of the pattern above, matching only
+`Inheritance` links with the same first and second argument would look
+like
+
 ```scheme
 (Lambda
   (Variable "$X")
@@ -111,9 +123,10 @@ associated values produce matching data trees (or in order words data
 trees in the satisfying set of the pattern).
 
 For instance if `P` is
+
 ```scheme
 (Lambda
-  (VariableList
+  (VariableSet
     (Variable "$X")
     (Variable "$Y"))
   (Present
@@ -140,6 +153,7 @@ and `T` is
 ```
 
 then the satisfying set of `P` over `T` is
+
 ```scheme
 (Inheritance
   (Concept "A")
@@ -194,7 +208,7 @@ The last one comes the fact that in the last valuation of `V`, the
 value associated to `(Variable "$Y")` is equal to the value associated
 to `(Variable "$X")` as well, `(Concept "D")`, allowing to capture a
 connection between `(Variable "$Y")` and `(Variable "$X")` as
-potentional pattern specialization.
+potential pattern specialization.
 
 Likewise the shallow abstractions of `(Variable "$Y")` would be
 
@@ -211,9 +225,10 @@ Another example, if the valuation set is the following singleton
 {(Variable "$X")->(Implication (Predicate "P") (Predicate "Q"))}
 ```
 its shallow abstraction over its single variable `(Variable "$X")` is
+
 ```scheme
 (Lambda
-  (VariableList
+  (VariableSet
     (Variable "$Z")
     (Variable "$W"))
   (Present
@@ -221,7 +236,7 @@ its shallow abstraction over its single variable `(Variable "$X")` is
       (Variable "$Z")
       (Variable "$W"))))
 ```
-because it corresponds to a pattern matching its value.
+because it corresponds to a pattern matching value.
 
 #### Step 4: Specialize with Shallow Abstractions
 
@@ -255,7 +270,7 @@ To carry out the composition `Put` is used as follows
     (Variable "$Y")))
 ```
 
-to substitute (or beta-reducebeta-reduce, as defined in the Lambda
+to substitute (or beta-reduce, as defined in the Lambda
 Calculus) `(Variable "$X")` by `(Concept "A")`, `(Concept "D")` and
 `(Variable "$Y")` in `P`, producing
 
@@ -337,6 +352,7 @@ Given all specializations (6 in total in this iteration example), we
 now need to calculate the support of each of them against `T`, and
 only the one reaching the minimum support can be added back to the
 population of patterns `C`. Out of these 6 only one has enough support
+
 ```scheme
 (Lambda
   (Variable "$Y")
@@ -348,7 +364,7 @@ population of patterns `C`. Out of these 6 only one has enough support
 
 The others can be safely discarded because, according to the a priori
 property, none of their subsequent specializations will reach the
-minumum support.
+minimum support.
 
 One may notice that already in Step 4 we can avoid creating shallow
 abstractions that we know will result into specializations that do not
@@ -363,8 +379,8 @@ On top of that basic algorithm one can add various heuristics. We will
 present one in particular called here *Incremental Conjunction
 Expansion*.
 
-A conjunction is the combination of different multiple patterns, for
-instance. For instance given patterns
+A conjunction is the combination of different multiple patterns. For
+instance given patterns
 
 ```scheme
 (Lambda
@@ -423,7 +439,7 @@ specialization. For instance the conjunction of the following patterns
 
 ```scheme
 (Lambda
-  (VariableList
+  (VariableSet
     (Variable "$X")
     (Variable "$Y"))
   (Present
@@ -434,7 +450,7 @@ specialization. For instance the conjunction of the following patterns
 
 ```scheme
 (Lambda
-  (VariableList
+  (VariableSet
     (Variable "$Y")
     (Variable "$Z"))
   (Present
@@ -447,8 +463,9 @@ using `(Variable "$Y")` as connector, result into
 
 ```scheme
 (Lambda
-  (VariableList
+  (VariableSet
     (Variable "$X")
+    (Variable "$Y")
     (Variable "$Z"))
   (Present
     (Inheritance
@@ -487,7 +504,7 @@ conjunction (connected by `(Variable "$X")`) however has a count of 9
 (3*3 for considering all combinations of `A`s and `C`s). Thus the
 conjunction cannot be a specialization. Therefore the a priori
 property cannot apply to it. For that reason any use of the a priori
-property will result in excessive pruning of the search. One one hand
+property will result in excessive pruning of the search. On one hand
 it can speed it up, but on the other hand it makes the pattern miner
 less open-ended as some desired patterns might be missed. To see that
 assume that the minimum support is set to 9, in that case such a
@@ -495,7 +512,7 @@ conjunction above should be accepted, however because the incremental
 conjunction expansion will only combine patterns with minimal support
 (both 6 here) such combination will be missed.
 
-### Unified Rule Engine Implemenation
+### Unified Rule Engine Implementation
 
 #### Motivation
 
@@ -515,7 +532,7 @@ mechanisms.
 #### Forward or Backward?
 
 There are at least two ways to implement this algorithm in the URE, a
-way which is more amenable to barckward chaining and another one more
+way which is more amenable to backward chaining and another one more
 amenable to forward chaining. The current implementation uses forward
 chaining but both ways are presented here.
 
@@ -616,15 +633,18 @@ Usage
 
 To invoke the pattern miner, within guile, you first need to import
 the `miner` module
+
 ```scheme
 (use-modules (opencog miner))
 ```
 
 Then, simply call `cog-mine` on your database with a given minimum
 support
+
 ```scheme
 (cog-mine db #:minsup ms)
 ```
+
 where `db` is either
 1. a Scheme list of atoms
 2. an Atomese List or Set of atoms
@@ -635,12 +655,14 @@ where `db` is either
 `cog-mine` automatically configures the rule engine, calls it, returns
 its results and removes the atoms that were temporarily created. The
 results have the following form
+
 ```scheme
 (Set
   P1
   ...
   Pn)
 ```
+
 where `P1` to `Pn` are the patterns discovered by the pattern miner.
 
 In addition `cog-mine` accepts multiple options such as

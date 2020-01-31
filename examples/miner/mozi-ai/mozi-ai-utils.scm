@@ -19,7 +19,7 @@
   (cog-subtype? 'EvaluationLink (cog-type x)))
 
 (define (eval-pred-name? name x)
-  (and (cog-subtype? 'EvaluationLink (cog-type x))
+  (and (eval? x)
        (equal? (cog-name (gar x)) name)))
 
 (define (forall? p l)
@@ -110,7 +110,7 @@
          (db-as (cog-atomspace))
          (db-lst (get-db-lst db-as))
 
-         ;; Filter in addimissible types from db-lst
+         ;; Filter in admissible types from db-lst
          (eval-has_pubmedID? (lambda (x) (eval-pred-name? "has_pubmedID" x)))
          (eval-has_definition? (lambda (x) (eval-pred-name? "has_definition" x)))
          (eval-has_name? (lambda (x) (eval-pred-name? "has_name" x)))

@@ -14,7 +14,7 @@
 ;;   Predicate "minsup"
 ;;   List
 ;;     Lambda
-;;       VariableList
+;;       VariableSet
 ;;         <x1>
 ;;         ...
 ;;         <xn>
@@ -39,7 +39,7 @@
 ;;   List
 ;;     Put
 ;;       Lambda
-;;         VariableList
+;;         VariableSet
 ;;           <x1>
 ;;           ...
 ;;           <xn>
@@ -92,7 +92,7 @@
          (db-decl (TypedVariable db ConceptT))
          (ms-decl (TypedVariable ms NumberT))
          (xs-f-decl xs-f)
-         (vardecl (VariableList g-decl db-decl ms-decl xs-f-decl))
+         (vardecl (VariableSet g-decl db-decl ms-decl xs-f-decl))
          ;; Clauses
          (minsup-g (minsup-eval g db ms))
          (shabs-eval (abstraction-eval xs-f minsup-g))

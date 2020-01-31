@@ -37,16 +37,17 @@
 
 (load "miner-rule-utils.scm")
 
-;; Generate a shallow specialization rule. If unary is #t then it adds
-;; the constraint that the pattern must be unary. This is to avoid
-;; specializing conjunctions of abstract patterns that may result in
-;; circumventing the the conjunction expansion rule heuristic.
+;; Generate a shallow specialization rule.
+
+;; nary is the number of conjuncts the pattern must have to be
+;; allowed to be specialized (as it is an expensive operation).
 ;;
 ;; mv is the maximum number of variable allowed in the resulting
 ;; patterns.
-(define (gen-shallow-specialization-rule unary mv)
+(define (gen-shallow-specialization-rule nary mv)
   (let* (;; Variables
-         (pattern (Variable "$pattern"))
+         (pattern-vardecl (Variable "$vardecl"))
+         (cnjs (gen-variables "$cnj" nary))
          (db (Variable "$db"))
          (ms (Variable "$ms"))
          ;; Types
@@ -54,20 +55,23 @@
          (ConceptT (Type "ConceptNode"))
          (NumberT (Type "NumberNode"))
          ;; Vardecls
-         (pattern-decl (TypedVariable pattern LambdaT))
+         (pattern-vardecl-decl pattern-vardecl)
+         (cnjs-decls cnjs)
          (db-decl (TypedVariable db ConceptT))
          (ms-decl (TypedVariable ms NumberT))
          ;; Clauses
+         (pattern (Quote (Lambda (Unquote pattern-vardecl)
+                                 (Present (map Unquote cnjs)))))
          (minsup-pattern (minsup-eval pattern db ms)))
   (Bind
-    (VariableList
-      pattern-decl
+    (VariableSet
+      pattern-vardecl-decl
+      cnjs-decls
       db-decl
       ms-decl)
     (And
       (Present minsup-pattern)
-      (absolutely-true-eval minsup-pattern)
-      (if unary (unary-conjunction-pattern-eval pattern) '()))
+      (absolutely-true-eval minsup-pattern))
     (ExecutionOutput
       (GroundedSchema (string-append "scm: shallow-specialization-mv-"
                                      (number->string mv)
