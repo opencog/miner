@@ -36,6 +36,7 @@
 (define default-minimum-support 10)
 (define default-minimum-frequency -1)
 (define default-initial-pattern (top))
+(define default-jobs 1)
 (define default-maximum-iterations 100)
 (define default-complexity-penalty 1)
 (define default-conjunction-expansion #t)
@@ -308,6 +309,7 @@
 
 (define* (configure-miner pm-rbs
                           #:key
+                          (jobs default-jobs)
                           (maximum-iterations default-maximum-iterations)
                           (complexity-penalty default-complexity-penalty)
                           (conjunction-expansion default-conjunction-expansion)
@@ -322,6 +324,7 @@
   rules and parameters.
 
   Usage: (configure-miner pm-rbs
+                          #:jobs jb
                           #:maximum-iterations mi
                           #:complexity-penalty cp
                           #:conjunction-expansion ce
@@ -332,6 +335,11 @@
                           #:maximum-cnjexp-variables mcev)
 
   pm-rbs: Concept node of the rule-based system to configure
+
+  jb: [optional, default=1] Number of jobs to run in parallel. Can
+      speed up mining. Note that this may alter the results especially
+      if conjunction expansion if used as its results depends on the output
+      of other mining rules.
 
   mi: [optional, default=100] Maximum number of iterations allocated.
       If negative then the pattern miner keeps running till all patterns
@@ -375,6 +383,7 @@
                    #:maximum-cnjexp-variables maximum-cnjexp-variables)
 
   ;; Set parameters
+  (ure-set-jobs pm-rbs jobs)
   (ure-set-maximum-iterations pm-rbs maximum-iterations)
   (ure-set-complexity-penalty pm-rbs complexity-penalty)
 
@@ -526,6 +535,9 @@
 
 (define* (cog-mine db
                    #:key
+                   ;; Number of jobs to run in parallel
+                   (jobs default-jobs)
+
                    ;; Minimum support
                    (minsup default-minimum-support)
                    (minimum-support default-minimum-support)
@@ -583,6 +595,7 @@
   pattern initpat.
 
   Usage: (cog-mine db
+                   #:jobs jb
                    #:minimum-support ms             (or #:minsup ms)
                    #:minimum-frequency mf           (or #:minfreq mf)
                    #:initial-pattern ip             (or #:initpat ip)
@@ -620,6 +633,11 @@
             (Member
               tn
               (Concept db-name))
+
+  jb: [optional, default=1] Number of jobs to run in parallel. Can
+      speed up mining. Note that this may alter the results especially
+      if conjunction expansion if used as its results depends on the output
+      of other mining rules.
 
   ms: [optional, default=10] Minimum support. All patterns with count below
       ms are discarded. Can be a Scheme number or an Atomese number node.
@@ -854,6 +872,7 @@
                (source (minsup-eval-true (get-initial-pattern) db-cpt ms-n))
                (miner-rbs (random-miner-rbs-cpt))
                (cfg-m (configure-miner miner-rbs
+                                       #:jobs jobs
                                        #:maximum-iterations mi
                                        #:complexity-penalty cp
                                        #:conjunction-expansion ce
