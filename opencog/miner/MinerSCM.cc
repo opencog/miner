@@ -211,7 +211,7 @@ Handle MinerSCM::do_shallow_abstract(Handle pattern,
 			sa_lists.insert(sa_list.size() == 1 ? sa_list[0]
 			                // Only Wrap in a list if arity is greater
 			                // than one
-			                : as->add_link(LIST_LINK, sa_list));
+			                : as->add_link(LIST_LINK, std::move(sa_list)));
 		}
 		vari++;
 	}

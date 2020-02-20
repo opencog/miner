@@ -469,7 +469,7 @@ Handle MinerUtils::restricted_satisfying_set(const Handle& pattern,
 
 	// Avoid pattern matcher warning
 	if (totally_abstract(pattern) and n_conjuncts(pattern) == 1)
-		return tmp_db_as.add_link(SET_LINK, tmp_db);
+		return tmp_db_as.add_link(SET_LINK, std::move(tmp_db));
 
 	// Define pattern to run
 	AtomSpace tmp_query_as(&tmp_db_as);
