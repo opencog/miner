@@ -236,7 +236,7 @@ public:
 	 * Create a pattern body from clauses, introducing an AndLink if
 	 * necessary.
 	 */
-	static Handle mk_body(const HandleSeq& clauses);
+	static Handle mk_body(const HandleSeq clauses);
 
 	/**
 	 * Given a sequence of clause create a LambdaLink of it without
