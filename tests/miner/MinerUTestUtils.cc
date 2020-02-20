@@ -121,9 +121,10 @@ Handle MinerUTestUtils::add_abs_true_eval(AtomSpace& as, const Handle& h)
 Handle MinerUTestUtils::add_nconjunct(AtomSpace& as, unsigned n)
 {
 	HandleSeq vars = add_variables(as, "$X-", n);
+	HandleSeq varz = vars;
 	return al(LAMBDA_LINK,
-	          al(VARIABLE_SET, std::move(HandleSeq(vars))),
-	          al(PRESENT_LINK, std::move(vars)));
+	          al(VARIABLE_SET, std::move(vars)),
+	          al(PRESENT_LINK, std::move(varz)));
 }
 
 Handle MinerUTestUtils::add_variable(AtomSpace& as,
