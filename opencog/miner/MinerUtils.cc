@@ -257,7 +257,8 @@ Handle MinerUtils::shallow_abstract_of_val(const Handle& value)
 
 Handle MinerUtils::variable_set(const HandleSeq& vars)
 {
-	return vars.size() == 1 ? vars[0] : Handle(createVariableSet(vars));
+	return vars.size() == 1 ? vars[0] :
+		Handle(createVariableSet(std::move(HandleSeq(vars))));
 }
 
 Handle MinerUtils::lambda(const Handle& vardecl, const Handle& body)
@@ -382,15 +383,15 @@ HandleSet MinerUtils::shallow_specialize(const Handle& pattern,
 	return results;
 }
 
-Handle MinerUtils::mk_body(const HandleSeq& clauses)
+Handle MinerUtils::mk_body(const HandleSeq clauses)
 {
 	if (clauses.size() == 0)
 		return Handle::UNDEFINED;
 	if (use_present_link)
-		return Handle(createPresentLink(clauses));
+		return Handle(createPresentLink(std::move(clauses)));
 	if (clauses.size() == 1)
 		return clauses.front();
-	return Handle(createLink(clauses, AND_LINK));
+	return Handle(createLink(std::move(clauses), AND_LINK));
 }
 
 Handle MinerUtils::mk_pattern_no_vardecl(const HandleSeq& clauses)
