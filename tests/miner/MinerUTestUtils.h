@@ -58,7 +58,7 @@ public:
 	 *
 	 * to as.
 	 */
-	static Handle add_surp_prd(AtomSpace& as, const std::string& mode);
+	static Handle add_surp_prd(AtomSpace& as, std::string mode);
 
 	/**
 	 * Add

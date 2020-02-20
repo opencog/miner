@@ -48,9 +48,9 @@ Handle MinerUTestUtils::add_minsup_prd(AtomSpace& as)
 	return an(PREDICATE_NODE, "minsup");
 }
 
-Handle MinerUTestUtils::add_surp_prd(AtomSpace& as, const std::string& mode)
+Handle MinerUTestUtils::add_surp_prd(AtomSpace& as, std::string mode)
 {
-	return an(PREDICATE_NODE, mode);
+	return an(PREDICATE_NODE, std::move(mode));
 }
 
 Handle MinerUTestUtils::add_top(AtomSpace& as)
@@ -83,7 +83,7 @@ Handle MinerUTestUtils::add_minsup_evals(AtomSpace& as,
 	HandleSeq minsup_evals;
 	for (const Handle& pat : patterns)
 		minsup_evals.push_back(add_minsup_eval(as, pat, minsup, tv));
-	return al(SET_LINK, minsup_evals);
+	return al(SET_LINK, std::move(minsup_evals));
 }
 
 Handle MinerUTestUtils::add_surp_eval(AtomSpace& as,
@@ -121,9 +121,10 @@ Handle MinerUTestUtils::add_abs_true_eval(AtomSpace& as, const Handle& h)
 Handle MinerUTestUtils::add_nconjunct(AtomSpace& as, unsigned n)
 {
 	HandleSeq vars = add_variables(as, "$X-", n);
+	HandleSeq varz = vars;
 	return al(LAMBDA_LINK,
-	          al(VARIABLE_SET, vars),
-	          al(PRESENT_LINK, vars));
+	          al(VARIABLE_SET, std::move(vars)),
+	          al(PRESENT_LINK, std::move(varz)));
 }
 
 Handle MinerUTestUtils::add_variable(AtomSpace& as,
@@ -392,7 +393,7 @@ HandleSeq MinerUTestUtils::populate_links(AtomSpace& as,
 	HandleSet links;
 	for (const HandleSeq& outgoing : cartesian_product(hs, arity))
 		if (biased_randbool(p))
-			links.insert(as.add_link(type, outgoing));
+			links.insert(as.add_link(type, std::move(HandleSeq(outgoing))));
 	return HandleSeq(links.begin(), links.end());
 }
 
