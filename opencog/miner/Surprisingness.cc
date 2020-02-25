@@ -25,6 +25,7 @@
 
 #include "MinerUtils.h"
 
+#include <opencog/util/Logger.h>
 #include <opencog/util/lazy_random_selector.h>
 #include <opencog/util/random.h>
 #include <opencog/util/dorepeat.h>
@@ -95,14 +96,7 @@ double Surprisingness::isurp(const Handle& pattern,
 	// Calculate the probability estimate of each partition based on
 	// independent assumption of between each partition block, taking
 	// into account the linkage probability.
-	std::vector<double> estimates;
-	HandleSeqSeqSeq prtns = MinerUtils::partitions_without_pattern(pattern);
-	for (const HandleSeqSeq& partition : prtns) {
-		double jip = ji_prob_est(partition, pattern, db);
-		estimates.push_back(jip);
-	}
-	auto mmp = std::minmax_element(estimates.begin(), estimates.end());
-	double emin = *mmp.first, emax = *mmp.second;
+	auto [emin, emax] = ji_prob_est_interval(pattern, db);
 
 	// Calculate the empirical probability of pattern, using
 	// boostrapping if necessary
@@ -286,6 +280,20 @@ double Surprisingness::emp_prob_bs(const Handle& pattern,
 }
 
 double Surprisingness::emp_prob_pbs(const Handle& pattern,
+                                    const HandleSeq& db)
+{
+	if (1 < MinerUtils::n_conjuncts(pattern)) {
+		// If there is more than one conjunct, calculate an estimate
+		// first to subsample the db if necessary
+		auto [emin, emax] = ji_prob_est_interval(pattern, db);
+		return emp_prob_pbs(pattern, db, emax);
+	} else {
+		// Otherwise, no subsampling is necessary, should be tractable
+		return emp_prob(pattern, db);
+	}
+}
+
+double Surprisingness::emp_prob_pbs(const Handle& pattern,
                                     const HandleSeq& db,
                                     double prob_estimate)
 {
@@ -305,6 +313,18 @@ double Surprisingness::emp_prob_pbs(const Handle& pattern,
 	} else {
 		return emp_prob(pattern, db);
 	}
+}
+
+double Surprisingness::emp_prob_pbs_mem(const Handle& pattern,
+                                        const HandleSeq& db)
+{
+	TruthValuePtr etv = get_emp_tv(pattern);
+	if (etv) {
+		return etv->get_mean();
+	}
+	double ep = emp_prob_pbs(pattern, db);
+	set_emp_prob(pattern, ep);
+	return ep;
 }
 
 double Surprisingness::emp_prob_pbs_mem(const Handle& pattern,
@@ -409,6 +429,24 @@ unsigned Surprisingness::subsmp_size(const Handle& pattern,
 	return std::max((unsigned)res, std::min(5000U, (unsigned)ts));
 }
 
+std::pair<double, double> Surprisingness::ji_prob_est_interval(const Handle& pattern,
+                                                               const HandleSeq& db)
+{
+	// Calculate the probability estimate of each partition based on
+	// independent assumption of between each partition block, taking
+	// into account the linkage probability.
+	std::vector<double> estimates;
+	HandleSeqSeqSeq prtns = MinerUtils::partitions_without_pattern(pattern);
+	for (const HandleSeqSeq& partition : prtns) {
+		double jip = ji_prob_est(partition, pattern, db);
+		estimates.push_back(jip);
+	}
+	auto mmp = std::minmax_element(estimates.begin(), estimates.end());
+	double emin = *mmp.first, emax = *mmp.second;
+
+	return {emin, emax};
+}
+
 double Surprisingness::ji_prob_est(const HandleSeqSeq& partition,
                                    const Handle& pattern,
                                    const HandleSeq& db)
@@ -422,7 +460,7 @@ double Surprisingness::ji_prob_est(const HandleSeqSeq& partition,
 	// without considering joint variables
 	double p = 1.0;
 	for (const Handle& subpattern : subpatterns) {
-		double empr = emp_prob_mem(subpattern, db);
+		double empr = emp_prob_pbs_mem(subpattern, db);
 		p *= empr;
 	}
 
