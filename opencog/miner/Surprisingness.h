@@ -478,8 +478,14 @@ public:
 	 * calculated based on the pattern, the db size and the
 	 * probability estimate of the pattern.
 	 *
+	 * In the version where the prob_estimate is not provided, the
+	 * prob_estimate is automatically inferred. This takes additional
+	 * computation.
+	 *
 	 * pbs stands for possibly boostrapping.
 	 */
+	static double emp_prob_pbs(const Handle& pattern,
+	                           const HandleSeq& db);
 	static double emp_prob_pbs(const Handle& pattern,
 	                           const HandleSeq& db,
 	                           double prob_estimate);
@@ -487,6 +493,8 @@ public:
 	/**
 	 * Like emp_prob_pbs with memoization.
 	 */
+	static double emp_prob_pbs_mem(const Handle& pattern,
+	                               const HandleSeq& db);
 	static double emp_prob_pbs_mem(const Handle& pattern,
 	                               const HandleSeq& db,
 	                               double prob_estimate);
@@ -585,6 +593,13 @@ public:
 	static unsigned subsmp_size(const Handle& pattern,
 	                            const HandleSeq& db,
 	                            double support_estimate);
+
+	/**
+	 * Calculate min and max probability estimates of a pattern by
+	 * applying ji_prob_est over all its possible partitions.
+	 */
+	static std::pair<double, double> ji_prob_est_interval(const Handle& pattern,
+	                                                      const HandleSeq& db);
 
 	/**
 	 * Calculate probability estimate of a pattern given a partition,
