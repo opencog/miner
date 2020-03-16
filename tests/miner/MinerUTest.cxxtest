@@ -171,6 +171,7 @@ public:
 	void test_shallow_abstract();
 
 	// Pattern miner
+	void test_empty();
 	void test_A();
 	void test_AB();
 	void test_AB_redundant_cnj();
@@ -888,6 +889,22 @@ void MinerUTest::test_shallow_abstract()
 	logger().debug() << "expect = " << oc_to_string(expect);
 
 	TS_ASSERT(content_eq(result, expect));
+}
+
+void MinerUTest::test_empty()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
+	// Test with empty db, thus expected result should be empty
+
+	// Run URE pattern miner
+	Handle ure_results = ure_pm(HandleSeq(), 0),
+		ure_expected = mk_minsup_evals(0, {top});
+
+	logger().debug() << "ure_results = " << oc_to_string(ure_results);
+	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
+
+	TS_ASSERT(content_eq(ure_results, ure_expected));
 }
 
 void MinerUTest::test_A()
