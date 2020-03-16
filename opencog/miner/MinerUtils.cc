@@ -73,11 +73,16 @@ HandleSetSeq MinerUtils::shallow_abstract(const Valuations& valuations,
 HandleSet MinerUtils::focus_shallow_abstract(const Valuations& valuations,
                                              unsigned ms)
 {
-	HandleSet shabs;
+	// If there are no valuations, then the result is empty by
+	// convention, regardless of the minimum support threshold.
+	if (valuations.empty())
+		return HandleSet();
 
 	// No more variable to specialize from
 	if (valuations.no_focus())
 		return HandleSet();
+
+	HandleSet shabs;
 
 	// Strongly connected valuations associated to the variable under
 	// focus
@@ -188,11 +193,12 @@ HandleSet MinerUtils::focus_shallow_abstract(const Valuations& valuations,
 
 	// Only consider variable factorizations reaching the minimum
 	// support
-	for (const auto& fvar : facvars)
+	for (const auto& fvar : facvars) {
 		if (ms <= fvar.second) {
 			set_support(fvar.first, fvar.second);
 			shabs.insert(fvar.first);
 		}
+   }
 
 	return shabs;
 }

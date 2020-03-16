@@ -92,6 +92,11 @@ unsigned ValuationsBase::size() const
 	return 0;
 }
 
+bool ValuationsBase::empty() const
+{
+	return true;
+}
+
 //////////////////
 // SCValuations //
 //////////////////
@@ -138,6 +143,11 @@ bool SCValuations::operator<(const SCValuations& other) const
 unsigned SCValuations::size() const
 {
 	return valuations.size();
+}
+
+bool SCValuations::empty() const
+{
+	return valuations.empty();
 }
 
 std::string SCValuations::to_string(const std::string& indent) const
@@ -234,6 +244,11 @@ HandleUCounter Valuations::values(unsigned var_idx) const
 unsigned Valuations::size() const
 {
 	return _size;
+}
+
+bool Valuations::empty() const
+{
+	return _size == 0;
 }
 
 std::string Valuations::to_string(const std::string& indent) const

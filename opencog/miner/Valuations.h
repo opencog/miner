@@ -79,6 +79,11 @@ public:
 	 */
 	unsigned size() const;
 
+	/**
+	 * Return true iff the number of valuations is zero.
+	 */
+	bool empty() const;
+
 	Variables variables;
 
 protected:
@@ -127,6 +132,11 @@ public:
 	 * values.
 	 */
 	unsigned size() const;
+
+	/**
+	 * Return true iff the number of values is zero.
+	 */
+	bool empty() const;
 
 	std::string to_string(const std::string& indent=empty_string) const;
 
@@ -185,6 +195,11 @@ public:
 	 * between the strongly connected valuations.
 	 */
 	unsigned size() const;
+
+	/**
+	 * Return true iff its size is zero.
+	 */
+	bool empty() const;
 
 	std::string to_string(const std::string& indent) const;
 
