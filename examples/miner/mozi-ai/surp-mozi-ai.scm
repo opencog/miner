@@ -11,6 +11,7 @@
 (define ptns-filename "test.scm")
 (define surp 'nisurp)
 (define max-cnjs 3)
+(define db-ratio 1)
 
 ;; Load modules & utils
 (use-modules (srfi srfi-1))
@@ -67,7 +68,7 @@
                                               "surp = ~a\n"
                                               "max-cnjs = ~a")
                                surp max-cnjs))
-         (results (cog-outgoing-set (cog-surp surp max-cnjs db-cpt)))
+         (results (cog-outgoing-set (cog-surp surp max-cnjs db-cpt db-ratio)))
          (msg (cog-logger-info "Results of surprisingness over ~a:\nsize = ~a\n~a"
                                kb-filename (length results) results)))
     results))

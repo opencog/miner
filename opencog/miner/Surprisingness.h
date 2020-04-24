@@ -334,7 +334,8 @@ public:
 	 */
 	static double isurp(const Handle& pattern,
 	                    const HandleSeq& db,
-	                    bool normalize=true);
+	                    bool normalize=true,
+	                    double db_ratio=1.0);
 
 	/**
 	 * Return the distance between a value and an interval
@@ -442,7 +443,7 @@ public:
 	                              double prob);
 
 	/**
-	 * Calculate the empiric probability of a pattern according to a
+	 * Calculate the empirical probability of a pattern according to a
 	 * database db.
 	 */
 	static double emp_prob(const Handle& pattern, const HandleSeq& db);
@@ -485,22 +486,26 @@ public:
 	 * pbs stands for possibly boostrapping.
 	 */
 	static double emp_prob_pbs(const Handle& pattern,
-	                           const HandleSeq& db);
+	                           const HandleSeq& db,
+	                           double db_ratio);
 	static double emp_prob_pbs(const Handle& pattern,
 	                           const HandleSeq& db,
-	                           double prob_estimate);
+	                           double prob_estimate,
+	                           double db_ratio);
 
 	/**
 	 * Like emp_prob_pbs with memoization.
 	 */
 	static double emp_prob_pbs_mem(const Handle& pattern,
-	                               const HandleSeq& db);
+	                               const HandleSeq& db,
+	                               double db_ratio);
 	static double emp_prob_pbs_mem(const Handle& pattern,
 	                               const HandleSeq& db,
-	                               double prob_estimate);
+	                               double prob_estimate,
+	                               double db_ratio);
 
 	/**
-	 * Calculate the empiric truth value of a pattern according to a
+	 * Calculate the empirical truth value of a pattern according to a
 	 * database db.
 	 */
 	static TruthValuePtr emp_tv(const Handle& pattern, const HandleSeq& db);
@@ -540,14 +545,16 @@ public:
 	 */
 	static TruthValuePtr emp_tv_pbs(const Handle& pattern,
 	                                const HandleSeq& db,
-	                                double prob_estimate);
+	                                double prob_estimate,
+	                                double db_ratio);
 
 	/**
 	 * Like emp_tv_pbs with memoization.
 	 */
 	static TruthValuePtr emp_tv_pbs_mem(const Handle& pattern,
 	                                    const HandleSeq& db,
-	                                    double prob_estimate);
+	                                    double prob_estimate,
+	                                    double db_ratio);
 
 	/**
 	 * Randomly subsample db so that the resulting db has size
@@ -591,15 +598,17 @@ public:
 	 * alpha = support_estimate / ts^nc
 	 */
 	static unsigned subsmp_size(const Handle& pattern,
-	                            const HandleSeq& db,
-	                            double support_estimate);
+	                            double db_size,
+	                            double support_estimate,
+	                            unsigned min_subsize=10U);
 
 	/**
 	 * Calculate min and max probability estimates of a pattern by
 	 * applying ji_prob_est over all its possible partitions.
 	 */
 	static std::pair<double, double> ji_prob_est_interval(const Handle& pattern,
-	                                                      const HandleSeq& db);
+	                                                      const HandleSeq& db,
+	                                                      double db_ratio);
 
 	/**
 	 * Calculate probability estimate of a pattern given a partition,
@@ -609,7 +618,8 @@ public:
 	 */
 	static double ji_prob_est(const HandleSeqSeq& partition,
 	                          const Handle& pattern,
-	                          const HandleSeq& db);
+	                          const HandleSeq& db,
+	                          double db_ratio);
 
 	/**
 	 * Calculate truth value estimate of a pattern given a partition,

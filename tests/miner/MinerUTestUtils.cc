@@ -339,12 +339,14 @@ void MinerUTestUtils::configure_optional_rules(SchemeEval& scm,
 void MinerUTestUtils::configure_surprisingness(SchemeEval& scm,
                                                const Handle& surp_rb,
                                                const std::string& mode,
-                                               unsigned max_conjuncts)
+                                               unsigned max_conjuncts,
+                                               double db_ratio)
 {
 	std::string call = "(configure-surprisingness (Concept \""
 		+ surp_rb->get_name() + "\") ";
 	call += std::string("'") + mode + " ";
-	call += std::to_string(max_conjuncts);
+	call += std::to_string(max_conjuncts) + " ";
+	call += std::to_string(db_ratio);
 	call += ")";
 	std::string rs = scm.eval(call);
 	logger().debug() << "MinerUTest::configure_surprisingness() rs = " << rs;
@@ -354,9 +356,10 @@ HandleSeq MinerUTestUtils::ure_surp(AtomSpace& as,
                                     SchemeEval& scm,
                                     const Handle& surp_rb,
                                     const std::string& mode,
-                                    unsigned max_conjuncts)
+                                    unsigned max_conjuncts,
+                                    double db_ratio)
 {
-	configure_surprisingness(scm, surp_rb, mode, max_conjuncts);
+	configure_surprisingness(scm, surp_rb, mode, max_conjuncts, db_ratio);
 	Handle X = an(VARIABLE_NODE, "$X"),
 		target = add_surp_eval(as, mode, X),
 		vardecl = al(TYPED_VARIABLE_LINK, X, an(TYPE_NODE, "LambdaLink"));

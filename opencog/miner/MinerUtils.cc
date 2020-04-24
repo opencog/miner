@@ -309,8 +309,12 @@ HandleSeq MinerUtils::get_db(const Handle& db_cpt)
 
 unsigned MinerUtils::get_uint(const Handle& h)
 {
-	NumberNodePtr nn = NumberNodeCast(h);
-	return (unsigned)std::round(nn->get_value());
+	return (unsigned)std::round(get_double(h));
+}
+
+double MinerUtils::get_double(const Handle& h)
+{
+	return NumberNodeCast(h)->get_value();
 }
 
 unsigned MinerUtils::support(const Handle& pattern,

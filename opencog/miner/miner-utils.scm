@@ -46,6 +46,7 @@
 (define default-maximum-spcial-conjuncts 1)
 (define default-maximum-cnjexp-variables 2)
 (define default-surprisingness 'isurp)
+(define default-db-ratio 1)
 
 ;; For some crazy reason I need to repaste absolutely-true here while
 ;; it is already defined in ure.
@@ -269,7 +270,7 @@
                             #:maximum-spcial-conjuncts maximum-spcial-conjuncts
                             #:maximum-cnjexp-variables maximum-cnjexp-variables))
 
-(define* (configure-surprisingness surp-rbs mode maximum-conjuncts)
+(define* (configure-surprisingness surp-rbs mode maximum-conjuncts db-ratio)
   ;; Add surprisingness rules
   (let* ((namify (lambda (i) (string-append (symbol->string mode) "-"
                                             (number->string i)
@@ -279,7 +280,7 @@
                               (eq? mode 'nisurp-old)
                               (eq? mode 'isurp)
                               (eq? mode 'nisurp))
-                          (lambda (i) (gen-i-surprisingness-rule mode i)))
+                          (lambda (i) (gen-i-surprisingness-rule mode i db-ratio)))
                          ((eq? mode 'jsdsurp) gen-jsd-surprisingness-rule)))
          (definify (lambda (i) (DefineLink
                                  (aliasify i)
@@ -293,7 +294,7 @@
       (let* ((emp-alias (DefinedSchema "emp-rule"))
              (est-alias (DefinedSchema "est-rule"))
              (jsd-alias (DefinedSchema "jsd-rule"))
-             (emp-def (Define emp-alias (gen-emp-rule)))
+             (emp-def (Define emp-alias (gen-emp-rule db-ratio)))
              (est-def (Define est-alias (gen-est-rule)))
              (jsd-def (Define jsd-alias (gen-jsd-rule))))
         (ure-add-rules surp-rbs (list emp-alias est-alias jsd-alias)))))
@@ -588,7 +589,10 @@
 
                    ;; Surprisingness measure
                    (surp default-surprisingness)
-                   (surprisingness default-surprisingness))
+                   (surprisingness default-surprisingness)
+
+		   ;; db-ratio
+		   (db-ratio default-db-ratio))
 "
   Mine patterns in db (data trees, a.k.a. grounded hypergraphs) with minimum
   support ms, optionally using mi iterations and starting from the initial
@@ -607,7 +611,8 @@
                    #:maximum-variables mv           (or #:maxvar mv)
                    #:maximum-spcial-conjuncts mspc  (or #:maxspcjn mspc)
                    #:maximum-cnjexp-variables mcev  (or #:maxcevar mcev)
-                   #:surprisingness su              (or #:surp su))
+                   #:surprisingness su              (or #:surp su)
+                   #:db-ratio dbr)
 
   db: Collection of data trees to mine. It can be given in 3 forms
 
@@ -719,14 +724,44 @@
       a predicate indicating their surprisingness. Otherwise, if 'none
       is selected then it returns a (scheme) list of patterns.
 
+  dbr: [optional, default=1] parameter to control how much
+       downsampling is taking place to estimate the empirical probability of
+       the patterns during surprisingness measure. The surprisingness rules
+       may automatically downsample of the dataset to reduce the computational
+       cost while maintaining a decent accuracy of the empirical
+       probability. However sometimes the user may want to tune that, either
+       by downsampling more so save computational resources, or downsampling
+       less to improve accuracy. This parameter indicates the proportion of
+       the dataset to consider when comparing the estimate of the pattern
+       count to the dataset size. The default is 1.0. The rational is that if
+       the computer has enough RAM to hold a dataset of size s, then it
+       likely has enough RAM to hold s instances of a pattern applied over
+       that dataset, thus if the expected count is below s no subsampling is
+       taking place, otherwise enough subsampling is taking place as to not
+       exceed s. The db-ratio parameter modifies that threshold by
+       considering dbr * s instead of s.
+
+       To sum-up:
+
+         dbr < 1 is more efficient but less accurate
+         dbr > 1 is less efficient but more accurate
+
+         with dbr ranging from 0 excluded to +inf (also excluded,
+         unless you have a super-Turing computer).
+
+       Also, note that such downsampling does not affect the frequent
+       mining process, even if dbr is set low, given enough iteration, no
+       pattern will be missed, however their surprisingness measures might be
+       inaccurate.
+
   Under the hood it will create a rule base and a query for the rule
   engine, configure it according to the user's options and run it.
   Everything takes place in a child atomspace. After the job is done
   it will remove the child atomspace after copying the solution set
   in the parent atomspace.
 
-  Pattern mining is computationally demanding. There are three ways
-  to improve performances at this time.
+  Pattern mining is computationally demanding. There are a few ways
+  to improve performances though.
 
   1. Set ms as high as possible. The higher the minium support the
      more pruning will take place in search tree. That is because
@@ -744,8 +779,14 @@
      tree is considered.
 
   4. If your pattern is a conjunction of multiple clauses, you can
-     enable incremental conjunction expansion, see the
+     enable incremental conjunction expansion (the default), see the
      #:conjunction-expansion option.
+
+  5. Enforcing systematic specialization (the default), especially
+     when conjunction expansion is used, can dramatically prune the search
+     space, however some patterns, like transitivity, will be missed.
+
+  6. If surprisingness takes too low and too much RAM, lower the db-ratio.
 "
   (define (diff? x y) (not (equal? x y)))
   (define (num-diff? x y) (not (= (to-number x) (to-number y))))
@@ -911,7 +952,7 @@
 		   (surp-rbs (random-surprisingness-rbs-cpt))
                    (target (surp-target su db-cpt))
                    (vardecl (surp-vardecl))
-                   (cfg-s (configure-surprisingness surp-rbs su mc))
+                   (cfg-s (configure-surprisingness surp-rbs su mc db-ratio))
 
                    ;; Run surprisingness in a backward way
                    (surp-res (cog-bc surp-rbs target #:vardecl vardecl))
