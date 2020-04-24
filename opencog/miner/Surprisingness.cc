@@ -91,16 +91,17 @@ double Surprisingness::isurp_old(const Handle& pattern,
 
 double Surprisingness::isurp(const Handle& pattern,
                              const HandleSeq& db,
-                             bool normalize)
+                             bool normalize,
+                             double db_ratio)
 {
 	// Calculate the probability estimate of each partition based on
 	// independent assumption of between each partition block, taking
 	// into account the linkage probability.
-	auto [emin, emax] = ji_prob_est_interval(pattern, db);
+	auto [emin, emax] = ji_prob_est_interval(pattern, db, db_ratio);
 
 	// Calculate the empirical probability of pattern, using
 	// boostrapping if necessary
-	double emp = emp_prob_pbs_mem(pattern, db, emax);
+	double emp = emp_prob_pbs_mem(pattern, db, emax, db_ratio);
 
 	// Calculate the I-Surprisingness, normalized if requested.
 	double dst = dst_from_interval(emin, emax, emp);
@@ -280,13 +281,14 @@ double Surprisingness::emp_prob_bs(const Handle& pattern,
 }
 
 double Surprisingness::emp_prob_pbs(const Handle& pattern,
-                                    const HandleSeq& db)
+                                    const HandleSeq& db,
+                                    double db_ratio)
 {
 	if (1 < MinerUtils::n_conjuncts(pattern)) {
 		// If there is more than one conjunct, calculate an estimate
 		// first to subsample the db if necessary
-		auto [emin, emax] = ji_prob_est_interval(pattern, db);
-		return emp_prob_pbs(pattern, db, emax);
+		auto [emin, emax] = ji_prob_est_interval(pattern, db, db_ratio);
+		return emp_prob_pbs(pattern, db, emax, db_ratio);
 	} else {
 		// Otherwise, no subsampling is necessary, should be tractable
 		return emp_prob(pattern, db);
@@ -295,47 +297,69 @@ double Surprisingness::emp_prob_pbs(const Handle& pattern,
 
 double Surprisingness::emp_prob_pbs(const Handle& pattern,
                                     const HandleSeq& db,
-                                    double prob_estimate)
+                                    double prob_estimate,
+                                    double db_ratio)
 {
 	// Calculate an estimate of the support of the pattern to decide
 	// whether we should subsample the db corpus. Indeed some
-	// pattern have intractably large support.
+	// patterns have intractably large support.
 	double support_estimate = prob_to_support(pattern, db, prob_estimate);
+	double db_size = db.size() * db_ratio;
 
 	// If the support estimate is above the db size then we
 	// subsample
-	if (db.size() < support_estimate) {
-		// Calculate the empiric probability of pattern
-		unsigned subsize = subsmp_size(pattern, db, support_estimate);
-		unsigned n_resampling = 10;  // TODO: move this hardwired contant
+	if (db_size < support_estimate) {
+		LAZY_LOG_DEBUG << "[Miner] Pattern" << std::endl << oc_to_string(pattern)
+		               << std::endl << "has support estimate " << support_estimate
+		               << " > " << db_size << " (its rescaled db size)";
+		// Calculate the empirical probability of pattern
+		unsigned subsize = subsmp_size(pattern, db_size, support_estimate);
+		unsigned n_resample = 10;  // TODO: move this hardwired contant
 		                             // to a user parameter
-		return emp_prob_bs(pattern, db, n_resampling, subsize);
+		LAZY_LOG_DEBUG << "[Miner] Downsample the db to " << subsize
+		               << " to avoid excessively large support,"
+		               << " boostrapping" << " (x" << n_resample << ")"
+		               << " to reduce inaccuracies.";
+		double emp_prob = emp_prob_bs(pattern, db, n_resample, subsize);
+		if (emp_prob == 0) {
+			LAZY_LOG_WARN << "[Miner] The empirical probability of pattern" << std::endl
+			              << oc_to_string(pattern) << std::endl
+			              << "is null. You probably want to increase the db-ratio"
+			              << ", currently of " << db_ratio;
+		}
+		return emp_prob;
 	} else {
+		LAZY_LOG_DEBUG << "[Miner] Pattern " << std::endl << oc_to_string(pattern)
+		               << std::endl << "has support estimate " << support_estimate
+		               << " <= " << db_size << " (its rescaled db size)"
+		               << ". No bootstrapping is taking place.";
 		return emp_prob(pattern, db);
 	}
 }
 
 double Surprisingness::emp_prob_pbs_mem(const Handle& pattern,
-                                        const HandleSeq& db)
+                                        const HandleSeq& db,
+                                        double db_ratio)
 {
 	TruthValuePtr etv = get_emp_tv(pattern);
 	if (etv) {
 		return etv->get_mean();
 	}
-	double ep = emp_prob_pbs(pattern, db);
+	double ep = emp_prob_pbs(pattern, db, db_ratio);
 	set_emp_prob(pattern, ep);
 	return ep;
 }
 
 double Surprisingness::emp_prob_pbs_mem(const Handle& pattern,
                                         const HandleSeq& db,
-                                        double prob_estimate)
+                                        double prob_estimate,
+                                        double db_ratio)
 {
 	TruthValuePtr etv = get_emp_tv(pattern);
 	if (etv) {
 		return etv->get_mean();
 	}
-	double ep = emp_prob_pbs(pattern, db, prob_estimate);
+	double ep = emp_prob_pbs(pattern, db, prob_estimate, db_ratio);
 	set_emp_prob(pattern, ep);
 	return ep;
 }
@@ -358,21 +382,23 @@ TruthValuePtr Surprisingness::emp_tv_bs(const Handle& pattern,
 
 TruthValuePtr Surprisingness::emp_tv_pbs(const Handle& pattern,
                                          const HandleSeq& db,
-                                         double prob_estimate)
+                                         double prob_estimate,
+                                         double db_ratio)
 {
 	// Calculate an estimate of the support of the pattern to decide
 	// whether we should subsample the db corpus. Indeed some
 	// pattern have intractably large support.
 	double support_estimate = prob_to_support(pattern, db, prob_estimate);
+	double db_size = db.size() * db_ratio;
 
 	// If the support estimate is above the db size then we
 	// subsample
-	if (db.size() < support_estimate) {
-		// Calculate the empiric probability of pattern
-		unsigned subsize = subsmp_size(pattern, db, support_estimate);
-		unsigned n_resampling = 10;  // TODO: move this hardwired contant
+	if (db_size < support_estimate) {
+		// Calculate the empirical probability of pattern
+		unsigned subsize = subsmp_size(pattern, db_size, support_estimate);
+		unsigned n_resample = 10;  // TODO: move this hardwired contant
 		                             // to a user parameter
-		return emp_tv_bs(pattern, db, n_resampling, subsize);
+		return emp_tv_bs(pattern, db, n_resample, subsize);
 	} else {
 		return emp_tv(pattern, db);
 	}
@@ -380,13 +406,14 @@ TruthValuePtr Surprisingness::emp_tv_pbs(const Handle& pattern,
 
 TruthValuePtr Surprisingness::emp_tv_pbs_mem(const Handle& pattern,
                                              const HandleSeq& db,
-                                             double prob_estimate)
+                                             double prob_estimate,
+                                             double db_ratio)
 {
 	TruthValuePtr etv = get_emp_tv(pattern);
 	if (etv) {
 		return etv;
 	}
-	etv = emp_tv_pbs(pattern, db, prob_estimate);
+	etv = emp_tv_pbs(pattern, db, prob_estimate, db_ratio);
 	set_emp_tv(pattern, etv);
 	return etv;
 }
@@ -419,18 +446,19 @@ HandleSeq Surprisingness::subsmp(const HandleSeq& db, unsigned subsize)
 }
 
 unsigned Surprisingness::subsmp_size(const Handle& pattern,
-                                     const HandleSeq& db,
-                                     double support_estimate)
+                                     double db_size,
+                                     double support_estimate,
+                                     unsigned min_subsize)
 {
-	double ts = db.size();
 	double nc = MinerUtils::n_conjuncts(pattern);
-	double alpha = (double)support_estimate / std::pow(ts, nc);
-	double res = std::pow(ts / (10*alpha), 1.0/nc);
-	return std::max((unsigned)res, std::min(5000U, (unsigned)ts));
+	double alpha = support_estimate / std::pow(db_size, nc);
+	double res = std::pow(db_size / (10*alpha), 1.0/nc);
+	return std::max((unsigned)res, std::min(min_subsize, (unsigned)db_size));
 }
 
 std::pair<double, double> Surprisingness::ji_prob_est_interval(const Handle& pattern,
-                                                               const HandleSeq& db)
+                                                               const HandleSeq& db,
+                                                               double db_ratio)
 {
 	// Calculate the probability estimate of each partition based on
 	// independent assumption of between each partition block, taking
@@ -438,7 +466,7 @@ std::pair<double, double> Surprisingness::ji_prob_est_interval(const Handle& pat
 	std::vector<double> estimates;
 	HandleSeqSeqSeq prtns = MinerUtils::partitions_without_pattern(pattern);
 	for (const HandleSeqSeq& partition : prtns) {
-		double jip = ji_prob_est(partition, pattern, db);
+		double jip = ji_prob_est(partition, pattern, db, db_ratio);
 		estimates.push_back(jip);
 	}
 	auto mmp = std::minmax_element(estimates.begin(), estimates.end());
@@ -449,7 +477,8 @@ std::pair<double, double> Surprisingness::ji_prob_est_interval(const Handle& pat
 
 double Surprisingness::ji_prob_est(const HandleSeqSeq& partition,
                                    const Handle& pattern,
-                                   const HandleSeq& db)
+                                   const HandleSeq& db,
+                                   double db_ratio)
 {
 	// Generate subpatterns from blocks (add them in the atomspace to
 	// memoize support calculation)
@@ -460,7 +489,7 @@ double Surprisingness::ji_prob_est(const HandleSeqSeq& partition,
 	// without considering joint variables
 	double p = 1.0;
 	for (const Handle& subpattern : subpatterns) {
-		double empr = emp_prob_pbs_mem(subpattern, db);
+		double empr = emp_prob_pbs_mem(subpattern, db, db_ratio);
 		p *= empr;
 	}
 
