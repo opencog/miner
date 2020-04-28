@@ -1085,7 +1085,9 @@ void SurprisingnessUTest::test_nisurp_linkage_synthetic_6()
 
 	// Test normalized I-Surprisingness
 	std::string mode = "nisurp";
-	HandleSeq surp_results = ure_surp(mode, 4);
+	unsigned max_conjuncts = 4;
+	double db_ratio = 2;
+	HandleSeq surp_results = ure_surp(mode, max_conjuncts, db_ratio);
 	Handle expected = MinerUTestUtils::add_surp_eval(_as, mode, pattern);
 
 	logger().debug() << "surp_results = " << oc_to_string(surp_results);
