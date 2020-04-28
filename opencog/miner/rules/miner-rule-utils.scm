@@ -80,7 +80,7 @@
   (Not (equal-top x)))
 
 (define (powerset l)
-  (if (null? l)
+  (if (nil? l)
       '(())
       (let ((rst (powerset (cdr l))))
         (append (map (lambda (x) (cons (car l) x)) rst)
@@ -98,7 +98,7 @@
 
   ( ((4 1) (2 3)) ((1) (4 2 3)) ((1) (2 3) (4)) )
 "
-  (if (null? l)
+  (if (nil? l)
       (list (list (list a)))
       (let ((rst (map (lambda (x) (cons (car l) x)) (copy-insert a (cdr l))))
             (fst (cons (cons a (car l)) (cdr l))))
@@ -114,7 +114,7 @@
 
   (((1 2 3)) ((2 3) (1)) ((1 3) (2)) ((3) (1 2)) ((3) (2) (1)))
 "
-  (if (null? l)
+  (if (nil? l)
       '(())
       (let* ((rst (partitions (cdr l)))
              (groups (map (lambda (x) (copy-insert (car l) x)) rst)))
