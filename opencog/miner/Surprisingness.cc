@@ -116,9 +116,7 @@ double Surprisingness::dst_from_interval(double l, double u, double v)
 
 Handle Surprisingness::add_pattern(const HandleSeq& block, AtomSpace& as)
 {
-	return as.add_link(LAMBDA_LINK,
-	                   block.size() == 1 ? block.front()
-	                   : as.add_link(AND_LINK, std::move(HandleSeq(block))));
+	return as.add_link(LAMBDA_LINK, MinerUtils::mk_body(block));
 }
 
 HandleSeq Surprisingness::add_subpatterns(const HandleSeqSeq& partition,
