@@ -938,10 +938,6 @@
          (ms (get-minimum-support db-size))
          (ms-n (to-number-node ms))
          ;; Check that the initial pattern has enough support
-         (my-ip (get-initial-pattern))
-         (dummy (cog-logger-debug "[Miner] (cog-as my-ip) = ~a"
-                                  (cog-as my-ip)))
-         (dummy (cog-logger-debug "[Miner] parent-as = ~a" parent-as))
          (es (cog-enough-support? (get-initial-pattern) db-cpt ms-n)))
     (if (not es)
         ;; The initial pattern doesn't have enough support, thus the
