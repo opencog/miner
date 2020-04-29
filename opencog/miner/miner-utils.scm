@@ -810,6 +810,44 @@
   ;; Set initial pattern, a function to use the current atomspace at
   ;; the time of being called
   (define (get-initial-pattern)
+
+    ;; TODO: can be simplified with high order function
+    (define (atom-as-readonly? A)
+      (define current-as (cog-set-atomspace! (cog-as A)))
+      (let* ([A-as-readonly? (cog-atomspace-readonly? A)])
+        (cog-set-atomspace! current-as)
+        A-as-readonly?))
+
+    ;; TODO: can be simplified with high order function
+    (define (atom-as-ro! A)
+      (define current-as (cog-set-atomspace! (cog-as A)))
+      (let* ([A-as-ro! (cog-atomspace-ro!)])
+        (cog-set-atomspace! current-as)
+        A-as-ro!))
+
+    ;; TODO: can be simplified with high order function
+    (define (atom-as-rw! A)
+      (define current-as (cog-set-atomspace! (cog-as A)))
+      (let* ([A-as-rw! (cog-atomspace-rw!)])
+        (cog-set-atomspace! current-as)
+        A-as-rw!))
+
+    (define (copy-to-current-as ip)
+      (if (equal? (cog-as ip) (cog-atomspace))
+          ;; ip is in current atomspace already, nothing to do
+          ip
+          ;; ip is not in current atomspace, below is a trick to copy
+          ;; it to any atomspace including child atomspace
+          (let* ([ip-tv (cog-tv ip)]
+                 [ip-as (cog-as ip)])
+            (if (atom-as-readonly? ip)
+                (cog-set-tv! ip ip-tv)
+                ;; Temporary set it to readonly
+                (let* ([dummy (atom-as-ro! ip)]
+                       [current-as-ip (cog-set-tv! ip ip-tv)])
+                  (atom-as-rw! ip)
+                  current-as-ip)))))
+
     (define (add-default-vardecl ip)
       (if (< 1 (cog-arity ip))
           ;; The variable declaration is already there
@@ -817,12 +855,13 @@
           ;; Need to add a default variable declaration
           (let* ((body (cog-outgoing-atom ip 0)))
             (Lambda (VariableSet (cog-free-variables body)) body))))
+
     (let* ((ip (cond ((diff? initial-pattern default-initial-pattern) initial-pattern)
                      ((diff? initpat default-initial-pattern) initpat)
                      (else default-initial-pattern))))
       ;; If the initial pattern is missing a variable declaration, add
       ;; a default one, as the miner rules require one.
-      (add-default-vardecl ip)))
+      (add-default-vardecl (copy-to-current-as ip))))
 
   ;; Set maximum iterations
   (define mi
@@ -904,9 +943,9 @@
         ;; The initial pattern doesn't have enough support, thus the
         ;; solution set is empty.
         (begin (cog-set-atomspace! parent-as)
-	       (cog-logger-debug "[Miner] Initial pattern:\n~a" (get-initial-pattern))
-	       (cog-logger-debug "[Miner] Does not have enough support (min support = ~a)" ms)
-	       (cog-logger-debug "[Miner] Abort pattern mining")
+               (cog-logger-debug "[Miner] Initial pattern:\n~a" (get-initial-pattern))
+               (cog-logger-debug "[Miner] Does not have enough support (min support = ~a)" ms)
+               (cog-logger-debug "[Miner] Abort pattern mining")
                ;; TODO: delete tmp-as
                (list))
 

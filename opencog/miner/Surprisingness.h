@@ -394,7 +394,7 @@ public:
 	                                 const HandleSeqSeq& partition);
 
 	/**
-	 * Return the the number values associated to a given variable in a
+	 * Return the number values (groundings) associated to a given variable in a
 	 * block (subpatterns) w.r.t. to db.
 	 */
 	static unsigned value_count(const HandleSeq& block,
