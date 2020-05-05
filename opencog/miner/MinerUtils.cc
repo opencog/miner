@@ -493,7 +493,9 @@ Handle MinerUtils::restricted_satisfying_set(const Handle& pattern,
 	sater.max_results = ms;
 	GetLinkCast(gl)->satisfy(sater);
 
-	return Handle(createUnorderedLink(sater._satisfying_set, SET_LINK));
+	QueueValuePtr qv(sater.get_result_queue());
+	HandleSeq hs(qv->to_handle_seq());
+	return Handle(createUnorderedLink(std::move(hs), SET_LINK));
 }
 
 bool MinerUtils::totally_abstract(const Handle& pattern)
