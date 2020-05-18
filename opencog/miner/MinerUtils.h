@@ -184,6 +184,11 @@ public:
 	static unsigned get_uint(const Handle& h);
 
 	/**
+	 * Return the double held by a number node.
+	 */
+	static double get_double(const Handle& h);
+
+	/**
 	 * Given a pattern and a db, calculate the pattern frequency up to
 	 * ms (to avoid unnecessary calculations).
 	 */
@@ -236,7 +241,7 @@ public:
 	 * Create a pattern body from clauses, introducing an AndLink if
 	 * necessary.
 	 */
-	static Handle mk_body(const HandleSeq& clauses);
+	static Handle mk_body(const HandleSeq clauses);
 
 	/**
 	 * Given a sequence of clause create a LambdaLink of it without

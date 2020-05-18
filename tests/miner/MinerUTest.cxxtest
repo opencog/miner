@@ -171,6 +171,7 @@ public:
 	void test_shallow_abstract();
 
 	// Pattern miner
+	void test_empty();
 	void test_A();
 	void test_AB();
 	void test_AB_redundant_cnj();
@@ -875,19 +876,43 @@ void MinerUTest::test_shallow_abstract()
 		man = an(CONCEPT_NODE, "man"),
 		soda_drinker = an(CONCEPT_NODE, "soda drinker"),
 		woman = an(CONCEPT_NODE, "woman");
-	// Expected shallow abstractions
-	HandleSetSeq expect{ // Values for X
-	                     { Abe, Alaura, Allen, Cason, Davion,
-	                       Emily, Hessley, Lily, Lucy, Sophia },
-	                     // Values for W. Z comes from variable factorization.
-	                     { soda_drinker, Z, ugly, man, human, woman },
-	                     // Values for Z. No variable factorization as last one.
-	                     { soda_drinker, ugly, man, human, woman } };
+
+	// Values for X
+	HandleSet XVal{ Abe, Alaura, Allen, Cason, Davion,
+	                Emily, Hessley, Lily, Lucy, Sophia };
+	// Possible values (2 sets because Z and W are symmetric) for W. Z,
+	// if present, comes from variable factorization.
+	HandleSet WVal1{ Z, soda_drinker, ugly, man, human, woman };
+	HandleSet WVal2{ soda_drinker, ugly, man, human, woman };
+	// Possible Values (2 sets because Z and W are symmetric) for Z. W,
+	// if present, comes from variable factorization.
+	HandleSet ZVal1{ soda_drinker, ugly, man, human, woman };
+	HandleSet ZVal2{ W, soda_drinker, ugly, man, human, woman };
+	// Expected shallow abstractions (two because Z and W are symmetric).
+	HandleSetSeq expect1{ XVal, WVal1, ZVal1 };
+	HandleSetSeq expect2{ XVal, ZVal2, WVal2 };
 
 	logger().debug() << "result = " << oc_to_string(result);
-	logger().debug() << "expect = " << oc_to_string(expect);
+	logger().debug() << "expect1 = " << oc_to_string(expect1);
+	logger().debug() << "expect2 = " << oc_to_string(expect2);
 
-	TS_ASSERT(content_eq(result, expect));
+	TS_ASSERT(content_eq(result, expect1) or content_eq(result, expect2));
+}
+
+void MinerUTest::test_empty()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
+	// Test with empty db, thus expected result should be empty
+
+	// Run URE pattern miner
+	Handle ure_results = ure_pm(HandleSeq(), 0),
+		ure_expected = mk_minsup_evals(0, {top});
+
+	logger().debug() << "ure_results = " << oc_to_string(ure_results);
+	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
+
+	TS_ASSERT(content_eq(ure_results, ure_expected));
 }
 
 void MinerUTest::test_A()

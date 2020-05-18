@@ -36,6 +36,7 @@
 (define default-minimum-support 10)
 (define default-minimum-frequency -1)
 (define default-initial-pattern (top))
+(define default-jobs 1)
 (define default-maximum-iterations 100)
 (define default-complexity-penalty 1)
 (define default-conjunction-expansion #t)
@@ -45,6 +46,7 @@
 (define default-maximum-spcial-conjuncts 1)
 (define default-maximum-cnjexp-variables 2)
 (define default-surprisingness 'isurp)
+(define default-db-ratio 1)
 
 ;; For some crazy reason I need to repaste absolutely-true here while
 ;; it is already defined in ure.
@@ -268,7 +270,7 @@
                             #:maximum-spcial-conjuncts maximum-spcial-conjuncts
                             #:maximum-cnjexp-variables maximum-cnjexp-variables))
 
-(define* (configure-surprisingness surp-rbs mode maximum-conjuncts)
+(define* (configure-surprisingness surp-rbs mode maximum-conjuncts db-ratio)
   ;; Add surprisingness rules
   (let* ((namify (lambda (i) (string-append (symbol->string mode) "-"
                                             (number->string i)
@@ -278,7 +280,7 @@
                               (eq? mode 'nisurp-old)
                               (eq? mode 'isurp)
                               (eq? mode 'nisurp))
-                          (lambda (i) (gen-i-surprisingness-rule mode i)))
+                          (lambda (i) (gen-i-surprisingness-rule mode i db-ratio)))
                          ((eq? mode 'jsdsurp) gen-jsd-surprisingness-rule)))
          (definify (lambda (i) (DefineLink
                                  (aliasify i)
@@ -292,7 +294,7 @@
       (let* ((emp-alias (DefinedSchema "emp-rule"))
              (est-alias (DefinedSchema "est-rule"))
              (jsd-alias (DefinedSchema "jsd-rule"))
-             (emp-def (Define emp-alias (gen-emp-rule)))
+             (emp-def (Define emp-alias (gen-emp-rule db-ratio)))
              (est-def (Define est-alias (gen-est-rule)))
              (jsd-def (Define jsd-alias (gen-jsd-rule))))
         (ure-add-rules surp-rbs (list emp-alias est-alias jsd-alias)))))
@@ -308,6 +310,7 @@
 
 (define* (configure-miner pm-rbs
                           #:key
+                          (jobs default-jobs)
                           (maximum-iterations default-maximum-iterations)
                           (complexity-penalty default-complexity-penalty)
                           (conjunction-expansion default-conjunction-expansion)
@@ -322,6 +325,7 @@
   rules and parameters.
 
   Usage: (configure-miner pm-rbs
+                          #:jobs jb
                           #:maximum-iterations mi
                           #:complexity-penalty cp
                           #:conjunction-expansion ce
@@ -332,6 +336,11 @@
                           #:maximum-cnjexp-variables mcev)
 
   pm-rbs: Concept node of the rule-based system to configure
+
+  jb: [optional, default=1] Number of jobs to run in parallel. Can
+      speed up mining. Note that this may alter the results especially
+      if conjunction expansion if used as its results depends on the output
+      of other mining rules.
 
   mi: [optional, default=100] Maximum number of iterations allocated.
       If negative then the pattern miner keeps running till all patterns
@@ -375,6 +384,7 @@
                    #:maximum-cnjexp-variables maximum-cnjexp-variables)
 
   ;; Set parameters
+  (ure-set-jobs pm-rbs jobs)
   (ure-set-maximum-iterations pm-rbs maximum-iterations)
   (ure-set-complexity-penalty pm-rbs complexity-penalty)
 
@@ -526,6 +536,9 @@
 
 (define* (cog-mine db
                    #:key
+                   ;; Number of jobs to run in parallel
+                   (jobs default-jobs)
+
                    ;; Minimum support
                    (minsup default-minimum-support)
                    (minimum-support default-minimum-support)
@@ -576,13 +589,17 @@
 
                    ;; Surprisingness measure
                    (surp default-surprisingness)
-                   (surprisingness default-surprisingness))
+                   (surprisingness default-surprisingness)
+
+		   ;; db-ratio
+		   (db-ratio default-db-ratio))
 "
   Mine patterns in db (data trees, a.k.a. grounded hypergraphs) with minimum
   support ms, optionally using mi iterations and starting from the initial
   pattern initpat.
 
   Usage: (cog-mine db
+                   #:jobs jb
                    #:minimum-support ms             (or #:minsup ms)
                    #:minimum-frequency mf           (or #:minfreq mf)
                    #:initial-pattern ip             (or #:initpat ip)
@@ -594,7 +611,8 @@
                    #:maximum-variables mv           (or #:maxvar mv)
                    #:maximum-spcial-conjuncts mspc  (or #:maxspcjn mspc)
                    #:maximum-cnjexp-variables mcev  (or #:maxcevar mcev)
-                   #:surprisingness su              (or #:surp su))
+                   #:surprisingness su              (or #:surp su)
+                   #:db-ratio dbr)
 
   db: Collection of data trees to mine. It can be given in 3 forms
 
@@ -620,6 +638,11 @@
             (Member
               tn
               (Concept db-name))
+
+  jb: [optional, default=1] Number of jobs to run in parallel. Can
+      speed up mining. Note that this may alter the results especially
+      if conjunction expansion if used as its results depends on the output
+      of other mining rules.
 
   ms: [optional, default=10] Minimum support. All patterns with count below
       ms are discarded. Can be a Scheme number or an Atomese number node.
@@ -701,14 +724,44 @@
       a predicate indicating their surprisingness. Otherwise, if 'none
       is selected then it returns a (scheme) list of patterns.
 
+  dbr: [optional, default=1] parameter to control how much
+       downsampling is taking place to estimate the empirical probability of
+       the patterns during surprisingness measure. The surprisingness rules
+       may automatically downsample of the dataset to reduce the computational
+       cost while maintaining a decent accuracy of the empirical
+       probability. However sometimes the user may want to tune that, either
+       by downsampling more so save computational resources, or downsampling
+       less to improve accuracy. This parameter indicates the proportion of
+       the dataset to consider when comparing the estimate of the pattern
+       count to the dataset size. The default is 1.0. The rational is that if
+       the computer has enough RAM to hold a dataset of size s, then it
+       likely has enough RAM to hold s instances of a pattern applied over
+       that dataset, thus if the expected count is below s no subsampling is
+       taking place, otherwise enough subsampling is taking place as to not
+       exceed s. The db-ratio parameter modifies that threshold by
+       considering dbr * s instead of s.
+
+       To sum-up:
+
+         dbr < 1 is more efficient but less accurate
+         dbr > 1 is less efficient but more accurate
+
+         with dbr ranging from 0 excluded to +inf (also excluded,
+         unless you have a super-Turing computer).
+
+       Also, note that such downsampling does not affect the frequent
+       mining process, even if dbr is set low, given enough iteration, no
+       pattern will be missed, however their surprisingness measures might be
+       inaccurate.
+
   Under the hood it will create a rule base and a query for the rule
   engine, configure it according to the user's options and run it.
   Everything takes place in a child atomspace. After the job is done
   it will remove the child atomspace after copying the solution set
   in the parent atomspace.
 
-  Pattern mining is computationally demanding. There are three ways
-  to improve performances at this time.
+  Pattern mining is computationally demanding. There are a few ways
+  to improve performances though.
 
   1. Set ms as high as possible. The higher the minium support the
      more pruning will take place in search tree. That is because
@@ -726,8 +779,14 @@
      tree is considered.
 
   4. If your pattern is a conjunction of multiple clauses, you can
-     enable incremental conjunction expansion, see the
+     enable incremental conjunction expansion (the default), see the
      #:conjunction-expansion option.
+
+  5. Enforcing systematic specialization (the default), especially
+     when conjunction expansion is used, can dramatically prune the search
+     space, however some patterns, like transitivity, will be missed.
+
+  6. If surprisingness takes too low and too much RAM, lower the db-ratio.
 "
   (define (diff? x y) (not (equal? x y)))
   (define (num-diff? x y) (not (= (to-number x) (to-number y))))
@@ -751,6 +810,44 @@
   ;; Set initial pattern, a function to use the current atomspace at
   ;; the time of being called
   (define (get-initial-pattern)
+
+    ;; TODO: can be simplified with high order function
+    (define (atom-as-readonly? A)
+      (define current-as (cog-set-atomspace! (cog-as A)))
+      (let* ([A-as-readonly? (cog-atomspace-readonly? A)])
+        (cog-set-atomspace! current-as)
+        A-as-readonly?))
+
+    ;; TODO: can be simplified with high order function
+    (define (atom-as-ro! A)
+      (define current-as (cog-set-atomspace! (cog-as A)))
+      (let* ([A-as-ro! (cog-atomspace-ro!)])
+        (cog-set-atomspace! current-as)
+        A-as-ro!))
+
+    ;; TODO: can be simplified with high order function
+    (define (atom-as-rw! A)
+      (define current-as (cog-set-atomspace! (cog-as A)))
+      (let* ([A-as-rw! (cog-atomspace-rw!)])
+        (cog-set-atomspace! current-as)
+        A-as-rw!))
+
+    (define (copy-to-current-as ip)
+      (if (equal? (cog-as ip) (cog-atomspace))
+          ;; ip is in current atomspace already, nothing to do
+          ip
+          ;; ip is not in current atomspace, below is a trick to copy
+          ;; it to any atomspace including child atomspace
+          (let* ([ip-tv (cog-tv ip)]
+                 [ip-as (cog-as ip)])
+            (if (atom-as-readonly? ip)
+                (cog-set-tv! ip ip-tv)
+                ;; Temporary set it to readonly
+                (let* ([dummy (atom-as-ro! ip)]
+                       [current-as-ip (cog-set-tv! ip ip-tv)])
+                  (atom-as-rw! ip)
+                  current-as-ip)))))
+
     (define (add-default-vardecl ip)
       (if (< 1 (cog-arity ip))
           ;; The variable declaration is already there
@@ -758,12 +855,13 @@
           ;; Need to add a default variable declaration
           (let* ((body (cog-outgoing-atom ip 0)))
             (Lambda (VariableSet (cog-free-variables body)) body))))
+
     (let* ((ip (cond ((diff? initial-pattern default-initial-pattern) initial-pattern)
                      ((diff? initpat default-initial-pattern) initpat)
                      (else default-initial-pattern))))
       ;; If the initial pattern is missing a variable declaration, add
       ;; a default one, as the miner rules require one.
-      (add-default-vardecl ip)))
+      (add-default-vardecl (copy-to-current-as ip))))
 
   ;; Set maximum iterations
   (define mi
@@ -845,6 +943,9 @@
         ;; The initial pattern doesn't have enough support, thus the
         ;; solution set is empty.
         (begin (cog-set-atomspace! parent-as)
+               (cog-logger-debug "[Miner] Initial pattern:\n~a" (get-initial-pattern))
+               (cog-logger-debug "[Miner] Does not have enough support (min support = ~a)" ms)
+               (cog-logger-debug "[Miner] Abort pattern mining")
                ;; TODO: delete tmp-as
                (list))
 
@@ -854,6 +955,7 @@
                (source (minsup-eval-true (get-initial-pattern) db-cpt ms-n))
                (miner-rbs (random-miner-rbs-cpt))
                (cfg-m (configure-miner miner-rbs
+                                       #:jobs jobs
                                        #:maximum-iterations mi
                                        #:complexity-penalty cp
                                        #:conjunction-expansion ce
@@ -862,6 +964,10 @@
                                        #:maximum-variables mv
                                        #:maximum-spcial-conjuncts mspc
                                        #:maximum-cnjexp-variables mcev))
+
+	       (dummy (cog-logger-debug "[Miner] Initial pattern:\n~a" (get-initial-pattern)))
+	       (dummy (cog-logger-debug "[Miner] Has enough support (min support = ~a)" ms))
+	       (dummy (cog-logger-debug "[Miner] Launch URE-based pattern mining"))
 
                ;; Run pattern miner in a forward way
                (results (cog-fc miner-rbs source))
@@ -873,16 +979,19 @@
 
               ;; No surprisingness, simple return the pattern list
               (let* ((parent-patterns-lst (cog-cp parent-as patterns-lst)))
+		(cog-logger-debug "[Miner] No surprisingness measure, end pattern miner now")
                 (cog-set-atomspace! parent-as)
                 parent-patterns-lst)
 
               ;; Run surprisingness
               (let*
                   ;; Configure surprisingness backward chainer
-                  ((surp-rbs (random-surprisingness-rbs-cpt))
+                  ((dummy (cog-logger-debug "[Miner] Call surprisingness on mined patterns"))
+
+		   (surp-rbs (random-surprisingness-rbs-cpt))
                    (target (surp-target su db-cpt))
                    (vardecl (surp-vardecl))
-                   (cfg-s (configure-surprisingness surp-rbs su mc))
+                   (cfg-s (configure-surprisingness surp-rbs su mc db-ratio))
 
                    ;; Run surprisingness in a backward way
                    (surp-res (cog-bc surp-rbs target #:vardecl vardecl))
@@ -891,6 +1000,7 @@
 
                    ;; Copy the results to the parent atomspace
                    (parent-surp-res (cog-cp parent-as surp-res-sort-lst)))
+		(cog-logger-debug "[Miner] End pattern miner")
                 (cog-set-atomspace! parent-as)
                 parent-surp-res))))))
 

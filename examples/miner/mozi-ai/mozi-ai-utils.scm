@@ -230,7 +230,7 @@
     base-minsup-ptns-lst))
 
 ;; TODO: move this to miner-utils.scm, maybe
-(define (cog-surp surprisingness max-conjuncts db-cpt)
+(define (cog-surp surprisingness max-conjuncts db-cpt db-ratio)
   (let* (
          ;; Configure surprisingness backward chainer
          (surp-rbs (random-surprisingness-rbs-cpt))
@@ -238,7 +238,8 @@
          (vardecl (surp-vardecl))
          (cfg-s (configure-surprisingness surp-rbs
                                           surprisingness
-                                          max-conjuncts))
+                                          max-conjuncts
+					  db-ratio))
 
          ;; Run surprisingness in a backward way
          (results (cog-bc surp-rbs target #:vardecl vardecl)))

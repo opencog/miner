@@ -73,11 +73,16 @@ HandleSetSeq MinerUtils::shallow_abstract(const Valuations& valuations,
 HandleSet MinerUtils::focus_shallow_abstract(const Valuations& valuations,
                                              unsigned ms)
 {
-	HandleSet shabs;
+	// If there are no valuations, then the result is empty by
+	// convention, regardless of the minimum support threshold.
+	if (valuations.empty())
+		return HandleSet();
 
 	// No more variable to specialize from
 	if (valuations.no_focus())
 		return HandleSet();
+
+	HandleSet shabs;
 
 	// Strongly connected valuations associated to the variable under
 	// focus
@@ -188,11 +193,12 @@ HandleSet MinerUtils::focus_shallow_abstract(const Valuations& valuations,
 
 	// Only consider variable factorizations reaching the minimum
 	// support
-	for (const auto& fvar : facvars)
+	for (const auto& fvar : facvars) {
 		if (ms <= fvar.second) {
 			set_support(fvar.first, fvar.second);
 			shabs.insert(fvar.first);
 		}
+   }
 
 	return shabs;
 }
@@ -257,7 +263,8 @@ Handle MinerUtils::shallow_abstract_of_val(const Handle& value)
 
 Handle MinerUtils::variable_set(const HandleSeq& vars)
 {
-	return vars.size() == 1 ? vars[0] : Handle(createVariableSet(vars));
+	return vars.size() == 1 ? vars[0] :
+		Handle(createVariableSet(std::move(HandleSeq(vars))));
 }
 
 Handle MinerUtils::lambda(const Handle& vardecl, const Handle& body)
@@ -302,8 +309,12 @@ HandleSeq MinerUtils::get_db(const Handle& db_cpt)
 
 unsigned MinerUtils::get_uint(const Handle& h)
 {
-	NumberNodePtr nn = NumberNodeCast(h);
-	return (unsigned)std::round(nn->get_value());
+	return (unsigned)std::round(get_double(h));
+}
+
+double MinerUtils::get_double(const Handle& h)
+{
+	return NumberNodeCast(h)->get_value();
 }
 
 unsigned MinerUtils::support(const Handle& pattern,
@@ -382,15 +393,15 @@ HandleSet MinerUtils::shallow_specialize(const Handle& pattern,
 	return results;
 }
 
-Handle MinerUtils::mk_body(const HandleSeq& clauses)
+Handle MinerUtils::mk_body(const HandleSeq clauses)
 {
 	if (clauses.size() == 0)
 		return Handle::UNDEFINED;
 	if (use_present_link)
-		return Handle(createPresentLink(clauses));
+		return Handle(createPresentLink(std::move(clauses)));
 	if (clauses.size() == 1)
 		return clauses.front();
-	return Handle(createLink(clauses, AND_LINK));
+	return Handle(createLink(std::move(clauses), AND_LINK));
 }
 
 Handle MinerUtils::mk_pattern_no_vardecl(const HandleSeq& clauses)
@@ -468,7 +479,7 @@ Handle MinerUtils::restricted_satisfying_set(const Handle& pattern,
 
 	// Avoid pattern matcher warning
 	if (totally_abstract(pattern) and n_conjuncts(pattern) == 1)
-		return tmp_db_as.add_link(SET_LINK, tmp_db);
+		return tmp_db_as.add_link(SET_LINK, std::move(tmp_db));
 
 	// Define pattern to run
 	AtomSpace tmp_query_as(&tmp_db_as);
@@ -482,7 +493,9 @@ Handle MinerUtils::restricted_satisfying_set(const Handle& pattern,
 	sater.max_results = ms;
 	GetLinkCast(gl)->satisfy(sater);
 
-	return Handle(createUnorderedLink(sater._satisfying_set, SET_LINK));
+	QueueValuePtr qv(sater.get_result_queue());
+	HandleSeq hs(qv->to_handle_seq());
+	return Handle(createUnorderedLink(std::move(hs), SET_LINK));
 }
 
 bool MinerUtils::totally_abstract(const Handle& pattern)
