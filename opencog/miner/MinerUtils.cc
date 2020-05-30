@@ -491,7 +491,7 @@ Handle MinerUtils::restricted_satisfying_set(const Handle& pattern,
 	// Run pattern matcher
 	SatisfyingSet sater(&tmp_db_as);
 	sater.max_results = ms;
-	GetLinkCast(gl)->satisfy(sater);
+	sater.satisfy(PatternLinkCast(gl));
 
 	QueueValuePtr qv(sater.get_result_queue());
 	HandleSeq hs(qv->to_handle_seq());
