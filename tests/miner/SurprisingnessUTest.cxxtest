@@ -62,7 +62,9 @@ private:
 	// Some constants
 	Handle C0, C1;
 	
-	HandleSeq ure_surp(const std::string& mode, unsigned max_conjuncts);
+	HandleSeq ure_surp(const std::string& mode,
+	                   unsigned max_conjuncts,
+	                   double db_ratio=1.0);
 
 	// Load the ugly male soda drinker corpus and associate all
 	// inheritance links to _db_cpt.
@@ -117,6 +119,10 @@ public:
 	void test_nisurp_linkage_synthetic_7();
 	void test_nisurp_linkage_synthetic_8();
 
+	// Make sure that the db-ratio doesn't degrade too much the
+	// accuracy of the surprisingness measure
+	void test_nisurp_linkage_synthetic_db_ratio();
+
 	// Test surprisingness using bootstrapping to calculate
 	// probabilities
 	void test_nisurp_emp_prob_bs_1();
@@ -131,9 +137,12 @@ public:
 	void test_jsdsurp_ugly_man_soda_drinker();
 };
 
-HandleSeq SurprisingnessUTest::ure_surp(const std::string& mode, unsigned max_conjuncts)
+HandleSeq SurprisingnessUTest::ure_surp(const std::string& mode,
+                                        unsigned max_conjuncts,
+                                        double db_ratio)
 {
-	return MinerUTestUtils::ure_surp(_as, _scm, _surp_rb, mode, max_conjuncts);
+	return MinerUTestUtils::ure_surp(_as, _scm, _surp_rb, mode,
+	                                 max_conjuncts, db_ratio);
 }
 
 void SurprisingnessUTest::load_ugly_male_soda_drinker_corpus()
@@ -870,7 +879,9 @@ void SurprisingnessUTest::test_nisurp_linkage_synthetic_3()
 
 	// Test normalized I-Surprisingness
 	std::string mode = "nisurp";
-	HandleSeq surp_results = ure_surp(mode, 2);
+	unsigned max_conjuncts = 2;
+	double db_ratio = 2;
+	HandleSeq surp_results = ure_surp(mode, max_conjuncts, db_ratio);
 	Handle expected = MinerUTestUtils::add_surp_eval(_as, mode, pattern);
 
 	logger().debug() << "surp_results = " << oc_to_string(surp_results);
@@ -997,7 +1008,9 @@ void SurprisingnessUTest::test_nisurp_linkage_synthetic_5()
 
 	// Test normalized I-Surprisingness
 	std::string mode = "nisurp";
-	HandleSeq surp_results = ure_surp(mode, 3);
+	unsigned max_conjuncts = 3;
+	double db_ratio = 3;
+	HandleSeq surp_results = ure_surp(mode, max_conjuncts, db_ratio);
 	Handle expected = MinerUTestUtils::add_surp_eval(_as, mode, pattern);
 
 	logger().debug() << "surp_results = " << oc_to_string(surp_results);
@@ -1072,7 +1085,9 @@ void SurprisingnessUTest::test_nisurp_linkage_synthetic_6()
 
 	// Test normalized I-Surprisingness
 	std::string mode = "nisurp";
-	HandleSeq surp_results = ure_surp(mode, 4);
+	unsigned max_conjuncts = 4;
+	double db_ratio = 2;
+	HandleSeq surp_results = ure_surp(mode, max_conjuncts, db_ratio);
 	Handle expected = MinerUTestUtils::add_surp_eval(_as, mode, pattern);
 
 	logger().debug() << "surp_results = " << oc_to_string(surp_results);
@@ -1135,7 +1150,9 @@ void SurprisingnessUTest::test_nisurp_linkage_synthetic_7()
 
 	// Test normalized I-Surprisingness
 	std::string mode = "nisurp";
-	HandleSeq surp_results = ure_surp(mode, 2);
+	unsigned max_conjuncts = 2;
+	double db_ratio = 2;
+	HandleSeq surp_results = ure_surp(mode, max_conjuncts, db_ratio);
 	Handle expected = MinerUTestUtils::add_surp_eval(_as, mode, pattern);
 
 	logger().debug() << "surp_results = " << oc_to_string(surp_results);
@@ -1215,6 +1232,56 @@ void SurprisingnessUTest::test_nisurp_linkage_synthetic_8()
 	TS_ASSERT_DELTA(0.0, expected->getTruthValue()->get_mean(), 0.3);
 }
 
+// Like test_nisurp_linkage_synthetic_8() but make sure that db-ratio
+// doesn't degrade too much the accuracy of the surprisingness
+// measure.
+void SurprisingnessUTest::test_nisurp_linkage_synthetic_db_ratio()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
+	// Create data base
+	populate_uniform_ternary_list_links(50, 0.1);
+
+	// Create pattern to measure surprisingness of
+	//
+	// LambdaLink
+	//   X Y Z W
+	//   PresentLink
+	//     List
+	//       X
+	//       Y
+	//       X
+	//     List
+	//       Z
+	//       W
+	//       X
+	Handle pattern = al(LAMBDA_LINK,
+	                    al(VARIABLE_SET, X, Y, Z, W),
+	                    al(PRESENT_LINK,
+	                       al(LIST_LINK, X, Y, X),
+	                       al(LIST_LINK, Z, W, X)));
+	MinerUTestUtils::add_minsup_eval(_as, pattern, 5, TruthValue::TRUE_TV());
+
+	// Test normalized I-Surprisingness
+	std::string mode = "nisurp";
+	double db_ratio = 0.5;
+	HandleSeq surp_results = ure_surp(mode, 2, db_ratio);
+	Handle expected = MinerUTestUtils::add_surp_eval(_as, mode, pattern);
+
+	logger().debug() << "surp_results = " << oc_to_string(surp_results);
+
+	TS_ASSERT(not surp_results.empty());
+
+	Handle surp_front = surp_results.front();
+
+	logger().debug() << "expected = " << oc_to_string(expected);
+	logger().debug() << "surp_front = " << oc_to_string(surp_front);
+
+	TS_ASSERT(content_eq(expected, surp_front));
+
+	TS_ASSERT_DELTA(0.0, expected->getTruthValue()->get_mean(), 0.3);
+}
+
 // Like test_nisurp_linkage_synthetic_3 but using bootstrapping to
 // calculate empirical probability and estimates.
 void SurprisingnessUTest::test_nisurp_emp_prob_bs_1()
@@ -1244,7 +1311,9 @@ void SurprisingnessUTest::test_nisurp_emp_prob_bs_1()
 
 	// Test normalized I-Surprisingness
 	std::string mode = "nisurp";
-	HandleSeq surp_results = ure_surp(mode, 2);
+	unsigned max_conjuncts = 2;
+	double db_ratio = 2;
+	HandleSeq surp_results = ure_surp(mode, max_conjuncts, db_ratio);
 	Handle expected = MinerUTestUtils::add_surp_eval(_as, mode, pattern);
 
 	logger().debug() << "surp_results = " << oc_to_string(surp_results);

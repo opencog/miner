@@ -58,7 +58,7 @@ public:
 	 *
 	 * to as.
 	 */
-	static Handle add_surp_prd(AtomSpace& as, const std::string& mode);
+	static Handle add_surp_prd(AtomSpace& as, std::string mode);
 
 	/**
 	 * Add
@@ -289,7 +289,8 @@ public:
 	static void configure_surprisingness(SchemeEval& scm,
 	                                     const Handle& surp_rb,
 	                                     const std::string& mode,
-	                                     unsigned max_conjuncts);
+	                                     unsigned max_conjuncts,
+	                                     double db_ratio);
 
 	/**
 	 * Run I-Surprisingness reasoning on the current atomspace and
@@ -299,7 +300,8 @@ public:
 	                          SchemeEval& scm,
 	                          const Handle& surp_rb,
 	                          const std::string& mode,
-	                          unsigned max_conjuncts);
+	                          unsigned max_conjuncts,
+	                          double db_ratio=1.0);
 
 	/**
 	 * Populate the given atomspace with n nodes of a given type, named

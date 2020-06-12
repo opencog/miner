@@ -110,15 +110,15 @@ protected:
 	 * do_isurp: I-Surprisingness
 	 * do_nisurp: normalized I-Surprisingness
 	 */
-	double do_isurp_old(Handle pattern, Handle db);
-	double do_nisurp_old(Handle pattern, Handle db);
-	double do_isurp(Handle pattern, Handle db);
-	double do_nisurp(Handle pattern, Handle db);
+	double do_isurp_old(Handle pattern, Handle db, Handle /*db_ratio unused*/);
+	double do_nisurp_old(Handle pattern, Handle db, Handle /*db_ratio unused*/);
+	double do_isurp(Handle pattern, Handle db, Handle db_ratio);
+	double do_nisurp(Handle pattern, Handle db, Handle db_ratio);
 
 	/**
 	 * Calculate the empirical truth value of pattern
 	 */
-	TruthValuePtr do_emp_tv(Handle pattern, Handle db);
+	TruthValuePtr do_emp_tv(Handle pattern, Handle db, Handle db_ratio);
 
 	/**
 	 * Calculate the joint independent truth value estimate of pattern
@@ -211,7 +211,7 @@ Handle MinerSCM::do_shallow_abstract(Handle pattern,
 			sa_lists.insert(sa_list.size() == 1 ? sa_list[0]
 			                // Only Wrap in a list if arity is greater
 			                // than one
-			                : as->add_link(LIST_LINK, sa_list));
+			                : as->add_link(LIST_LINK, std::move(sa_list)));
 		}
 		vari++;
 	}
@@ -268,7 +268,7 @@ Handle MinerSCM::do_expand_conjunction(Handle cnjtion, Handle pattern,
 	return as->add_link(SET_LINK, HandleSeq(results.begin(), results.end()));
 }
 
-double MinerSCM::do_isurp_old(Handle pattern, Handle db)
+double MinerSCM::do_isurp_old(Handle pattern, Handle db, Handle /*db_ratio*/)
 {
 	// Fetch data trees
 	HandleSeq db_seq = MinerUtils::get_db(db);
@@ -276,38 +276,41 @@ double MinerSCM::do_isurp_old(Handle pattern, Handle db)
 	return Surprisingness::isurp_old(pattern, db_seq, false);
 }
 
-double MinerSCM::do_nisurp_old(Handle pattern, Handle db)
+double MinerSCM::do_nisurp_old(Handle pattern, Handle db, Handle /*db_ratio*/)
 {
-	// Fetch data trees
+	// Fetch arguments
 	HandleSeq db_seq = MinerUtils::get_db(db);
 
 	return Surprisingness::isurp_old(pattern, db_seq, true);
 }
 
-double MinerSCM::do_isurp(Handle pattern, Handle db)
+double MinerSCM::do_isurp(Handle pattern, Handle db, Handle db_ratio)
 {
-	// Fetch data trees
+	// Fetch arguments
 	HandleSeq db_seq = MinerUtils::get_db(db);
+	double db_rat = MinerUtils::get_double(db_ratio);
 
-	return Surprisingness::isurp(pattern, db_seq, false);
+	return Surprisingness::isurp(pattern, db_seq, false, db_rat);
 }
 
-double MinerSCM::do_nisurp(Handle pattern, Handle db)
+double MinerSCM::do_nisurp(Handle pattern, Handle db, Handle db_ratio)
 {
-	// Fetch data trees
+	// Fetch arguments
 	HandleSeq db_seq = MinerUtils::get_db(db);
+	double db_rat = MinerUtils::get_double(db_ratio);
 
-	return Surprisingness::isurp(pattern, db_seq, true);
+	return Surprisingness::isurp(pattern, db_seq, true, db_rat);
 }
 
-TruthValuePtr MinerSCM::do_emp_tv(Handle pattern, Handle db)
+TruthValuePtr MinerSCM::do_emp_tv(Handle pattern, Handle db, Handle db_ratio)
 {
-	// Fetch data trees
+	// Fetch arguments
 	HandleSeq db_seq = MinerUtils::get_db(db);
+	double db_rat = MinerUtils::get_double(db_ratio);
 
 	// Calculate its estimate first to optimize empirical calculation
 	TruthValuePtr jte = Surprisingness::ji_tv_est_mem(pattern, db_seq);
-	return Surprisingness::emp_tv_pbs_mem(pattern, db_seq, jte->get_mean());
+	return Surprisingness::emp_tv_pbs_mem(pattern, db_seq, jte->get_mean(), db_rat);
 }
 
 TruthValuePtr MinerSCM::do_ji_tv_est(Handle pattern, Handle db)
