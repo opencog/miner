@@ -943,9 +943,9 @@
         ;; The initial pattern doesn't have enough support, thus the
         ;; solution set is empty.
         (begin (cog-set-atomspace! parent-as)
-               (cog-logger-debug "[Miner] Initial pattern:\n~a" (get-initial-pattern))
-               (cog-logger-debug "[Miner] Does not have enough support (min support = ~a)" ms)
-               (cog-logger-debug "[Miner] Abort pattern mining")
+               (miner-logger-debug "Initial pattern:\n~a" (get-initial-pattern))
+               (miner-logger-debug "Does not have enough support (min support = ~a)" ms)
+               (miner-logger-debug "Abort pattern mining")
                ;; TODO: delete tmp-as
                (list))
 
@@ -965,9 +965,9 @@
                                        #:maximum-spcial-conjuncts mspc
                                        #:maximum-cnjexp-variables mcev))
 
-	       (dummy (cog-logger-debug "[Miner] Initial pattern:\n~a" (get-initial-pattern)))
-	       (dummy (cog-logger-debug "[Miner] Has enough support (min support = ~a)" ms))
-	       (dummy (cog-logger-debug "[Miner] Launch URE-based pattern mining"))
+	       (dummy (miner-logger-debug "Initial pattern:\n~a" (get-initial-pattern)))
+	       (dummy (miner-logger-debug "Has enough support (min support = ~a)" ms))
+	       (dummy (miner-logger-debug "Launch URE-based pattern mining"))
 
                ;; Run pattern miner in a forward way
                (results (cog-fc miner-rbs source))
@@ -979,14 +979,14 @@
 
               ;; No surprisingness, simple return the pattern list
               (let* ((parent-patterns-lst (cog-cp parent-as patterns-lst)))
-		(cog-logger-debug "[Miner] No surprisingness measure, end pattern miner now")
+		(miner-logger-debug "No surprisingness measure, end pattern miner now")
                 (cog-set-atomspace! parent-as)
                 parent-patterns-lst)
 
               ;; Run surprisingness
               (let*
                   ;; Configure surprisingness backward chainer
-                  ((dummy (cog-logger-debug "[Miner] Call surprisingness on mined patterns"))
+                  ((dummy (miner-logger-debug "Call surprisingness on mined patterns"))
 
 		   (surp-rbs (random-surprisingness-rbs-cpt))
                    (target (surp-target su db-cpt))
@@ -1000,7 +1000,7 @@
 
                    ;; Copy the results to the parent atomspace
                    (parent-surp-res (cog-cp parent-as surp-res-sort-lst)))
-		(cog-logger-debug "[Miner] End pattern miner")
+		(miner-logger-debug "End pattern miner")
                 (cog-set-atomspace! parent-as)
                 parent-surp-res))))))
 
