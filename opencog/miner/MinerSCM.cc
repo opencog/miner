@@ -31,6 +31,7 @@
 
 #include "MinerUtils.h"
 #include "Surprisingness.h"
+#include "MinerLogger.h"
 
 namespace opencog {
 
@@ -130,6 +131,11 @@ protected:
 	 */
 	double do_jsd(TruthValuePtr ltv, TruthValuePtr rtv);
 
+	/**
+	 * Return the Miner logger
+	 */
+	Logger* do_miner_logger();
+
 public:
 	MinerSCM();
 };
@@ -181,6 +187,9 @@ void MinerSCM::init(void)
 
 	define_scheme_primitive("cog-jsd",
 		&MinerSCM::do_jsd, this, "miner");
+
+	define_scheme_primitive("cog-miner-logger",
+		&MinerSCM::do_miner_logger, this, "miner");
 }
 
 Handle MinerSCM::do_shallow_abstract(Handle pattern,
@@ -324,6 +333,11 @@ TruthValuePtr MinerSCM::do_ji_tv_est(Handle pattern, Handle db)
 double MinerSCM::do_jsd(TruthValuePtr ltv, TruthValuePtr rtv)
 {
 	return Surprisingness::jsd(ltv, rtv);
+}
+
+Logger* MinerSCM::do_miner_logger()
+{
+	return &miner_logger();
 }
 
 extern "C" {

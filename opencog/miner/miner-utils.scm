@@ -1028,6 +1028,7 @@
     get-cardinality
     fetch-patterns
     conjunct-pattern
+    cog-miner-logger
     cog-miner
     cog-mine
     ;; Functions to allow the rules to run
