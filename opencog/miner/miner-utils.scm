@@ -1004,6 +1004,154 @@
                 (cog-set-atomspace! parent-as)
                 parent-surp-res))))))
 
+;;;;;;;;;;;;;;;;;;
+;; Miner Logger ;;
+;;;;;;;;;;;;;;;;;;
+
+(define (miner-logger-set-level! l)
+  "
+    Wrapper around cog-logger-set-level! using (cog-miner-logger) as logger.
+
+    See (help cog-logger-set-level!) for more info.
+  "
+  (cog-logger-set-level! (cog-miner-logger) l))
+
+(define (miner-logger-get-level)
+  "
+    Wrapper around cog-logger-set-level! using (cog-miner-logger) as logger.
+
+    See (help cog-logger-set-level!) for more info.
+  "
+  (cog-logger-get-level (cog-miner-logger)))
+
+(define (miner-logger-set-filename! filename)
+  "
+    Wrapper around cog-logger-set-filename! using (cog-miner-logger) as logger.
+
+    See (help cog-logger-set-filename!) for more info.
+  "
+  (cog-logger-set-filename! (cog-miner-logger) filename))
+
+(define (miner-logger-get-filename)
+  "
+    Wrapper around cog-logger-get-filename using (cog-miner-logger) as logger.
+
+    See (help cog-logger-get-filename) for more info.
+  "
+  (cog-logger-get-filename (cog-miner-logger)))
+
+(define (miner-logger-set-stdout! enable)
+  "
+    Wrapper around cog-logger-set-stdout! using (cog-miner-logger) as logger.
+
+    See (help cog-logger-set-stdout!) for more info.
+  "
+  (cog-logger-set-stdout! (cog-miner-logger) enable))
+
+(define (miner-logger-set-sync! enable)
+  "
+    Wrapper around cog-logger-set-sync! using (cog-miner-logger) as logger.
+
+    See (help cog-logger-set-sync!) for more info.
+  "
+  (cog-logger-set-sync! (cog-miner-logger) enable))
+
+(define (miner-logger-set-timestamp! enable)
+  "
+    Wrapper around cog-logger-set-timestamp! using (cog-miner-logger) as logger.
+
+    See (help cog-logger-set-timestamp!) for more info.
+  "
+  (cog-logger-set-timestamp! (cog-miner-logger) enable))
+
+(define (miner-logger-error-enabled?)
+  "
+    Wrapper around cog-logger-error-enabled? using (cog-miner-logger) as logger.
+
+    See (help cog-logger-error-enabled?) for more info.
+  "
+  (cog-logger-error-enabled? (cog-miner-logger)))
+
+(define (miner-logger-warn-enabled?)
+  "
+    Wrapper around cog-logger-warn-enabled? using (cog-miner-logger) as logger.
+
+    See (help cog-logger-warn-enabled?) for more info.
+  "
+  (cog-logger-warn-enabled? (cog-miner-logger)))
+
+(define (miner-logger-info-enabled?)
+  "
+    Wrapper around cog-logger-info-enabled? using (cog-miner-logger) as logger.
+
+    See (help cog-logger-info-enabled?) for more info.
+  "
+  (cog-logger-info-enabled? (cog-miner-logger)))
+
+(define (miner-logger-debug-enabled?)
+  "
+    Wrapper around cog-logger-debug-enabled? using (cog-miner-logger) as logger.
+
+    See (help cog-logger-debug-enabled?) for more info.
+  "
+  (cog-logger-debug-enabled? (cog-miner-logger)))
+
+(define (miner-logger-fine-enabled?)
+  "
+    Wrapper around cog-logger-fine-enabled? using (cog-miner-logger) as logger.
+
+    See (help cog-logger-fine-enabled?) for more info.
+  "
+  (cog-logger-fine-enabled? (cog-miner-logger)))
+
+(define (miner-logger-error . args)
+  "
+    Wrapper around cog-logger-error using (cog-miner-logger) as logger.
+
+    See (help cog-logger-error) for more info.
+  "
+  (apply cog-logger-error (cons (cog-miner-logger) args)))
+
+(define (miner-logger-warn . args)
+  "
+    Wrapper around cog-logger-warn using (cog-miner-logger) as logger.
+
+    See (help cog-logger-warn) for more info.
+  "
+  (apply cog-logger-warn (cons (cog-miner-logger) args)))
+
+(define (miner-logger-info . args)
+  "
+    Wrapper around cog-logger-info using (cog-miner-logger) as logger.
+
+    See (help cog-logger-info) for more info.
+  "
+  (apply cog-logger-info (cons (cog-miner-logger) args)))
+
+(define (miner-logger-debug . args)
+  "
+    Wrapper around cog-logger-debug using (cog-miner-logger) as logger.
+
+    See (help cog-logger-debug) for more info.
+  "
+  (apply cog-logger-debug (cons (cog-miner-logger) args)))
+
+(define (miner-logger-fine . args)
+  "
+    Wrapper around cog-logger-fine using (cog-miner-logger) as logger.
+
+    See (help cog-logger-fine) for more info.
+  "
+  (apply cog-logger-fine (cons (cog-miner-logger) args)))
+
+(define (miner-logger-flush)
+  "
+    Wrapper around cog-logger-flush using (cog-miner-logger) as logger.
+
+    See (help cog-logger-flush) for more info.
+  "
+  (cog-logger-flush (cog-miner-logger)))
+
 (define (export-miner-utils)
   (export
     absolutely-true
@@ -1060,6 +1208,24 @@
     conjunction-expansion-specialization-mv-8-formula
     conjunction-expansion-specialization-mv-9-formula
     isurp-old-formula
+    miner-logger-set-level!
+    miner-logger-get-level
+    miner-logger-set-filename!
+    miner-logger-get-filename
+    miner-logger-set-stdout!
+    miner-logger-set-sync!
+    miner-logger-set-timestamp!
+    miner-logger-error-enabled?
+    miner-logger-warn-enabled?
+    miner-logger-info-enabled?
+    miner-logger-debug-enabled?
+    miner-logger-fine-enabled?
+    miner-logger-error
+    miner-logger-warn
+    miner-logger-info
+    miner-logger-debug
+    miner-logger-fine
+    miner-logger-flush
     nisurp-old-formula
     isurp-formula
     nisurp-formula
