@@ -506,7 +506,7 @@ bool MinerUtils::totally_abstract(const Handle& pattern)
 
 	// If some variables are typed then the abstraction isn't total
 	const Variables& vars = get_variables(pattern);
-	if (not vars._simple_typemap.empty() or not vars._deep_typemap.empty())
+	if (not vars._typemap.empty())
 		return false;
 
 	// Make sure the body is either a variable, or a conjunction of
