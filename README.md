@@ -1,8 +1,8 @@
 # Miner
 
-[![CircleCI](https://circleci.com/gh/opencog/miner.svg?style=svg)](https://circleci.com/gh/opencog/miner)
+opencog/miner [![CircleCI](https://circleci.com/gh/opencog/miner.svg?style=svg)](https://circleci.com/gh/opencog/miner)
 
-[![CircleCI](https://circleci.com/gh/singnet/miner.svg?style=svg)](https://circleci.com/gh/singnet/miner)
+singnet/miner [![CircleCI](https://circleci.com/gh/singnet/miner.svg?style=svg)](https://circleci.com/gh/singnet/miner)
 
 <a href="https://circleci.com/gh/opencog/miner"><img src="https://circleci.com/gh/opencog/miner.svg?style=svg"></a>
 
