@@ -12,6 +12,14 @@
     </tr>
 </table>
 
+<script type="text/javascript">
+JavaScript statements....... 
+</script> 
+
+<noscript>
+... code ....
+</noscript> 
+
 The miner (or pattern miner) is a frequent and surprise subhypergraph
 pattern miner for the AtomSpace. It is built on top of the URE to take
 advantage of the URE refined control capabilities.
