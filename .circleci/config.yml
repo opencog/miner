@@ -3,7 +3,7 @@ version: 2.0
 jobs:
   miner:
     docker:
-      - image: $CIRCLE_PROJECT_USERNAME/opencog-deps
+      - image: nothingiseverythingwheneverythingisnothing/opencog-deps
         user: root
         environment:
           CCACHE_DIR: /ws/ccache
@@ -102,7 +102,7 @@ jobs:
 
   package: #Place holder
     docker:
-      - image: $CIRCLE_PROJECT_USERNAME/opencog-deps
+      - image: nothingiseverythingwheneverythingisnothing/opencog-deps
         user: root
     working_directory: /ws/miner
     steps:
