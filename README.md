@@ -1,24 +1,26 @@
 # Miner
 
-opencog/miner [![CircleCI](https://circleci.com/gh/opencog/miner.svg?style=svg)](https://circleci.com/gh/opencog/miner)
+opencog | singnet
+------- | -------
+[![CircleCI](https://circleci.com/gh/opencog/miner.svg?style=svg)](https://circleci.com/gh/opencog/miner) | [![CircleCI](https://circleci.com/gh/singnet/miner.svg?style=svg)](https://circleci.com/gh/singnet/miner)
 
-singnet/miner [![CircleCI](https://circleci.com/gh/singnet/miner.svg?style=svg)](https://circleci.com/gh/singnet/miner)
+<!-- singnet/miner [![CircleCI](https://circleci.com/gh/singnet/miner.svg?style=svg)](https://circleci.com/gh/singnet/miner) -->
 
-<a href="https://circleci.com/gh/opencog/miner"><img src="https://circleci.com/gh/opencog/miner.svg?style=svg"></a>
+<!-- <a href="https://circleci.com/gh/opencog/miner"><img src="https://circleci.com/gh/opencog/miner.svg?style=svg"></a> -->
 
-<table>
-    <tr>
-        <td>Foo</td>
-    </tr>
-</table>
+<!-- <table> -->
+<!--     <tr> -->
+<!--         <td>Foo</td> -->
+<!--     </tr> -->
+<!-- </table> -->
 
-<script type="text/javascript">
-JavaScript statements....... 
-</script> 
+<!-- <script type="text/javascript"> -->
+<!-- JavaScript statements.......  -->
+<!-- </script>  -->
 
-<noscript>
-... code ....
-</noscript> 
+<!-- <noscript> -->
+<!-- ... code .... -->
+<!-- </noscript>  -->
 
 The miner (or pattern miner) is a frequent and surprise subhypergraph
 pattern miner for the AtomSpace. It is built on top of the URE to take
