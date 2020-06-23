@@ -3,7 +3,7 @@ version: 2.0
 jobs:
   miner:
     docker:
-      - image: opencog/opencog-deps
+      - image: $CIRCLE_PROJECT_USERNAME/opencog-deps
         user: root
         environment:
           CCACHE_DIR: /ws/ccache
