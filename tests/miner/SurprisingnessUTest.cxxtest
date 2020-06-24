@@ -1052,7 +1052,7 @@ void SurprisingnessUTest::test_nisurp_linkage_synthetic_6()
 	logger().info("BEGIN TEST: %s", __FUNCTION__);
 
 	// Create data base
-	populate_uniform_inheritance_links(1000, 0.01);
+	populate_uniform_inheritance_links(1000, 0.05);
 
 	// Create pattern to measure surprisingness of
 	//
