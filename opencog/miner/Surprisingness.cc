@@ -24,6 +24,7 @@
 #include "Surprisingness.h"
 
 #include "MinerUtils.h"
+#include "MinerLogger.h"
 
 #include <opencog/util/Logger.h>
 #include <opencog/util/lazy_random_selector.h>
@@ -307,27 +308,27 @@ double Surprisingness::emp_prob_pbs(const Handle& pattern,
 	// If the support estimate is above the db size then we
 	// subsample
 	if (db_size < support_estimate) {
-		LAZY_LOG_FINE << "[Miner] Pattern" << std::endl << oc_to_string(pattern)
+		LAZY_MINER_LOG_FINE << "Pattern" << std::endl << oc_to_string(pattern)
 		              << std::endl << "has support estimate " << support_estimate
 		              << " > " << db_size << " (its rescaled db size)";
 		// Calculate the empirical probability of pattern
 		unsigned subsize = subsmp_size(pattern, db_size, support_estimate);
 		unsigned n_resample = 10;  // TODO: move this hardwired contant
 		                             // to a user parameter
-		LAZY_LOG_FINE << "[Miner] Downsample the db to " << subsize
+		LAZY_MINER_LOG_FINE << "Downsample the db to " << subsize
 		              << " to avoid excessively large support,"
 		              << " boostrapping" << " (x" << n_resample << ")"
 		              << " to reduce inaccuracies.";
 		double emp_prob = emp_prob_bs(pattern, db, n_resample, subsize);
 		if (emp_prob == 0) {
-			LAZY_LOG_WARN << "[Miner] The empirical probability of pattern" << std::endl
+			LAZY_MINER_LOG_WARN << "The empirical probability of pattern" << std::endl
 			              << oc_to_string(pattern) << std::endl
 			              << "is null. You probably want to increase the db-ratio"
 			              << ", currently of " << db_ratio;
 		}
 		return emp_prob;
 	} else {
-		LAZY_LOG_FINE << "[Miner] Pattern " << std::endl << oc_to_string(pattern)
+		LAZY_MINER_LOG_FINE << "Pattern " << std::endl << oc_to_string(pattern)
 		              << std::endl << "has support estimate " << support_estimate
 		              << " <= " << db_size << " (its rescaled db size)"
 		              << ". No subsampling is taking place.";
