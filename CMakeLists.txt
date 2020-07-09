@@ -90,6 +90,8 @@ ENDIF (URE_FOUND)
 # add the 'cmake' directory from cogutil to search path
 list(APPEND CMAKE_MODULE_PATH  ${COGUTIL_DATA_DIR}/cmake)
 include(OpenCogGccOptions)
+include(OpenCogLibOptions)
+include(OpenCogInstallOptions)
 include(Summary)
 
 # ----------------------------------------------------------
@@ -99,7 +101,7 @@ SET(Boost_USE_MULTITHREADED ON)
 SET(MIN_BOOST 1.46)
 
 # Required boost packages
-FIND_PACKAGE(Boost ${MIN_BOOST} COMPONENTS date_time filesystem program_options regex serialization system thread REQUIRED)
+FIND_PACKAGE(Boost ${MIN_BOOST} REQUIRED)
 
 IF(Boost_FOUND)
 	SET(Boost_FOUND_SAVE 1)
@@ -133,20 +135,8 @@ ENDIF (NOT CXXTEST_FOUND)
 
 # ----------------------------------------------------------
 # This is required for Guile
-FIND_LIBRARY(GMP_LIBRARY gmp)
-FIND_PATH(GMP_INCLUDE_DIR gmp.h)
 
-# Gnu Guile scheme interpreter
-# Version 2.2.2 is needed for mrs io ports, compilation, atomics, nlp
-FIND_PACKAGE(Guile 2.2.2)
-IF (GUILE_FOUND AND GMP_LIBRARY AND GMP_INCLUDE_DIR)
-	ADD_DEFINITIONS(-DHAVE_GUILE)
-	SET(HAVE_GUILE 1)
-	INCLUDE_DIRECTORIES(${GUILE_INCLUDE_DIR})
-ELSE (GUILE_FOUND AND GMP_LIBRARY AND GMP_INCLUDE_DIR)
-	SET(GUILE_DIR_MESSAGE "Guile was not found; the scheme shell will not be built.\nTo over-ride, make sure GUILE_LIBRARIES and GUILE_INCLUDE_DIRS are set.")
-	MESSAGE(STATUS "${GUILE_DIR_MESSAGE}")
-ENDIF (GUILE_FOUND AND GMP_LIBRARY AND GMP_INCLUDE_DIR)
+include(OpenCogFindGuile)
 
 # ----------------------------------------------------------
 # Optional, currently needed only to hush up DRD in util/Logger.cc
@@ -164,9 +154,6 @@ ELSE (VALGRIND_FOUND)
 ENDIF (VALGRIND_FOUND)
 
 # ===================================================================
-# Global includes
-
-# -------------------------------------------------
 # Include configuration.
 
 # Set default include paths.
@@ -181,53 +168,6 @@ ENDIF (NOT DEFINED ATOMSPACE_DATA_DIR)
 INCLUDE("${ATOMSPACE_DATA_DIR}/cmake/OpenCogMacros.cmake")
 INCLUDE("${ATOMSPACE_DATA_DIR}/cmake/OpenCogGuile.cmake")
 INCLUDE("${ATOMSPACE_DATA_DIR}/cmake/OpenCogCython.cmake")
-
-# -------------------------------------------------
-# Library configuration
-
-# Small hack to handle unixes that use "/usr/lib64" instead of
-# "/usr/lib" as the default lib path on 64 bit archs.
-IF (NOT DEFINED LIB_DIR_SUFFIX)
-	EXECUTE_PROCESS(COMMAND ${CMAKE_CXX_COMPILER} -print-search-dirs OUTPUT_VARIABLE PRINT_SEARCH_DIRS_OUTPUT)
-	STRING(REGEX MATCH "\r?\nlibraries:.*\r?\n" COMPILER_LIB_SEARCH_DIRS ${PRINT_SEARCH_DIRS_OUTPUT})
-	IF (NOT ${COMPILER_LIB_SEARCH_DIRS} STREQUAL "")
-		STRING(REGEX MATCH "/lib64/:|/lib64:|/lib64\n" HAS_LIB64 ${COMPILER_LIB_SEARCH_DIRS})
-		IF (NOT ${HAS_LIB64} STREQUAL "")
-			SET(LIB_DIR_SUFFIX "64")
-		ENDIF (NOT ${HAS_LIB64} STREQUAL "")
-	ENDIF (NOT ${COMPILER_LIB_SEARCH_DIRS} STREQUAL "")
-ENDIF (NOT DEFINED LIB_DIR_SUFFIX)
-
-# RPATH handling (see https://cmake.org/Wiki/CMake_RPATH_handling)
-# Note: RPATH only supported under Linux!
-SET(CMAKE_SKIP_BUILD_RPATH	FALSE)
-SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-SET(CMAKE_INSTALL_RPATH
-	"${CMAKE_INSTALL_PREFIX}/lib/opencog"
-	"${CMAKE_INSTALL_PREFIX}/lib/opencog/modules")
-
-SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
-# -------------------------------------------------
-# Install configuration
-
-# Only list install files that have actually changed.
-SET(CMAKE_INSTALL_MESSAGE "LAZY")
-
-# Set confdir and datadir
-IF (NOT DEFINED CONFDIR)
-	SET (CONFDIR "${CMAKE_INSTALL_PREFIX}/etc")
-ENDIF (NOT DEFINED CONFDIR)
-
-IF (NOT DEFINED DATADIR)
-	SET (DATADIR "${CMAKE_INSTALL_PREFIX}/share/opencog")
-ENDIF (NOT DEFINED DATADIR)
-
-ADD_DEFINITIONS(-DCONFDIR="${CONFDIR}")
-ADD_DEFINITIONS(-DDATADIR="${DATADIR}")
-
-# (re?)define MAN_INSTALL_DIR
-SET (MAN_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/share/man")
 
 # ==========================================================
 # Decide what to build, based on the packages found.
@@ -314,13 +254,6 @@ SET(CPACK_PACKAGING_INSTALL_PREFIX "/usr/local")
 SET(DEPENDENCY_LIST
 	"guile-2.2-dev (>= 2.2.2)"
 	"python-dev (>= 2.7.5)"
-	"libboost-date-time-dev (>= ${MIN_BOOST})"
-	"libboost-filesystem-dev (>= ${MIN_BOOST})"
-	"libboost-program-options-dev (>= ${MIN_BOOST})"
-	"libboost-regex-dev (>= ${MIN_BOOST})"
-	"libboost-serialization-dev (>= ${MIN_BOOST})"
-	"libboost-thread-dev (>= ${MIN_BOOST})"
-	"libboost-system-dev (>= ${MIN_BOOST})"
 	"libboost-random-dev (>= ${MIN_BOOST})"
 	"libstdc++6 (>= 4.7)"
 	"libcogutil-dev (>= 2.0.2)"
