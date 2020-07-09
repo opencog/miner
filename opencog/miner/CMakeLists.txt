@@ -1,5 +1,6 @@
 ADD_LIBRARY(miner SHARED
 	Miner
+	MinerLogger
 	MinerUtils
 	HandleTree
 	Valuations
@@ -16,6 +17,7 @@ INSTALL (TARGETS miner DESTINATION "lib${LIB_DIR_SUFFIX}/opencog")
 
 INSTALL (FILES
 	Miner.h
+	MinerLogger.h
 	MinerUtils.h
 	HandleTree.h
 	Valuations.h
