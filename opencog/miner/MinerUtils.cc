@@ -300,6 +300,17 @@ Handle MinerUtils::compose(const Handle& pattern, const HandleMap& var2pat)
 	return pattern;
 }
 
+Handle MinerUtils::compose_nocheck(const Handle& pattern, const HandlePair& var2pat)
+{
+	Variables variables = get_variables(pattern);
+	Handle sa_decl = variables.get_type_decl(var2pat.first, var2pat.second);
+	variables.erase(var2pat.first);
+	if (not variables.is_in_varset(var2pat.second))
+		variables.extend(Variables(sa_decl));
+	Handle body = Replacement::replace_nocheck(get_body(pattern), {{var2pat.first, var2pat.second}});
+	return remove_useless_clauses(lambda(variables.get_vardecl(), body));
+}
+
 HandleSeq MinerUtils::get_db(const Handle& db_cpt)
 {
 	// Retrieve all members of db_cpt
@@ -385,7 +396,9 @@ HandleSet MinerUtils::shallow_specialize(const Handle& pattern,
 	HandleSet results;
 	for (const HandleSet& shabs : shabs_per_var) {
 		for (const Handle& sa : shabs) {
-			Handle npat = compose(pattern, {{vars.varseq[vari], sa}});
+			Handle npat = nameserver().isA(sa->get_type(), VARIABLE_NODE) ?
+			              MinerUtils::compose_nocheck(pattern, {vars.varseq[vari], sa}) :
+			              MinerUtils::compose(pattern, {{vars.varseq[vari], sa}});
 
 			if (mv < get_variables(npat).size())
 				continue;

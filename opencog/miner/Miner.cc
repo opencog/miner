@@ -209,7 +209,10 @@ HandleTree Miner::specialize_shapat(const Handle& pattern,
                                     int maxdepth)
 {
 	// Perform the composition (that is specialize)
-	Handle npat = MinerUtils::compose(pattern, {{var, shapat}});
+
+	Handle npat = nameserver().isA(shapat->get_type(), VARIABLE_NODE) ?
+	              MinerUtils::compose_nocheck(pattern, {var, shapat}) :
+	              MinerUtils::compose(pattern, {{var, shapat}});
 
 	// If the specialization has too few conjuncts, dismiss it.
 	if (MinerUtils::n_conjuncts(npat) < param.initconjuncts)

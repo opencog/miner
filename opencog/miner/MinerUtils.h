@@ -176,6 +176,13 @@ public:
 	static Handle compose(const Handle& pattern, const HandleMap& var2pat);
 
 	/**
+	 * It does the same as compose except when the value to be substituted
+	 * is a Variable, beta_reduction wont pass type checking. This is an
+	 * alternative using replace_nocheck.
+	 */
+	static Handle compose_nocheck(const Handle& pattern, const HandlePair& var2pat);
+
+	/**
 	 * Given a db concept node, retrieve all its members
 	 */
 	static HandleSeq get_db(const Handle& db_cpt);
