@@ -185,6 +185,7 @@ public:
 	void test_long_transitivity();
 	void test_no_transitivity();
 	void test_evaluation();
+	void test_variable_factorization();
 	void test_2conjuncts_1();
 	void test_2conjuncts_2();
 	void test_2conjuncts_3();
@@ -1396,6 +1397,34 @@ void MinerUTest::test_evaluation()
 	// Run URE pattern miner
 	Handle ure_results = ure_pm(db, 2, 5),
 		ure_expected = mk_minsup_eval(2, cpp_expected);
+
+	logger().debug() << "ure_results = " << oc_to_string(ure_results);
+	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
+
+	TS_ASSERT(is_in(ure_expected, ure_results->getOutgoingSet()));
+}
+
+void MinerUTest::test_variable_factorization()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
+	// Define db
+	Handle
+		InhAA = al(INHERITANCE_LINK, A, A),
+		InhBB = al(INHERITANCE_LINK, B, B);
+	HandleSeq db{InhAA, InhBB};
+
+	// Define initpat
+	Handle InhXY = al(INHERITANCE_LINK, X, Y);
+	Handle initpat = MinerUtils::mk_pattern_no_vardecl({InhXY});
+
+	// Define expected pattern
+	Handle InhXX = al(INHERITANCE_LINK, X, X),
+		xpat = MinerUtils::mk_pattern(X, {InhXX});
+
+	// Run URE pattern miner
+	Handle ure_results = ure_pm(db, 2, 5, initpat),
+		ure_expected = mk_minsup_eval(2, xpat);
 
 	logger().debug() << "ure_results = " << oc_to_string(ure_results);
 	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
