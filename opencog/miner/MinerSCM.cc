@@ -206,7 +206,7 @@ Handle MinerSCM::do_shallow_abstract(Handle pattern,
 
 	// Generate all shallow abstractions
 	HandleSetSeq shabs_per_var =
-		MinerUtils::shallow_abstract(pattern, db_seq, ms);
+		MinerUtils::shallow_abstract(pattern, db_seq, ms, false); // TODO support type.
 
 	// Turn that sequence of handle sets into a set of ready to be
 	// applied shallow abstractions
