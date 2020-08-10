@@ -783,6 +783,8 @@ public:
 	static Handle lwst_com_types_decl(const Handle &var, const HandleSeq &vector);
 
 	static TypeSet lwst_com_types(HandleSeq vals);
+
+	static TypeSet lwst_com_types(TypeSet tsets);
 };
 
 /**

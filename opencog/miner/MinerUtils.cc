@@ -1206,6 +1206,31 @@ TypeSet MinerUtils::lwst_com_types(HandleSeq vals)
 	return lwst_com_types(common_types);
 }
 
+TypeSet MinerUtils::lwst_com_types(TypeSet tsets)
+{
+	Type tp = *tsets.begin();
+	tsets.erase(tsets.begin());
+	if (tsets.empty())
+		return {tp};
+
+	TypeSet common_types = lwst_com_types(tsets);
+
+	bool add_tp=true;
+	for (auto itr=common_types.begin(); itr!=common_types.end(); ++itr)
+	{
+		if (nameserver().isAncestor(tp, *itr)) { // a lower type already exists.
+			add_tp = false;
+			break;
+		}
+		if (nameserver().isA(tp, *itr)) {       // tp is lower than existing types
+			common_types.erase(itr);            // in common_types.
+			break;
+		}
+	}
+	if (add_tp) common_types.insert(tp);
+	return common_types;
+}
+
 std::string oc_to_string(const HandleSeqSeqSeq& hsss,
                          const std::string& indent)
 {
