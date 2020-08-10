@@ -82,7 +82,7 @@ HandleSet MinerUtils::focus_shallow_abstract(const Valuations& valuations,
 	if (valuations.no_focus())
 		return HandleSet();
 
-	HandleSet shabs;
+	HandleSeqMap shabs;
 
 	// Strongly connected valuations associated to the variable under
 	// focus
@@ -95,7 +95,7 @@ HandleSet MinerUtils::focus_shallow_abstract(const Valuations& valuations,
 	// For each valuation create an abstraction (shallow pattern) of
 	// the value associated to variable, and associate the remaining
 	// valuations to it.
-	HandleUCounter shapats;
+	HandleSeqMap shapats;
 	// Calculate how many valuations will be encompassed by these
 	// shallow abstractions
 	unsigned val_count = valuations.size() / var_scv.size();
@@ -120,15 +120,15 @@ HandleSet MinerUtils::focus_shallow_abstract(const Valuations& valuations,
 
 		// Otherwise generate its shallow abstraction
 		if (Handle shabs = shallow_abstract_of_val(value))
-			shapats[shabs] += val_count;
+			shapats[shabs].push_back(value);
 	}
 
 	// Only consider shallow abstractions that reach the minimum
 	// support
 	for (const auto& shapat : shapats) {
-		if (ms <= shapat.second) {
-			set_support(shapat.first, shapat.second);
-			shabs.insert(shapat.first);
+		if (ms <= shapat.second.size()) {
+			set_support(shapat.first, shapat.second.size());
+			shabs.insert(shapat);
 		}
 	}
 
@@ -196,11 +196,12 @@ HandleSet MinerUtils::focus_shallow_abstract(const Valuations& valuations,
 	for (const auto& fvar : facvars) {
 		if (ms <= fvar.second) {
 			set_support(fvar.first, fvar.second);
-			shabs.insert(fvar.first);
+			shabs.insert({fvar.first, {}});
 		}
    }
 
-	return shabs;
+	HandleSet rshabs;
+	return type_restrict_patterns(shabs);
 }
 
 bool MinerUtils::is_nullary(const Handle& h)
@@ -1127,6 +1128,47 @@ void MinerUtils::remove_if(HandleSeq& clauses,
 		else
 			++it;
 	}
+}
+
+HandleSet MinerUtils::type_restrict_patterns(const HandleSeqMap& shapats)
+{
+	HandleSet typed_shapats;
+	for (const HandleSeqMap::value_type &shapat : shapats) {
+		if (shapat.first->get_type() == LAMBDA_LINK)
+			typed_shapats.insert(type_restrict_pattern(shapat));
+		else
+			typed_shapats.insert(shapat.first);
+	}
+	return typed_shapats;
+}
+
+Handle MinerUtils::type_restrict_pattern(const HandleSeqMap::value_type &pair)
+{
+	OC_ASSERT(pair.first->get_type() == LAMBDA_LINK);
+
+	LambdaLinkPtr pat = LambdaLinkCast(pair.first);
+	Variables vars = pat->get_variables();
+	if (not vars._typemap.empty())        // Vars in this pattern are
+		return pair.first;                // already type restricted.
+	Handle body = pat->get_body();
+
+	HandleSeq t_decls;
+	for (Arity i = 0; i < body->get_arity(); ++i) {
+		if (not nameserver().isA(body->getOutgoingAtom(i)->get_type(),
+		                         VARIABLE_NODE))
+			continue;
+		HandleSeq vals;
+		for (const Handle v : pair.second) {
+			if (body->getOutgoingAtom(i)->get_type() == GLOB_NODE)
+				vals.insert(vals.end(),
+				            v->getOutgoingSet().begin(),
+				            v->getOutgoingSet().end());
+			else
+				vals.push_back(v->getOutgoingAtom(i));
+		}
+		t_decls.push_back(lwst_com_types_decl(body->getOutgoingAtom(i), vals));
+	}
+	return lambda(variable_set(t_decls), body);
 }
 
 std::string oc_to_string(const HandleSeqSeqSeq& hsss,

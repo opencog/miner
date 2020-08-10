@@ -774,6 +774,13 @@ public:
 	 */
 	static void remove_if(HandleSeq& clauses,
 	                      std::function<bool(const Handle&, const HandleSeq&)> fun);
+
+	static HandleSet type_restrict_patterns(const HandleSeqMap &);
+
+	static Handle type_restrict_pattern(const std::map<Handle,
+	                      HandleSeq>::value_type &pair);
+
+	static Handle lwst_com_types_decl(const Handle &var, const HandleSeq &vector);
 };
 
 /**
