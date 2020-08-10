@@ -188,6 +188,8 @@ public:
 	void test_no_transitivity();
 	void test_evaluation();
 	void test_variable_factorization();
+	void test_type_support_1();
+	void test_type_support_2();
 	void test_2conjuncts_1();
 	void test_2conjuncts_2();
 	void test_2conjuncts_3();
@@ -1438,6 +1440,74 @@ void MinerUTest::test_variable_factorization()
 	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
 
 	TS_ASSERT(is_in(ure_expected, ure_results->getOutgoingSet()));
+}
+
+void MinerUTest::test_type_support_1()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
+	// Define db
+	Handle
+			InhAAnd = al(INHERITANCE_LINK, A, al(AND_LINK, B, C)),
+			InhAD = al(INHERITANCE_LINK, A, D);
+	HandleSeq db{InhAAnd, InhAD};
+
+	Handle VarXY = al(VARIABLE_SET,
+	                  al(TYPED_VARIABLE_LINK,
+	                     X, an(TYPE_INH_NODE, "ConceptNode")),
+	                  al(TYPED_VARIABLE_LINK,
+	                     Y, an(TYPE_INH_NODE, "Atom")));
+	Handle VarY = al(VARIABLE_SET,
+	                 al(TYPED_VARIABLE_LINK,
+	                    Y, an(TYPE_INH_NODE, "Atom")));
+	Handle InhXY = al(INHERITANCE_LINK, X, Y);
+
+	Handle ure_results = ure_pm(db, 2, 10, Handle::UNDEFINED,
+	                            false, UINT_MAX, UINT_MAX, 1, UINT_MAX, true, 0.0, true);
+	Handle ure_expected = mk_minsup_evals(2, {top,
+										   MinerUtils::mk_pattern(VarY, {al(INHERITANCE_LINK, A, Y)}),
+										   MinerUtils::mk_pattern(VarXY, {InhXY})});
+
+	logger().debug() << "ure_results = " << oc_to_string(ure_results);
+	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
+
+	TS_ASSERT(content_eq(ure_results, ure_expected));
+}
+
+void MinerUTest::test_type_support_2()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
+	// Define db
+	Handle
+			InhAAnd = al(INHERITANCE_LINK, A, al(AND_LINK, B, C)),
+			InhAOr = al(INHERITANCE_LINK, A, al(OR_LINK, D, E));
+	HandleSeq db{InhAAnd, InhAOr};
+
+	Handle TChoiceY = al(TYPE_CHOICE,
+	                     an(TYPE_INH_NODE, "UnorderedLink"),
+	                     an(TYPE_INH_NODE, "CrispOutputLink"),
+	                     an(TYPE_INH_NODE, "BooleanLink"));
+	Handle VarXY = al(VARIABLE_SET,
+	                  al(TYPED_VARIABLE_LINK,
+	                     X, an(TYPE_INH_NODE, "ConceptNode")),
+	                  al(TYPED_VARIABLE_LINK,
+	                     Y, TChoiceY));
+	Handle VarY = al(VARIABLE_SET,
+	                 al(TYPED_VARIABLE_LINK,
+	                    Y, TChoiceY));
+	Handle InhXY = al(INHERITANCE_LINK, X, Y);
+
+	Handle ure_results = ure_pm(db, 2, 10, Handle::UNDEFINED,
+	                            false, UINT_MAX, UINT_MAX, 1, UINT_MAX, true, 0.0, true);
+	Handle ure_expected = mk_minsup_evals(2, {top,
+	                                          MinerUtils::mk_pattern(VarY, {al(INHERITANCE_LINK, A, Y)}),
+	                                          MinerUtils::mk_pattern(VarXY, {InhXY})});
+
+	logger().debug() << "ure_results = " << oc_to_string(ure_results);
+	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
+
+	TS_ASSERT(content_eq(ure_results, ure_expected));
 }
 
 void MinerUTest::test_2conjuncts_1()
