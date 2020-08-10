@@ -138,6 +138,8 @@ public:
 	 */
 	static Handle shallow_abstract_of_val(const Handle& value);
 
+	static Handle shallow_abstract_of_val(const Handle& value, const HandleSeq& rnd_vars);
+
 	/**
 	 * Wrap a VariableSet around a list of variables if more than one
 	 * variable, otherwise return that one variable.

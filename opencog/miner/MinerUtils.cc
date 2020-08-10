@@ -220,8 +220,13 @@ Handle MinerUtils::shallow_abstract_of_val(const Handle& value)
 	if (is_nullary(value))
 		return value;
 
-	Type tt = value->get_type();
 	HandleSeq rnd_vars = gen_rand_variables(value->get_arity());
+	return shallow_abstract_of_val(value, rnd_vars);
+}
+
+Handle MinerUtils::shallow_abstract_of_val(const Handle &value, const HandleSeq &rnd_vars)
+{
+	Type tt = value->get_type();
 	Handle vardecl = variable_set(rnd_vars);
 
 	// TODO: this can probably be simplified using PresentLink, would
@@ -235,7 +240,7 @@ Handle MinerUtils::shallow_abstract_of_val(const Handle& value)
 	}
 
 	if (tt == BIND_LINK or       // TODO: should probabably be replaced
-	                             // by scope link and its subtypes
+	    // by scope link and its subtypes
 	    (tt == EVALUATION_LINK and
 	     value->getOutgoingAtom(0)->get_type() == GROUNDED_PREDICATE_NODE) or
 	    nameserver().isA(tt, FUNCTION_LINK) or
