@@ -113,7 +113,8 @@ private:
 	              unsigned max_spcial_conjuncts=1,
 	              unsigned max_cnjexp_variables=UINT_MAX,
 	              bool enforce_specialization=true,
-	              double complexity_penalty=0.0);
+	              double complexity_penalty=0.0,
+	              bool type_check=false);
 	Handle ure_pm(const HandleSeq& db, int minsup,
 	              int max_iter=-1, Handle initpat=Handle::UNDEFINED,
 	              bool conjunction_expansion=false,
@@ -122,7 +123,8 @@ private:
 	              unsigned max_spcial_conjuncts=1,
 	              unsigned max_cnjexp_variables=UINT_MAX,
 	              bool enforce_specialization=true,
-	              double complexity_penalty=0.0);
+	              double complexity_penalty=0.0,
+	              bool type_check=false);
 
 	/**
 	 * Configure the C++ Miner and run it.
@@ -225,7 +227,8 @@ Handle MinerUTest::ure_pm(const AtomSpace& db_as, int minsup,
                           unsigned max_spcial_conjuncts,
                           unsigned max_cnjexp_variables,
                           bool enforce_specialization,
-                          double complexity_penalty)
+                          double complexity_penalty,
+                          bool type_check)
 {
 	return MinerUTestUtils::ure_pm(_as, _scm, pm_rb, db_as, minsup,
 	                               maximum_iterations, initpat,
@@ -233,7 +236,9 @@ Handle MinerUTest::ure_pm(const AtomSpace& db_as, int minsup,
 	                               max_conjuncts, max_variables,
 	                               max_spcial_conjuncts,
 	                               max_cnjexp_variables,
-	                               enforce_specialization, complexity_penalty);
+	                               enforce_specialization,
+	                               complexity_penalty,
+	                               type_check);
 }
 
 Handle MinerUTest::ure_pm(const HandleSeq& db, int minsup,
@@ -244,7 +249,8 @@ Handle MinerUTest::ure_pm(const HandleSeq& db, int minsup,
                           unsigned max_spcial_conjuncts,
                           unsigned max_cnjexp_variables,
                           bool enforce_specialization,
-                          double complexity_penalty)
+                          double complexity_penalty,
+                          bool type_check)
 {
 	return MinerUTestUtils::ure_pm(_as, _scm, pm_rb, db, minsup,
 	                               maximum_iterations, initpat,
@@ -252,7 +258,9 @@ Handle MinerUTest::ure_pm(const HandleSeq& db, int minsup,
 	                               max_conjuncts, max_variables,
 	                               max_spcial_conjuncts,
 	                               max_cnjexp_variables,
-	                               enforce_specialization, complexity_penalty);
+	                               enforce_specialization,
+	                               complexity_penalty,
+	                               type_check);
 }
 
 HandleTree MinerUTest::cpp_pm(const AtomSpace& db_as,
