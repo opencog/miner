@@ -74,7 +74,8 @@ public:
 	 *    { (Concept "D") }
 	 *  }
 	 */
-	static HandleSetSeq shallow_abstract(const Valuations& valuations, unsigned ms);
+	static HandleSetSeq shallow_abstract(const Valuations &valuations,
+	                                     unsigned ms, bool type_check);
 
 	/**
 	 * Given valuations produce all shallow abstractions reaching
@@ -104,7 +105,8 @@ public:
 	 *                                            (Variable "$X1")
 	 *                                            (Variable "$X2"))) }
 	 */
-	static HandleSet focus_shallow_abstract(const Valuations& valuations, unsigned ms);
+	static HandleSet focus_shallow_abstract(const Valuations &valuations,
+	                                        unsigned ms, bool type_check);
 
 	/**
 	 * Return true iff h is a node or a nullary link.
@@ -223,7 +225,8 @@ public:
 	 */
 	static HandleSetSeq shallow_abstract(const Handle& pattern,
 	                                     const HandleSeq& db,
-	                                     unsigned ms);
+	                                     unsigned ms,
+	                                     bool type_check);
 
 	/**
 	 * Return all shallow specializations of pattern with support ms
@@ -235,7 +238,8 @@ public:
 	static HandleSet shallow_specialize(const Handle& pattern,
 	                                    const HandleSeq& db,
 	                                    unsigned ms,
-	                                    unsigned mv=UINT_MAX);
+	                                    unsigned mv=UINT_MAX,
+	                                    bool type_check=false);
 
 	/**
 	 * Create a pattern body from clauses, introducing an AndLink if

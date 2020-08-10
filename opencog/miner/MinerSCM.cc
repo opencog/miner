@@ -82,7 +82,7 @@ protected:
 	 *   (Lambda Y (Inheritance Y Y)))
 	 */
 	Handle do_shallow_specialize(Handle pattern, Handle db,
-	                             Handle ms, Handle mv);
+	                             Handle ms, Handle mv, Handle type_check);
 
 	/**
 	 * Given a pattern, a db concept and a minimum support, return
@@ -231,7 +231,8 @@ Handle MinerSCM::do_shallow_abstract(Handle pattern,
 Handle MinerSCM::do_shallow_specialize(Handle pattern,
                                        Handle db,
                                        Handle ms_h,
-                                       Handle mv_h)
+                                       Handle mv_h,
+                                       Handle type_check)
 {
 	AtomSpace *as = SchemeSmob::ss_get_env_as("cog-shallow-specialize");
 

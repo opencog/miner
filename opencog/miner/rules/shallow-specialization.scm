@@ -44,7 +44,7 @@
 ;;
 ;; mv is the maximum number of variable allowed in the resulting
 ;; patterns.
-(define (gen-shallow-specialization-rule nary mv)
+(define (gen-shallow-specialization-rule nary mv type-check)
   (let* (;; Variables
          (pattern-vardecl (Variable "$vardecl"))
          (cnjs (gen-variables "$cnj" nary))
@@ -63,6 +63,9 @@
          (pattern (Quote (Lambda (Unquote pattern-vardecl)
                                  (Present (map Unquote cnjs)))))
          (minsup-pattern (minsup-eval pattern db ms)))
+
+  (define (btoi b) (if b 1 0))
+
   (Bind
     (VariableSet
       pattern-vardecl-decl
@@ -83,7 +86,8 @@
                             ; thus we cannot build the Set. Need to
                             ; support ConsLink, or ConsSetLink or
                             ; such. Or perhaps use Glob.
-        minsup-pattern)))))
+        minsup-pattern
+        (cog-new-node 'PredicateNode "type-check" (cog-new-stv (btoi type-check) 1)))))))
 
 ;; Shallow specialization formula
 ;;
@@ -91,12 +95,13 @@
 (define (gen-shallow-specialization-formula mv)
   (lambda (conclusion . premises)
     ;; (cog-logger-debug "gen-shallow-specialization-formula mv=~a, conclusion=~a, premises=~a" mv conclusion premises)
-    (if (= (length premises) 1)
+    (if (= (length premises) 2)
         (let* ((minsup-pattern (car premises))
+               (type-check (cadr premises))
                (pattern (get-pattern minsup-pattern))
                (db (get-db minsup-pattern))
                (ms (get-ms minsup-pattern))
-               (shaspes (cog-shallow-specialize pattern db ms (Number mv)))
+               (shaspes (cog-shallow-specialize pattern db ms (Number mv) type-check))
                (minsup-shaspe (lambda (x) (cog-set-tv!
                                            (minsup-eval x db ms)
                                            (stv 1 1))))

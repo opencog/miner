@@ -55,23 +55,23 @@ namespace opencog
 {
 
 HandleSetSeq MinerUtils::shallow_abstract(const Valuations& valuations,
-                                          unsigned ms)
+                                          unsigned ms, bool type_check)
 {
 	// Base case
 	if (valuations.no_focus())
 		return HandleSetSeq();
 
 	// Recursive case
-	HandleSetSeq shabs_per_var{focus_shallow_abstract(valuations, ms)};
+	HandleSetSeq shabs_per_var{focus_shallow_abstract(valuations, ms, type_check)};
 	valuations.inc_focus_variable();
-	HandleSetSeq remaining = shallow_abstract(valuations, ms);
+	HandleSetSeq remaining = shallow_abstract(valuations, ms, type_check);
 	valuations.dec_focus_variable();
 	append(shabs_per_var, remaining);
 	return shabs_per_var;
 }
 
 HandleSet MinerUtils::focus_shallow_abstract(const Valuations& valuations,
-                                             unsigned ms)
+                                             unsigned ms, bool type_check)
 {
 	// If there are no valuations, then the result is empty by
 	// convention, regardless of the minimum support threshold.
@@ -200,8 +200,13 @@ HandleSet MinerUtils::focus_shallow_abstract(const Valuations& valuations,
 		}
    }
 
+	if (type_check)
+		return type_restrict_patterns(shabs);
+
 	HandleSet rshabs;
-	return type_restrict_patterns(shabs);
+	for (auto shab : shabs)
+		rshabs.insert(shab.first);
+	return rshabs;
 }
 
 bool MinerUtils::is_nullary(const Handle& h)
@@ -357,19 +362,21 @@ bool MinerUtils::enough_support(const Handle& pattern,
 
 HandleSetSeq MinerUtils::shallow_abstract(const Handle& pattern,
                                           const HandleSeq& db,
-                                          unsigned ms)
+                                          unsigned ms,
+                                          bool type_check)
 {
 	Valuations valuations(pattern, db);
-	return shallow_abstract(valuations, ms);
+	return shallow_abstract(valuations, ms, type_check);
 }
 
 HandleSet MinerUtils::shallow_specialize(const Handle& pattern,
                                          const HandleSeq& db,
                                          unsigned ms,
-                                         unsigned mv)
+                                         unsigned mv,
+                                         bool type_check)
 {
 	// Calculate all shallow abstractions of pattern
-	HandleSetSeq shabs_per_var = shallow_abstract(pattern, db, ms);
+	HandleSetSeq shabs_per_var = shallow_abstract(pattern, db, ms, type_check);
 
 	// For each variable of pattern, generate the corresponding shallow
 	// specializations
