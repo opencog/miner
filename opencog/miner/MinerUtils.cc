@@ -1186,6 +1186,26 @@ Handle MinerUtils::lwst_com_types_decl(const Handle &var, const HandleSeq &vecto
 	                  createLink(seq, TYPE_CHOICE));
 }
 
+TypeSet MinerUtils::lwst_com_types(HandleSeq vals)
+{
+	auto itr = vals.begin();
+	TypeSet common_types = nameserver().getParentsRecursive((*itr)->get_type());
+	common_types.insert((*itr)->get_type());
+
+	for (++itr; itr != vals.end(); ++itr)
+	{
+		TypeSet nts = nameserver().getParentsRecursive((*itr)->get_type());
+		nts.insert((*itr)->get_type());
+		common_types = set_intersection(common_types, nts);
+	}
+
+	// Remove unknown type coming from getParentsRecursive.
+	while (nameserver().getTypeName(*common_types.begin()) != "Atom")
+		common_types.erase(common_types.begin());
+
+	return lwst_com_types(common_types);
+}
+
 std::string oc_to_string(const HandleSeqSeqSeq& hsss,
                          const std::string& indent)
 {
