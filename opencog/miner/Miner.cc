@@ -134,7 +134,8 @@ HandleTree Miner::specialize_alt(const Handle& pattern,
 	Variables vars = MinerUtils::get_variables(pattern);
 
 	// Calculate all shallow abstractions of pattern
-	HandleSetSeq shabs = MinerUtils::shallow_abstract(valuations, param.minsup);
+	// No type support for cpp-miner.
+	HandleSetSeq shabs = MinerUtils::shallow_abstract(valuations, param.minsup, false);
 
 	// Generate all associated specializations
 	for (unsigned i = 0; i < shabs.size(); i++) {
@@ -176,7 +177,8 @@ HandleTree Miner::specialize_shabs(const Handle& pattern,
 	// Generate shallow patterns of the first variable of the
 	// valuations and associate the remaining valuations (excluding
 	// that variable) to them.
-	HandleSet shapats = MinerUtils::focus_shallow_abstract(valuations, param.minsup);
+	// No type support for cpp-miner
+	HandleSet shapats = MinerUtils::focus_shallow_abstract(valuations, param.minsup, false);
 
 	// No shallow abstraction to use for specialization
 	if (shapats.empty())
