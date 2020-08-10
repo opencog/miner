@@ -1171,6 +1171,21 @@ Handle MinerUtils::type_restrict_pattern(const HandleSeqMap::value_type &pair)
 	return lambda(variable_set(t_decls), body);
 }
 
+Handle MinerUtils::lwst_com_types_decl(const Handle &var, const HandleSeq &vector)
+{
+	TypeSet types = lwst_com_types(vector);
+	HandleSeq seq;
+	if (types.size() == 1)
+		return createLink(TYPED_VARIABLE_LINK, var,
+		                  createNode(TYPE_INH_NODE,
+		                             nameserver().getTypeName(*types.begin())));
+	for (Type type : types)
+		seq.push_back(createNode(TYPE_INH_NODE,
+		                         nameserver().getTypeName(type)));
+	return createLink(TYPED_VARIABLE_LINK, var,
+	                  createLink(seq, TYPE_CHOICE));
+}
+
 std::string oc_to_string(const HandleSeqSeqSeq& hsss,
                          const std::string& indent)
 {
