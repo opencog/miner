@@ -295,6 +295,47 @@ HandleSeq MinerUtils::glob_shallow_abstract_of_val(const Handle &value, const Ha
 
 HandleSeq MinerUtils::glob_shallow_abstract_of_lst(const Handle &value, const HandleSeq &vars)
 {
+	OC_ASSERT(value->get_type() == LIST_LINK,
+	          "Values of a glob must be wrapped with ListLink");
+
+	const HandleSeq vals = value->getOutgoingSet();
+	if(vals.empty())
+		return {value};
+
+	HandleSet new_vals;
+
+	for (unsigned n = 1; n < vals.size() + 1; n++)
+	{
+		// For every n-gram in vals generate an abstraction
+		// with globs for remaining vals.
+		//
+		//   such as: for vals = {A, B, C} and vars = {G1, G2}
+		//     the following are all valid abstractions
+		//
+		//     for 1-gram.
+		//      {A, G1}, {G1, A, G2}, {G1, B, G2}, {G1, C}, {G1, C, G2}
+		//     for 2-gram.
+		//      {A, B, G1}, {G1, A, B, G2}, {G1, B, C}, {G1, B, C, G2}
+		//     for 3-gram.
+		//      {A, B, C, G1}, {G1, A, B, C, G2}
+		for (size_t j=0; j < (vals.size() - n) + 1; j++)
+		{
+			HandleSeq nval(vals.begin()+j, vals.begin() + (j + n));
+			HandleSeq left(nval);
+			left.insert(left.end(), vars[0]);
+			if (j == 0)
+				new_vals.insert(lambda(vars[0], createLink(left, LIST_LINK)));
+
+			HandleSeq right(nval);
+			right.insert(right.begin(), vars[0]);
+			if (j == vals.size() - n)
+				new_vals.insert(lambda(vars[0], createLink(right, LIST_LINK)));
+
+			right.insert(right.end(), vars[1]);
+			new_vals.insert(lambda(variable_set(vars), createLink(right, LIST_LINK)));
+		}
+	}
+	return {new_vals.begin(), new_vals.end()};
 }
 
 Handle MinerUtils::variable_set(const HandleSeq& vars)
