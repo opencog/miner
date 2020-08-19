@@ -48,6 +48,7 @@
 (define default-surprisingness 'isurp)
 (define default-db-ratio 1)
 (define default-type-check #f)
+(define default-glob-support #f)
 
 ;; For some crazy reason I need to repaste absolutely-true here while
 ;; it is already defined in ure.
@@ -173,7 +174,8 @@
 (define (configure-shallow-specialization-rules pm-rbs
                                                 maximum-variables
                                                 maximum-spcial-conjuncts
-                                                type-check)
+                                                type-check
+                                                glob-support)
   (define mv (min 9 maximum-variables))
 
   ;; Only define such rules if maximum-spcial-conjuncts if above 0
@@ -190,7 +192,7 @@
              (definify (lambda (i)
                          (DefineLink
                            (aliasify i)
-                           (gen-shallow-specialization-rule i mv type-check))))
+                           (gen-shallow-specialization-rule i mv type-check glob-support))))
              (rule-tv (stv 0.9 1))
              (rulify (lambda (i) (definify i) (list (aliasify i) rule-tv)))
              (rules (map rulify (iota-plus-one maximum-spcial-conjuncts))))
@@ -242,12 +244,14 @@
                                    (maximum-variables default-maximum-variables)
                                    (maximum-spcial-conjuncts default-maximum-spcial-conjuncts)
                                    (maximum-cnjexp-variables default-maximum-cnjexp-variables)
-                                   (type-check default-type-check))
+                                   (type-check default-type-check)
+                                   (glob-support default-glob-support))
   ;; Load shallow specialization and associate to pm-rbs
   (configure-shallow-specialization-rules pm-rbs
                                           maximum-variables
                                           maximum-spcial-conjuncts
-                                          type-check)
+                                          type-check
+                                          glob-support)
 
   ;; Load conjunction-expansion and associate to pm-rbs
   (configure-conjunction-expansion-rules pm-rbs
@@ -264,7 +268,8 @@
                           (maximum-variables default-maximum-variables)
                           (maximum-spcial-conjuncts default-maximum-spcial-conjuncts)
                           (maximum-cnjexp-variables default-maximum-cnjexp-variables)
-                          (type-check default-type-check))
+                          (type-check default-type-check)
+                          (glob-support default-glob-support))
   (configure-mandatory-rules pm-rbs)
   (configure-optional-rules pm-rbs
                             #:conjunction-expansion conjunction-expansion
@@ -273,7 +278,8 @@
                             #:maximum-variables maximum-variables
                             #:maximum-spcial-conjuncts maximum-spcial-conjuncts
                             #:maximum-cnjexp-variables maximum-cnjexp-variables
-                            #:type-check type-check))
+                            #:type-check type-check
+                            #:glob-support glob-support))
 
 (define* (configure-surprisingness surp-rbs mode maximum-conjuncts db-ratio)
   ;; Add surprisingness rules
@@ -324,7 +330,8 @@
                           (maximum-variables default-maximum-variables)
                           (maximum-spcial-conjuncts default-maximum-spcial-conjuncts)
                           (maximum-cnjexp-variables default-maximum-cnjexp-variables)
-                          (type-check default-type-check))
+                          (type-check default-type-check)
+                          (glob-support default-glob-support))
 "
   Given a Concept node representing a rule based system for the
   pattern miner. Automatically configure it with the appropriate
@@ -388,7 +395,8 @@
                    #:maximum-variables maximum-variables
                    #:maximum-spcial-conjuncts maximum-spcial-conjuncts
                    #:maximum-cnjexp-variables maximum-cnjexp-variables
-                   #:type-check type-check)
+                   #:type-check type-check
+                   #:glob-support glob-support)
 
   ;; Set parameters
   (ure-set-jobs pm-rbs jobs)
@@ -602,7 +610,8 @@
                    (db-ratio default-db-ratio)
 
                    ;; enable type-check
-                   (type-check default-type-check))
+                   (type-check default-type-check)
+                   (glob-support default-glob-support))
 "
   Mine patterns in db (data trees, a.k.a. grounded hypergraphs) with minimum
   support ms, optionally using mi iterations and starting from the initial
@@ -974,7 +983,8 @@
                                        #:maximum-variables mv
                                        #:maximum-spcial-conjuncts mspc
                                        #:maximum-cnjexp-variables mcev
-                                       #:type-check type-check))
+                                       #:type-check type-check
+                                       #:glob-support glob-support))
 
 	       (dummy (miner-logger-debug "Initial pattern:\n~a" (get-initial-pattern)))
 	       (dummy (miner-logger-debug "Has enough support (min support = ~a)" ms))

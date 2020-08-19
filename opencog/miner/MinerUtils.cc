@@ -55,23 +55,26 @@ namespace opencog
 {
 
 HandleSetSeq MinerUtils::shallow_abstract(const Valuations& valuations,
-                                          unsigned ms, bool type_check)
+                                          unsigned ms, bool type_check,
+                                          bool glob_support)
 {
 	// Base case
 	if (valuations.no_focus())
 		return HandleSetSeq();
 
 	// Recursive case
-	HandleSetSeq shabs_per_var{focus_shallow_abstract(valuations, ms, type_check)};
+	HandleSetSeq shabs_per_var{focus_shallow_abstract(valuations, ms,
+	                                                  type_check, glob_support)};
 	valuations.inc_focus_variable();
-	HandleSetSeq remaining = shallow_abstract(valuations, ms, type_check);
+	HandleSetSeq remaining = shallow_abstract(valuations, ms, type_check, glob_support);
 	valuations.dec_focus_variable();
 	append(shabs_per_var, remaining);
 	return shabs_per_var;
 }
 
 HandleSet MinerUtils::focus_shallow_abstract(const Valuations& valuations,
-                                             unsigned ms, bool type_check)
+                                             unsigned ms, bool type_check,
+                                             bool glob_support)
 {
 	// If there are no valuations, then the result is empty by
 	// convention, regardless of the minimum support threshold.
@@ -122,7 +125,7 @@ HandleSet MinerUtils::focus_shallow_abstract(const Valuations& valuations,
 		if (Handle shabs = shallow_abstract_of_val(value))
 			shapats[shabs].push_back(value);
 
-		if (true) // TODO check if glob_support is on.
+		if (glob_support)
 		{
 			HandleSeq shabs = glob_shallow_abstract_of_val(value, var_scv.focus_variable());
 			if (!shabs.empty())
@@ -445,20 +448,23 @@ bool MinerUtils::enough_support(const Handle& pattern,
 HandleSetSeq MinerUtils::shallow_abstract(const Handle& pattern,
                                           const HandleSeq& db,
                                           unsigned ms,
-                                          bool type_check)
+                                          bool type_check,
+                                          bool glob_support)
 {
 	Valuations valuations(pattern, db);
-	return shallow_abstract(valuations, ms, type_check);
+	return shallow_abstract(valuations, ms, type_check, glob_support);
 }
 
 HandleSet MinerUtils::shallow_specialize(const Handle& pattern,
                                          const HandleSeq& db,
                                          unsigned ms,
                                          unsigned mv,
-                                         bool type_check)
+                                         bool type_check,
+                                         bool glob_support)
 {
 	// Calculate all shallow abstractions of pattern
-	HandleSetSeq shabs_per_var = shallow_abstract(pattern, db, ms, type_check);
+	HandleSetSeq shabs_per_var =
+			shallow_abstract(pattern, db, ms, type_check, glob_support);
 
 	// For each variable of pattern, generate the corresponding shallow
 	// specializations
