@@ -105,6 +105,8 @@ private:
 	 */
 	Handle mk_nconjunct(unsigned n);
 
+	bool are_in(const HandleSeq& es, const HandleSeq& c);
+
 	/**
 	 * Generate a query, run the URE forward to generate patterns,
 	 * then backward to gather the results, and output them.
@@ -197,6 +199,7 @@ public:
 	void test_variable_factorization();
 	void test_type_support_1();
 	void test_type_support_2();
+	void test_typed_glob();
 	void test_2conjuncts_1();
 	void test_2conjuncts_2();
 	void test_2conjuncts_3();
@@ -226,6 +229,14 @@ Handle MinerUTest::mk_minsup_evals(int minsup,
 Handle MinerUTest::mk_nconjunct(unsigned n)
 {
 	return MinerUTestUtils::add_nconjunct(_as, n);
+}
+
+bool MinerUTest::are_in(const HandleSeq& es, const HandleSeq& c)
+{
+	for (const Handle &e : es)
+		if (not is_in(e, c))
+			return false;
+	return true;
 }
 
 Handle MinerUTest::ure_pm(const AtomSpace& db_as, int minsup,
@@ -1563,6 +1574,84 @@ void MinerUTest::test_type_support_2()
 	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
 
 	TS_ASSERT(content_eq(ure_results, ure_expected));
+}
+
+void MinerUTest::test_typed_glob()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
+	Handle d1 = al(ORDERED_LINK, A, B);
+	Handle d2 = al(ORDERED_LINK, A, an(PREDICATE_NODE, "P"), E);
+	Handle d3 = al(ORDERED_LINK, A, D, E, B);
+	Handle d4 = al(IMPLICATION_LINK, A, E);
+	HandleSeq db = {d1, d2, d3, d4};
+
+	Handle p1 = al(ORDERED_LINK, A, GB1),
+			p2 = al(ORDERED_LINK, GB2, A, GB1),
+			p3 = al(ORDERED_LINK, A, GB1, B),
+			p4 = al(ORDERED_LINK, GB2, A, GB1, B),
+			p5 = al(ORDERED_LINK, A, GB1, B, GB2),
+			p6 = al(ORDERED_LINK, A, GB1, E, GB2),
+			p7 = al(ORDERED_LINK, GB1, B),
+			p8 = al(ORDERED_LINK, GB1, B, GB2),
+			p9 = al(ORDERED_LINK, GB1, E, GB2),
+			p10 = al(ORDERED_LINK, GB1),
+			VarGB1_3 = al(TYPED_VARIABLE_LINK, GB1,
+			              al(TYPE_INTERSECTION_LINK,
+			                 al(INTERVAL_LINK, an(NUMBER_NODE, "1"), an(NUMBER_NODE, "3")),
+			                 an(TYPE_INH_NODE, "ConceptNode"))),
+			VarGB1_3n = al(TYPED_VARIABLE_LINK, GB1,
+			              al(TYPE_INTERSECTION_LINK,
+			                 al(INTERVAL_LINK, an(NUMBER_NODE, "1"), an(NUMBER_NODE, "3")),
+			                 an(TYPE_INH_NODE, "Node"))),
+			VarGB0_0 = al(TYPED_VARIABLE_LINK, GB2,
+			              al(TYPE_INTERSECTION_LINK,
+			                 al(INTERVAL_LINK, an(NUMBER_NODE, "0"), an(NUMBER_NODE, "0")),
+			                 an(TYPE_INH_NODE, "Atom"))),
+			VarGB0_2 = al(TYPED_VARIABLE_LINK, GB1,
+			              al(TYPE_INTERSECTION_LINK,
+			                 al(INTERVAL_LINK, an(NUMBER_NODE, "0"), an(NUMBER_NODE, "2")),
+			                 an(TYPE_INH_NODE, "ConceptNode"))),
+			VarGB2_2 = al(TYPED_VARIABLE_LINK, GB1,
+			              al(TYPE_INTERSECTION_LINK,
+			                 al(INTERVAL_LINK, an(NUMBER_NODE, "2"), an(NUMBER_NODE, "2")),
+			                 an(TYPE_INH_NODE, "Node"))),
+			VarGB0_1 = al(TYPED_VARIABLE_LINK, GB2,
+			              al(TYPE_INTERSECTION_LINK,
+			                 al(INTERVAL_LINK, an(NUMBER_NODE, "0"), an(NUMBER_NODE, "1")),
+			                 an(TYPE_INH_NODE, "ConceptNode"))),
+			VarGB1_1 = al(TYPED_VARIABLE_LINK, GB1,
+			              al(TYPE_INTERSECTION_LINK,
+			                 al(INTERVAL_LINK, an(NUMBER_NODE, "1"), an(NUMBER_NODE, "1")),
+			                 an(TYPE_INH_NODE, "Node"))),
+			VarGB2_4 = al(TYPED_VARIABLE_LINK, GB1,
+			              al(TYPE_INTERSECTION_LINK,
+			                 al(INTERVAL_LINK, an(NUMBER_NODE, "2"), an(NUMBER_NODE, "4")),
+			                 an(TYPE_INH_NODE, "Node"))),
+			VarGB12_0 = al(VARIABLE_SET, VarGB1_3, VarGB0_0),
+			VarGB12_0n = al(VARIABLE_SET, VarGB1_3n, VarGB0_0),
+			VarGB12_1 = al(VARIABLE_SET, VarGB0_0, VarGB0_2),
+			VarGB12_2 = al(VARIABLE_SET, VarGB0_1, VarGB1_1),
+			VarGB12_3 = al(VARIABLE_SET, VarGB0_1, VarGB2_2);
+
+	Handle ure_results = ure_pm(db, 2, 10, Handle::UNDEFINED,
+	                            false, UINT_MAX, UINT_MAX, 1, UINT_MAX, true, 0.0, true, true),
+			ure_expected = mk_minsup_evals(2,
+			                               {top,
+			                                MinerUtils::mk_pattern(VarGB1_3n, {p1}),
+			                                MinerUtils::mk_pattern(VarGB12_0n, {p2}),
+			                                MinerUtils::mk_pattern(VarGB0_2, {p3}),
+			                                MinerUtils::mk_pattern(VarGB12_1, {p4}),
+			                                MinerUtils::mk_pattern(VarGB12_1, {p5}),
+			                                MinerUtils::mk_pattern(VarGB12_2, {p6}),
+			                                MinerUtils::mk_pattern(VarGB1_3, {p7}),
+			                                MinerUtils::mk_pattern(VarGB12_0, {p8}),
+			                                MinerUtils::mk_pattern(VarGB12_3, {p9}),
+			                                MinerUtils::mk_pattern(VarGB2_4, {p10})});
+
+	logger().debug() << "ure_results = " << oc_to_string(ure_results);
+	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
+	TS_ASSERT(are_in(ure_expected->getOutgoingSet(), ure_results->getOutgoingSet()));
 }
 
 void MinerUTest::test_2conjuncts_1()
