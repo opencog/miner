@@ -60,6 +60,10 @@ private:
 	// Variables
 	Handle X, Y, Z, W;
 
+	// Globs
+	Handle GB1;
+	Handle GB2;
+
 	// Constants
 	Handle A, A1, A2, A3, B, C, C0, C1, C2, C3, D, E, F, G, H;
 
@@ -183,6 +187,7 @@ public:
 	void test_ABCD();
 	void test_ABAB();
 	void test_AAAA();
+	void test_glob();
 	void test_transitivity();
 	void test_long_transitivity();
 	void test_no_transitivity();
@@ -317,6 +322,8 @@ void MinerUTest::setUp()
 	Y = an(VARIABLE_NODE, "$Y");
 	Z = an(VARIABLE_NODE, "$Z");
 	W = an(VARIABLE_NODE, "$W");
+	GB1 = an(GLOB_NODE, "$G1");
+	GB2 = an(GLOB_NODE, "$G2");
 	A = an(CONCEPT_NODE, "A");
 	A1 = an(CONCEPT_NODE, "A1");
 	A2 = an(CONCEPT_NODE, "A2");
@@ -1275,6 +1282,47 @@ void MinerUTest::test_AAAA()
 	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
 
 	TS_ASSERT(is_in(ure_expected, ure_results->getOutgoingSet()));
+}
+
+void MinerUTest::test_glob()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
+	Handle d1 = al(ORDERED_LINK, A, B);
+	Handle d2 = al(ORDERED_LINK, A, C, E);
+	Handle d3 = al(ORDERED_LINK, A, D, E, B);
+	Handle d4 = al(IMPLICATION_LINK, A, E);
+	HandleSeq db = {d1, d2, d3, d4};
+
+	Handle p1 = al(ORDERED_LINK, A, GB1),
+			p2 = al(ORDERED_LINK, GB1, A, GB2),
+			p3 = al(ORDERED_LINK, A, GB1, B),
+			p4 = al(ORDERED_LINK, GB1, A, GB2, B),
+			p5 = al(ORDERED_LINK, A, GB1, B, GB2),
+			p6 = al(ORDERED_LINK, A, GB1, E, GB2),
+			p7 = al(ORDERED_LINK, GB1, B),
+			p8 = al(ORDERED_LINK, GB1, B, GB2),
+			p9 = al(ORDERED_LINK, GB1, E, GB2),
+			p10 = al(ORDERED_LINK, GB1),
+			VarGB12 = al(VARIABLE_SET, GB1, GB2);
+
+	Handle ure_results = ure_pm(db, 2),
+			ure_expected = mk_minsup_evals(2,
+			                               {top,
+			                                MinerUtils::mk_pattern(GB1, {p1}),
+			                                MinerUtils::mk_pattern(VarGB12, {p2}),
+			                                MinerUtils::mk_pattern(GB1, {p3}),
+			                                MinerUtils::mk_pattern(VarGB12, {p4}),
+			                                MinerUtils::mk_pattern(VarGB12, {p5}),
+			                                MinerUtils::mk_pattern(VarGB12, {p6}),
+			                                MinerUtils::mk_pattern(GB1, {p7}),
+			                                MinerUtils::mk_pattern(VarGB12, {p8}),
+			                                MinerUtils::mk_pattern(VarGB12, {p9}),
+			                                MinerUtils::mk_pattern(GB1, {p10})});
+
+	logger().debug() << "ure_results = " << oc_to_string(ure_results);
+	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
+	TS_ASSERT(content_eq(ure_results, ure_expected));
 }
 
 void MinerUTest::test_transitivity()
