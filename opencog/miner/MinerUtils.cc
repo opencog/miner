@@ -1258,46 +1258,153 @@ Handle MinerUtils::type_restrict_pattern(const HandleSeqMap::value_type &pair)
 
 	LambdaLinkPtr pat = LambdaLinkCast(pair.first);
 	Variables vars = pat->get_variables();
-	if (not vars._typemap.empty())        // Vars in this pattern are
-		return pair.first;                // already type restricted.
 	Handle body = pat->get_body();
 
+	if (not vars._typemap.empty())        // Vars in this pattern are
+		return pair.first;                // already type restricted.
+
 	HandleSeq t_decls;
-	for (Arity i = 0; i < body->get_arity(); ++i) {
-		if (not nameserver().isA(body->getOutgoingAtom(i)->get_type(),
-		                         VARIABLE_NODE))
-			continue;
-		HandleSeq vals;
-		for (const Handle v : pair.second) {
-			if (body->getOutgoingAtom(i)->get_type() == GLOB_NODE)
-				vals.insert(vals.end(),
-				            v->getOutgoingSet().begin(),
-				            v->getOutgoingSet().end());
-			else
-				vals.push_back(v->getOutgoingAtom(i));
-		}
-		t_decls.push_back(lwst_com_types_decl(body->getOutgoingAtom(i), vals));
-	}
+	HandleValIntvlMap vvmap;
+	for (const Handle v : pair.second)
+		extend_seq_map(vvmap, simple_unify(body->getOutgoingSet(),
+		                                   v->getOutgoingSet()));
+	for (const auto vvpair : vvmap)
+		t_decls.push_back(lwst_com_types_decl(vvpair.first,
+				HandleSeq(vvpair.second.first.begin(), vvpair.second.first.end()),
+				vvpair.second.second));
+
 	return lambda(variable_set(t_decls), body);
 }
 
-Handle MinerUtils::lwst_com_types_decl(const Handle &var, const HandleSeq &vector)
+inline HandleSeq tail(HandleSeq seq)
+{
+	return HandleSeq(seq.begin() + 1, seq.end());
+}
+
+HandleValIntvlMap MinerUtils::simple_unify(const HandleSeq &pat, const HandleSeq &mch)
+{
+	HandleValIntvlMap result;
+
+	if (pat.empty())
+		return mch.empty() ?
+		       result :
+		       throw RuntimeException(TRACE_INFO, "Error type checking pattern.");
+	if (mch.empty()) {
+		for (const Handle g : pat) {
+			if (g->get_type() != GLOB_NODE)
+				throw RuntimeException(TRACE_INFO, "Error type checking pattern.");
+			result.insert({g, {{}, {0, 0}}});
+		}
+		return result;
+	}
+
+	Handle var = *pat.begin();
+	Handle val = *mch.begin();
+
+	if ((not nameserver().isA(var->get_type(), VARIABLE_NODE)) and
+	    (not (var == val)))
+		throw RuntimeException(TRACE_INFO, "Error type checking pattern.");
+
+	if (var->get_type() == VARIABLE_NODE) {
+		result.insert({var, {{val}, {NAN, NAN}}}); // interval Not supported.
+		extend_seq_map(result, simple_unify(tail(pat), tail(mch)));
+	}
+	else if (var->get_type() == GLOB_NODE) {
+		const auto nxt = pat.begin() + 1;
+		HandleSeq t = mch;
+		HandleSet vals;
+		// match value in mch as long as it is not equal to
+		// next element in pat.
+		if (nxt != pat.end() and *nxt == *t.begin()) {
+			result.insert({var, {{}, {0, 0}}});
+			extend_seq_map(result, simple_unify(tail(pat), t));
+		}
+		else {
+			while ((nxt == pat.end() or (*nxt != *t.begin()))
+			       and t.begin() != t.end())
+			{
+				vals.insert(*t.begin());
+				t = tail(t);
+			}
+			result.insert({var, {vals, {vals.size(), vals.size()}}});
+			extend_seq_map(result, simple_unify(tail(pat), t));
+		}
+	}
+	else
+		result = simple_unify(tail(pat), tail(mch));
+
+	return result;
+}
+
+void MinerUtils::extend_seq_map(HandleValIntvlMap &sup, const HandleValIntvlMap &sub)
+{
+	for (const auto pair :sub)
+	{
+		auto pos = sup.find(pair.first);
+		if (pos == sup.end())
+			sup.insert(pair);
+		else {
+			const GlobInterval prevIntvl = pos->second.second;
+			GlobInterval newIntvl = pair.second.second;
+			newIntvl.first = std::min(newIntvl.first, prevIntvl.first);
+			newIntvl.second = std::max(newIntvl.second, prevIntvl.second);
+			pos->second.first.insert(pair.second.first.begin(), pair.second.first.end());
+			pos->second.second = newIntvl;
+		}
+	}
+}
+
+inline std::string itos(int i)
+{
+	return std::to_string(i);
+}
+
+inline Handle createTVL(const Handle& var, const Handle& tp)
+{
+	return createLink(TYPED_VARIABLE_LINK, var, tp);
+}
+
+inline Handle createTIL(const GlobInterval intval, const Handle& tp)
+{
+	return createLink(TYPE_INTERSECTION_LINK,
+	                  createLink(INTERVAL_LINK,
+	                             createNode(NUMBER_NODE, itos(intval.first)),
+	                             createNode(NUMBER_NODE, itos(intval.second))),
+	                  tp);
+}
+
+inline std::string tname(Type t)
+{
+	return nameserver().getTypeName(t);
+}
+
+Handle MinerUtils::lwst_com_types_decl(const Handle &var, const HandleSeq &vector,
+                                       const GlobInterval &intval)
 {
 	TypeSet types = lwst_com_types(vector);
 	HandleSeq seq;
-	if (types.size() == 1)
-		return createLink(TYPED_VARIABLE_LINK, var,
-		                  createNode(TYPE_INH_NODE,
-		                             nameserver().getTypeName(*types.begin())));
+	if (types.size() == 1) {
+		if (var->get_type() == VARIABLE_NODE)
+			return createTVL(var, createNode(TYPE_INH_NODE,
+			                                 tname(*types.begin())));
+		else
+			return createTVL(var, createTIL(intval,
+			                                createNode(TYPE_INH_NODE,
+			                                           tname(*types.begin()))));
+	}
 	for (Type type : types)
 		seq.push_back(createNode(TYPE_INH_NODE,
 		                         nameserver().getTypeName(type)));
-	return createLink(TYPED_VARIABLE_LINK, var,
-	                  createLink(seq, TYPE_CHOICE));
+	if (var->get_type() == VARIABLE_NODE)
+		return createTVL(var, createLink(seq, TYPE_CHOICE));
+	return createTVL(var, createTIL(intval, createLink(seq, TYPE_CHOICE)));
 }
 
 TypeSet MinerUtils::lwst_com_types(HandleSeq vals)
 {
+	if (vals.empty())
+		return {ATOM};
+
 	auto itr = vals.begin();
 	TypeSet common_types = nameserver().getParentsRecursive((*itr)->get_type());
 	common_types.insert((*itr)->get_type());

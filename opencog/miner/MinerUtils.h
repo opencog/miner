@@ -33,6 +33,8 @@ namespace opencog
 {
 
 typedef std::vector<HandleSeqSeq> HandleSeqSeqSeq;
+typedef std::pair<HandleSet, GlobInterval> ValIntvlPair;
+typedef std::map<Handle, ValIntvlPair> HandleValIntvlMap;
 
 /**
  * Collection of static methods for the pattern miner.
@@ -804,11 +806,16 @@ public:
 	static Handle type_restrict_pattern(const std::map<Handle,
 	                      HandleSeq>::value_type &pair);
 
-	static Handle lwst_com_types_decl(const Handle &var, const HandleSeq &vector);
+	static Handle lwst_com_types_decl(const Handle &var, const HandleSeq &vector,
+	                                  const GlobInterval &);
 
 	static TypeSet lwst_com_types(HandleSeq vals);
 
 	static TypeSet lwst_com_types(TypeSet tsets);
+
+	static HandleValIntvlMap simple_unify(const HandleSeq &pat, const HandleSeq &val);
+
+	static void extend_seq_map(HandleValIntvlMap &sup, const HandleValIntvlMap &sub);
 };
 
 /**
