@@ -140,6 +140,10 @@ public:
 
 	static Handle shallow_abstract_of_val(const Handle& value, const HandleSeq& rnd_vars);
 
+	static HandleSeq glob_shallow_abstract_of_val(const Handle &val, const Handle &var);
+
+	static HandleSeq glob_shallow_abstract_of_lst(const Handle &value, const HandleSeq &vars);
+
 	/**
 	 * Wrap a VariableSet around a list of variables if more than one
 	 * variable, otherwise return that one variable.
@@ -353,6 +357,9 @@ public:
 	 */
 	static HandleSeq gen_rand_variables(size_t n);
 	static Handle gen_rand_variable();
+
+	static HandleSeq gen_rand_globs(size_t n);
+	static Handle gen_rand_glob();
 
 	/**
 	 * Given a pattern return its variables. If the pattern is not a

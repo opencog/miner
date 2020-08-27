@@ -121,6 +121,14 @@ HandleSet MinerUtils::focus_shallow_abstract(const Valuations& valuations,
 		// Otherwise generate its shallow abstraction
 		if (Handle shabs = shallow_abstract_of_val(value))
 			shapats[shabs].push_back(value);
+
+		if (true) // TODO check if glob_support is on.
+		{
+			HandleSeq shabs = glob_shallow_abstract_of_val(value, var_scv.focus_variable());
+			if (!shabs.empty())
+				for (Handle s : shabs)
+					shapats[s].push_back(value);
+		}
 	}
 
 	// Only consider shallow abstractions that reach the minimum
@@ -270,6 +278,23 @@ Handle MinerUtils::shallow_abstract_of_val(const Handle &value, const HandleSeq 
 
 	// Generic non empty link, abstract away all the arguments
 	return lambda(vardecl, createLink(rnd_vars, tt));
+}
+
+HandleSeq MinerUtils::glob_shallow_abstract_of_val(const Handle &value, const Handle &var)
+{
+	// Node or empty link, nothing to abstract
+	if (is_nullary(value))
+		return {}; // should be handled by shallow_abstract_of_val.
+
+	if (var->get_type() == GLOB_NODE)
+		return glob_shallow_abstract_of_lst(value, gen_rand_globs(2));
+
+	HandleSeq rnd_vars = gen_rand_globs(1);
+	return HandleSeq{shallow_abstract_of_val(value, rnd_vars)};
+}
+
+HandleSeq MinerUtils::glob_shallow_abstract_of_lst(const Handle &value, const HandleSeq &vars)
+{
 }
 
 Handle MinerUtils::variable_set(const HandleSeq& vars)
@@ -547,6 +572,19 @@ bool MinerUtils::totally_abstract(const Handle& pattern)
 		if (ch->get_type() != VARIABLE_NODE)
 			return false;
 	return true;
+}
+
+HandleSeq MinerUtils::gen_rand_globs(size_t n)
+{
+	HandleSeq globs;
+	dorepeat (n)
+		globs.push_back(gen_rand_glob());
+	return globs;
+}
+
+Handle MinerUtils::gen_rand_glob()
+{
+	return createNode(GLOB_NODE, randstr("$PM-"));
 }
 
 HandleSeq MinerUtils::gen_rand_variables(size_t n)
