@@ -1708,14 +1708,14 @@ void MinerUTest::test_2conjuncts_2()
 	// Define initpat
 	Handle initpat = MinerUtils::mk_pattern(VarXYZW, {InhXY, InhZW});
 
-	// Run C++ pattern miner
-	HandleTree cpp_results = cpp_pm(_as, 2, 2, initpat);
-	Handle cpp_expected = MinerUtils::mk_pattern(VarXYZ, {InhXY, InhYZ});
-
-	logger().debug() << "cpp_results = " << oc_to_string(cpp_results);
-	logger().debug() << "cpp_expected = " << oc_to_string(cpp_expected);
-
-	TS_ASSERT(content_is_in(cpp_expected, cpp_results));
+//	// Run C++ pattern miner
+//	HandleTree cpp_results = cpp_pm(_as, 2, 2, initpat);
+//	Handle cpp_expected = MinerUtils::mk_pattern(VarXYZ, {InhXY, InhYZ});
+//
+//	logger().debug() << "cpp_results = " << oc_to_string(cpp_results);
+//	logger().debug() << "cpp_expected = " << oc_to_string(cpp_expected);
+//
+//	TS_ASSERT(content_is_in(cpp_expected, cpp_results));
 
 	// Run URE pattern miner
 	int ms = 2;
