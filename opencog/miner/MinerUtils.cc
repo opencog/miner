@@ -137,8 +137,8 @@ HandleSet MinerUtils::focus_shallow_abstract(const Valuations& valuations,
 	// Only consider shallow abstractions that reach the minimum
 	// support
 	for (const auto& shapat : shapats) {
-		if (ms <= shapat.second.size()) {
-			set_support(shapat.first, shapat.second.size());
+		if (ms <= shapat.second.size() * val_count) {
+			set_support(shapat.first, shapat.second.size() * val_count);
 			shabs.insert(shapat);
 		}
 	}
