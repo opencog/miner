@@ -205,6 +205,7 @@ public:
 	void test_2conjuncts_3();
 	void test_2conjuncts_4();
 	void test_2conjuncts_5();
+	void test_2conjuncts_6();
 	void test_InferenceControl();
 	void test_SodaDrinker();
 	void test_SodaDrinker_incremental();
@@ -1862,6 +1863,60 @@ void MinerUTest::test_2conjuncts_5()
 	logger().debug() << "non_expected = " << oc_to_string(non_expected);
 
 	TS_ASSERT(not content_is_in(non_expected, results));
+}
+
+void MinerUTest::test_2conjuncts_6()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
+	// Define db
+	Handle
+			InhA1B = al(INHERITANCE_LINK, A1, B),
+			InhA2B = al(INHERITANCE_LINK, A2, B),
+			InhA3B = al(INHERITANCE_LINK, A3, B),
+			InhBC1 = al(INHERITANCE_LINK, B, C1),
+			InhBC2 = al(INHERITANCE_LINK, B, C2),
+			InhBC3 = al(INHERITANCE_LINK, B, C3);
+	HandleSeq db{InhA1B, InhA2B, InhA3B, InhBC1, InhBC2, InhBC3};
+
+	// Define pattern parts
+	Handle VarXYZ = al(VARIABLE_SET, X, Y, Z),
+			VarXYZW = al(VARIABLE_SET, X, Y, Z, W),
+			InhXY = al(INHERITANCE_LINK, X, Y),
+			InhYZ = al(INHERITANCE_LINK, Y, Z),
+			InhZW = al(INHERITANCE_LINK, Z, W),
+			InhXZ = al(INHERITANCE_LINK, X, Z),
+			InhZB = al(INHERITANCE_LINK, Z, B),
+			InhBZ = al(INHERITANCE_LINK, B, Z);
+
+	// Define initpat
+	Handle initpat = MinerUtils::mk_pattern(VarXYZW, {InhXY, InhZW});
+
+	// Run URE pattern miner
+	int ms = 9;
+	int mi = 1;
+	bool cnj_exp = false;
+	unsigned max_cnjs = 2;
+	unsigned max_vars = 3;
+	unsigned max_spcial_cnjs = 2;
+	Handle ure_results = ure_pm(db, ms, mi, initpat, cnj_exp,
+	                            max_cnjs, max_vars, max_spcial_cnjs),
+			ure_expected = mk_minsup_evals(9,
+			                               {MinerUtils::mk_pattern(VarXYZ,
+			                                                       {InhXY, InhZB}),
+			                                MinerUtils::mk_pattern(VarXYZW,
+			                                                       {InhXY, InhZW}),
+			                                MinerUtils::mk_pattern(VarXYZ,
+			                                                       {InhXY, InhYZ}),
+			                                MinerUtils::mk_pattern(VarXYZ,
+			                                                       {InhXY, InhBZ}),
+			                                MinerUtils::mk_pattern(VarXYZ,
+			                                                       {InhXY, InhXZ})});
+
+	logger().debug() << "ure_results = " << oc_to_string(ure_results);
+	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
+
+	TS_ASSERT(are_in(ure_expected->getOutgoingSet(), ure_results->getOutgoingSet()));
 }
 
 void MinerUTest::test_InferenceControl()
