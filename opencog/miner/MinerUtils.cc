@@ -128,9 +128,8 @@ HandleSet MinerUtils::focus_shallow_abstract(const Valuations& valuations,
 		if (glob_support)
 		{
 			HandleSeq shabs = glob_shallow_abstract_of_val(value, var_scv.focus_variable());
-			if (!shabs.empty())
-				for (Handle s : shabs)
-					shapats[s].push_back(value);
+			for (Handle s : shabs)
+				shapats[s].push_back(value);
 		}
 	}
 
