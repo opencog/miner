@@ -1313,15 +1313,8 @@ void MinerUTest::test_glob()
 	HandleSeq db = {d1, d2, d3, d4};
 
 	Handle p1 = al(ORDERED_LINK, A, GB1),
-			p2 = al(ORDERED_LINK, GB1, A, GB2),
-			p3 = al(ORDERED_LINK, A, GB1, B),
-			p4 = al(ORDERED_LINK, GB1, A, GB2, B),
-			p5 = al(ORDERED_LINK, A, GB1, B, GB2),
-			p6 = al(ORDERED_LINK, A, GB1, E, GB2),
-			p7 = al(ORDERED_LINK, GB1, B),
-			p8 = al(ORDERED_LINK, GB1, B, GB2),
-			p9 = al(ORDERED_LINK, GB1, E, GB2),
-			p10 = al(ORDERED_LINK, GB1),
+			p2 = al(ORDERED_LINK, GB1, B),
+			p3 = al(ORDERED_LINK, GB1),
 			VarGB12 = al(VARIABLE_SET, GB1, GB2);
 
 	Handle ure_results = ure_pm(db, 2, 10, Handle::UNDEFINED,
@@ -1329,15 +1322,8 @@ void MinerUTest::test_glob()
 			ure_expected = mk_minsup_evals(2,
 			                               {top,
 			                                MinerUtils::mk_pattern(GB1, {p1}),
-			                                MinerUtils::mk_pattern(VarGB12, {p2}),
-			                                MinerUtils::mk_pattern(GB1, {p3}),
-			                                MinerUtils::mk_pattern(VarGB12, {p4}),
-			                                MinerUtils::mk_pattern(VarGB12, {p5}),
-			                                MinerUtils::mk_pattern(VarGB12, {p6}),
-			                                MinerUtils::mk_pattern(GB1, {p7}),
-			                                MinerUtils::mk_pattern(VarGB12, {p8}),
-			                                MinerUtils::mk_pattern(VarGB12, {p9}),
-			                                MinerUtils::mk_pattern(GB1, {p10})});
+			                                MinerUtils::mk_pattern(GB1, {p2}),
+			                                MinerUtils::mk_pattern(GB1, {p3})});
 
 	logger().debug() << "ure_results = " << oc_to_string(ure_results);
 	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
