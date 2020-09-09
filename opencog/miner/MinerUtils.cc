@@ -127,7 +127,9 @@ HandleSet MinerUtils::focus_shallow_abstract(const Valuations& valuations,
 
 		if (glob_support)
 		{
-			HandleSeq shabs = glob_shallow_abstract_of_val(value, var_scv.focus_variable());
+			HandleSeq shabs =
+					glob_shallow_abstract_of_val(value, var_scv.focus_variable(),
+					                             type_check);
 			for (Handle s : shabs)
 				shapats[s].push_back(value);
 		}
@@ -282,20 +284,22 @@ Handle MinerUtils::shallow_abstract_of_val(const Handle &value, const HandleSeq 
 	return lambda(vardecl, createLink(rnd_vars, tt));
 }
 
-HandleSeq MinerUtils::glob_shallow_abstract_of_val(const Handle &value, const Handle &var)
+HandleSeq MinerUtils::glob_shallow_abstract_of_val(const Handle &value,
+                                                   const Handle &var, bool type_check)
 {
 	// Node or empty link, nothing to abstract
 	if (is_nullary(value))
 		return {}; // should be handled by shallow_abstract_of_val.
 
 	if (var->get_type() == GLOB_NODE)
-		return glob_shallow_abstract_of_lst(value, gen_rand_globs(2));
+		return glob_shallow_abstract_of_lst(value, gen_rand_globs(2), type_check);
 
 	HandleSeq rnd_vars = gen_rand_globs(1);
 	return HandleSeq{shallow_abstract_of_val(value, rnd_vars)};
 }
 
-HandleSeq MinerUtils::glob_shallow_abstract_of_lst(const Handle &value, const HandleSeq &vars)
+HandleSeq MinerUtils::glob_shallow_abstract_of_lst(const Handle &value,
+                                                   const HandleSeq &vars, bool type_check)
 {
 	OC_ASSERT(value->get_type() == LIST_LINK,
 	          "Values of a glob must be wrapped with ListLink");
@@ -325,16 +329,28 @@ HandleSeq MinerUtils::glob_shallow_abstract_of_lst(const Handle &value, const Ha
 			HandleSeq nval(vals.begin()+j, vals.begin() + (j + n));
 			HandleSeq left(nval);
 			left.insert(left.end(), vars[0]);
-			if (j == 0)
+			// Glob node has [1, inf) interval by default hence we dont want to
+			// include abstractions with possibly empty glob (a glob matching
+			// empty list) unless we know type checking is on.
+			// Example
+			// if type checking is off
+			//       (Ordered A B)
+			//       can not be abstracted to (Ordered A G B)
+			//       because the default interval of G doesn't include 0.
+			// but if type check is on (Ordered A G B) is a valid abstraction
+			// since the interval of G will be restricted to [0,0] later when
+			// type checking.
+			if (j == 0 and (j != vals.size() - n or type_check))
 				new_vals.insert(lambda(vars[0], createLink(left, LIST_LINK)));
 
 			HandleSeq right(nval);
 			right.insert(right.begin(), vars[0]);
-			if (j == vals.size() - n)
+			if (j == vals.size() - n and (j != 0 or type_check))
 				new_vals.insert(lambda(vars[0], createLink(right, LIST_LINK)));
 
 			right.insert(right.end(), vars[1]);
-			new_vals.insert(lambda(variable_set(vars), createLink(right, LIST_LINK)));
+			if ((j != 0 and j != vals.size() - n) or type_check)
+				new_vals.insert(lambda(variable_set(vars), createLink(right, LIST_LINK)));
 		}
 	}
 	return {new_vals.begin(), new_vals.end()};

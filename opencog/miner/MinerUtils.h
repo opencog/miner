@@ -144,9 +144,11 @@ public:
 
 	static Handle shallow_abstract_of_val(const Handle& value, const HandleSeq& rnd_vars);
 
-	static HandleSeq glob_shallow_abstract_of_val(const Handle &val, const Handle &var);
+	static HandleSeq glob_shallow_abstract_of_val(const Handle &val,
+	                                              const Handle &var, bool type_check);
 
-	static HandleSeq glob_shallow_abstract_of_lst(const Handle &value, const HandleSeq &vars);
+	static HandleSeq glob_shallow_abstract_of_lst(const Handle &value,
+	                                              const HandleSeq &vars, bool type_check);
 
 	/**
 	 * Wrap a VariableSet around a list of variables if more than one
