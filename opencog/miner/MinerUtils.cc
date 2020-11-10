@@ -55,23 +55,26 @@ namespace opencog
 {
 
 HandleSetSeq MinerUtils::shallow_abstract(const Valuations& valuations,
-                                          unsigned ms)
+                                          unsigned ms, bool type_check,
+                                          bool glob_support)
 {
 	// Base case
 	if (valuations.no_focus())
 		return HandleSetSeq();
 
 	// Recursive case
-	HandleSetSeq shabs_per_var{focus_shallow_abstract(valuations, ms)};
+	HandleSetSeq shabs_per_var{focus_shallow_abstract(valuations, ms,
+	                                                  type_check, glob_support)};
 	valuations.inc_focus_variable();
-	HandleSetSeq remaining = shallow_abstract(valuations, ms);
+	HandleSetSeq remaining = shallow_abstract(valuations, ms, type_check, glob_support);
 	valuations.dec_focus_variable();
 	append(shabs_per_var, remaining);
 	return shabs_per_var;
 }
 
 HandleSet MinerUtils::focus_shallow_abstract(const Valuations& valuations,
-                                             unsigned ms)
+                                             unsigned ms, bool type_check,
+                                             bool glob_support)
 {
 	// If there are no valuations, then the result is empty by
 	// convention, regardless of the minimum support threshold.
@@ -82,7 +85,7 @@ HandleSet MinerUtils::focus_shallow_abstract(const Valuations& valuations,
 	if (valuations.no_focus())
 		return HandleSet();
 
-	HandleSet shabs;
+	HandleSeqMap shabs;
 
 	// Strongly connected valuations associated to the variable under
 	// focus
@@ -95,7 +98,7 @@ HandleSet MinerUtils::focus_shallow_abstract(const Valuations& valuations,
 	// For each valuation create an abstraction (shallow pattern) of
 	// the value associated to variable, and associate the remaining
 	// valuations to it.
-	HandleUCounter shapats;
+	HandleSeqMap shapats;
 	// Calculate how many valuations will be encompassed by these
 	// shallow abstractions
 	unsigned val_count = valuations.size() / var_scv.size();
@@ -120,15 +123,24 @@ HandleSet MinerUtils::focus_shallow_abstract(const Valuations& valuations,
 
 		// Otherwise generate its shallow abstraction
 		if (Handle shabs = shallow_abstract_of_val(value))
-			shapats[shabs] += val_count;
+			shapats[shabs].push_back(value);
+
+		if (glob_support)
+		{
+			HandleSeq shabs =
+					glob_shallow_abstract_of_val(value, var_scv.focus_variable(),
+					                             type_check);
+			for (Handle s : shabs)
+				shapats[s].push_back(value);
+		}
 	}
 
 	// Only consider shallow abstractions that reach the minimum
 	// support
 	for (const auto& shapat : shapats) {
-		if (ms <= shapat.second) {
-			set_support(shapat.first, shapat.second);
-			shabs.insert(shapat.first);
+		if (ms <= shapat.second.size() * val_count) {
+			set_support(shapat.first, shapat.second.size() * val_count);
+			shabs.insert(shapat);
 		}
 	}
 
@@ -196,11 +208,17 @@ HandleSet MinerUtils::focus_shallow_abstract(const Valuations& valuations,
 	for (const auto& fvar : facvars) {
 		if (ms <= fvar.second) {
 			set_support(fvar.first, fvar.second);
-			shabs.insert(fvar.first);
+			shabs.insert({fvar.first, {}});
 		}
    }
 
-	return shabs;
+	if (type_check)
+		return type_restrict_patterns(shabs);
+
+	HandleSet rshabs;
+	for (auto shab : shabs)
+		rshabs.insert(shab.first);
+	return rshabs;
 }
 
 bool MinerUtils::is_nullary(const Handle& h)
@@ -214,8 +232,13 @@ Handle MinerUtils::shallow_abstract_of_val(const Handle& value)
 	if (is_nullary(value))
 		return value;
 
-	Type tt = value->get_type();
 	HandleSeq rnd_vars = gen_rand_variables(value->get_arity());
+	return shallow_abstract_of_val(value, rnd_vars);
+}
+
+Handle MinerUtils::shallow_abstract_of_val(const Handle &value, const HandleSeq &rnd_vars)
+{
+	Type tt = value->get_type();
 	Handle vardecl = variable_set(rnd_vars);
 
 	// TODO: this can probably be simplified using PresentLink, would
@@ -229,7 +252,7 @@ Handle MinerUtils::shallow_abstract_of_val(const Handle& value)
 	}
 
 	if (tt == BIND_LINK or       // TODO: should probabably be replaced
-	                             // by scope link and its subtypes
+	    // by scope link and its subtypes
 	    (tt == EVALUATION_LINK and
 	     value->getOutgoingAtom(0)->get_type() == GROUNDED_PREDICATE_NODE) or
 	    nameserver().isA(tt, FUNCTION_LINK) or
@@ -259,6 +282,78 @@ Handle MinerUtils::shallow_abstract_of_val(const Handle& value)
 
 	// Generic non empty link, abstract away all the arguments
 	return lambda(vardecl, createLink(rnd_vars, tt));
+}
+
+HandleSeq MinerUtils::glob_shallow_abstract_of_val(const Handle &value,
+                                                   const Handle &var, bool type_check)
+{
+	// Node or empty link, nothing to abstract
+	if (is_nullary(value))
+		return {}; // should be handled by shallow_abstract_of_val.
+
+	if (var->get_type() == GLOB_NODE)
+		return glob_shallow_abstract_of_lst(value, gen_rand_globs(2), type_check);
+
+	HandleSeq rnd_vars = gen_rand_globs(1);
+	return HandleSeq{shallow_abstract_of_val(value, rnd_vars)};
+}
+
+HandleSeq MinerUtils::glob_shallow_abstract_of_lst(const Handle &value,
+                                                   const HandleSeq &vars, bool type_check)
+{
+	OC_ASSERT(value->get_type() == LIST_LINK,
+	          "Values of a glob must be wrapped with ListLink");
+
+	const HandleSeq vals = value->getOutgoingSet();
+	if(vals.empty())
+		return {value};
+
+	HandleSet new_vals;
+
+	for (unsigned n = 1; n < vals.size() + 1; n++)
+	{
+		// For every n-gram in vals generate an abstraction
+		// with globs for remaining vals.
+		//
+		//   such as: for vals = {A, B, C} and vars = {G1, G2}
+		//     the following are all valid abstractions
+		//
+		//     for 1-gram.
+		//      {A, G1}, {G1, A, G2}, {G1, B, G2}, {G1, C}, {G1, C, G2}
+		//     for 2-gram.
+		//      {A, B, G1}, {G1, A, B, G2}, {G1, B, C}, {G1, B, C, G2}
+		//     for 3-gram.
+		//      {A, B, C, G1}, {G1, A, B, C, G2}
+		for (size_t j=0; j < (vals.size() - n) + 1; j++)
+		{
+			HandleSeq nval(vals.begin()+j, vals.begin() + (j + n));
+			HandleSeq left(nval);
+			left.insert(left.end(), vars[0]);
+			// Glob node has [1, inf) interval by default hence we dont want to
+			// include abstractions with possibly empty glob (a glob matching
+			// empty list) unless we know type checking is on.
+			// Example
+			// if type checking is off
+			//       (Ordered A B)
+			//       can not be abstracted to (Ordered A G B)
+			//       because the default interval of G doesn't include 0.
+			// but if type check is on (Ordered A G B) is a valid abstraction
+			// since the interval of G will be restricted to [0,0] later when
+			// type checking.
+			if (j == 0 and (j != vals.size() - n or type_check))
+				new_vals.insert(lambda(vars[0], createLink(left, LIST_LINK)));
+
+			HandleSeq right(nval);
+			right.insert(right.begin(), vars[0]);
+			if (j == vals.size() - n and (j != 0 or type_check))
+				new_vals.insert(lambda(vars[0], createLink(right, LIST_LINK)));
+
+			right.insert(right.end(), vars[1]);
+			if ((j != 0 and j != vals.size() - n) or type_check)
+				new_vals.insert(lambda(variable_set(vars), createLink(right, LIST_LINK)));
+		}
+	}
+	return {new_vals.begin(), new_vals.end()};
 }
 
 Handle MinerUtils::variable_set(const HandleSeq& vars)
@@ -292,6 +387,25 @@ Handle MinerUtils::compose(const Handle& pattern, const HandleMap& var2pat)
 	if (RewriteLinkPtr sc = RewriteLinkCast(pattern))
 		return remove_useless_clauses(sc->beta_reduce(var2pat));
 	return pattern;
+}
+
+Handle MinerUtils::compose_nocheck(const Handle& pattern, const HandlePair& var2pat)
+{
+	Variables pvars = get_variables(pattern);
+	Handle var = var2pat.first;
+	Handle val = var2pat.second;
+	if (nameserver().isA(val->get_type(), VARIABLE_NODE)) {
+		Handle sa_decl = pvars.get_type_decl(var, val);
+		pvars.erase(var2pat.first);
+		if (not pvars.is_in_varset(val)) pvars.extend(Variables(sa_decl));
+	}
+	else {
+		pvars.erase(var2pat.first);
+		pvars.extend(get_variables(val));
+		val = get_body(val);
+	}
+	Handle body = Replacement::replace_nocheck(get_body(pattern), {{var, val}});
+	return remove_useless_clauses(lambda(pvars.get_vardecl(), body));
 }
 
 HandleSeq MinerUtils::get_db(const Handle& db_cpt)
@@ -356,19 +470,24 @@ bool MinerUtils::enough_support(const Handle& pattern,
 
 HandleSetSeq MinerUtils::shallow_abstract(const Handle& pattern,
                                           const HandleSeq& db,
-                                          unsigned ms)
+                                          unsigned ms,
+                                          bool type_check,
+                                          bool glob_support)
 {
 	Valuations valuations(pattern, db);
-	return shallow_abstract(valuations, ms);
+	return shallow_abstract(valuations, ms, type_check, glob_support);
 }
 
 HandleSet MinerUtils::shallow_specialize(const Handle& pattern,
                                          const HandleSeq& db,
                                          unsigned ms,
-                                         unsigned mv)
+                                         unsigned mv,
+                                         bool type_check,
+                                         bool glob_support)
 {
 	// Calculate all shallow abstractions of pattern
-	HandleSetSeq shabs_per_var = shallow_abstract(pattern, db, ms);
+	HandleSetSeq shabs_per_var =
+			shallow_abstract(pattern, db, ms, type_check, glob_support);
 
 	// For each variable of pattern, generate the corresponding shallow
 	// specializations
@@ -377,8 +496,7 @@ HandleSet MinerUtils::shallow_specialize(const Handle& pattern,
 	HandleSet results;
 	for (const HandleSet& shabs : shabs_per_var) {
 		for (const Handle& sa : shabs) {
-			Handle npat = compose(pattern, {{vars.varseq[vari], sa}});
-
+			Handle npat = MinerUtils::compose_nocheck(pattern, {vars.varseq[vari], sa});
 			if (mv < get_variables(npat).size())
 				continue;
 
@@ -521,6 +639,19 @@ bool MinerUtils::totally_abstract(const Handle& pattern)
 		if (ch->get_type() != VARIABLE_NODE)
 			return false;
 	return true;
+}
+
+HandleSeq MinerUtils::gen_rand_globs(size_t n)
+{
+	HandleSeq globs;
+	dorepeat (n)
+		globs.push_back(gen_rand_glob());
+	return globs;
+}
+
+Handle MinerUtils::gen_rand_glob()
+{
+	return createNode(GLOB_NODE, randstr("$PM-"));
 }
 
 HandleSeq MinerUtils::gen_rand_variables(size_t n)
@@ -1127,6 +1258,214 @@ void MinerUtils::remove_if(HandleSeq& clauses,
 		else
 			++it;
 	}
+}
+
+HandleSet MinerUtils::type_restrict_patterns(const HandleSeqMap& shapats)
+{
+	HandleSet typed_shapats;
+	for (const HandleSeqMap::value_type &shapat : shapats) {
+		if (shapat.first->get_type() == LAMBDA_LINK)
+			typed_shapats.insert(type_restrict_pattern(shapat));
+		else
+			typed_shapats.insert(shapat.first);
+	}
+	return typed_shapats;
+}
+
+Handle MinerUtils::type_restrict_pattern(const HandleSeqMap::value_type &pair)
+{
+	OC_ASSERT(pair.first->get_type() == LAMBDA_LINK);
+
+	LambdaLinkPtr pat = LambdaLinkCast(pair.first);
+	Variables vars = pat->get_variables();
+	Handle body = pat->get_body();
+
+	if (not vars._typemap.empty())        // Vars in this pattern are
+		return pair.first;                // already type restricted.
+
+	HandleSeq t_decls;
+	HandleValIntvlMap vvmap;
+	for (const Handle v : pair.second)
+		extend_seq_map(vvmap, simple_unify(body->getOutgoingSet(),
+		                                   v->getOutgoingSet()));
+	for (const auto vvpair : vvmap)
+		t_decls.push_back(lwst_com_types_decl(vvpair.first,
+				HandleSeq(vvpair.second.first.begin(), vvpair.second.first.end()),
+				vvpair.second.second));
+
+	return lambda(variable_set(t_decls), body);
+}
+
+inline HandleSeq tail(HandleSeq seq)
+{
+	return HandleSeq(seq.begin() + 1, seq.end());
+}
+
+HandleValIntvlMap MinerUtils::simple_unify(const HandleSeq &pat, const HandleSeq &mch)
+{
+	HandleValIntvlMap result;
+
+	if (pat.empty())
+		return mch.empty() ?
+		       result :
+		       throw RuntimeException(TRACE_INFO, "Error type checking pattern.");
+	if (mch.empty()) {
+		for (const Handle g : pat) {
+			if (g->get_type() != GLOB_NODE)
+				throw RuntimeException(TRACE_INFO, "Error type checking pattern.");
+			result.insert({g, {{}, {0, 0}}});
+		}
+		return result;
+	}
+
+	Handle var = *pat.begin();
+	Handle val = *mch.begin();
+
+	if ((not nameserver().isA(var->get_type(), VARIABLE_NODE)) and
+	    (not (var == val)))
+		throw RuntimeException(TRACE_INFO, "Error type checking pattern.");
+
+	if (var->get_type() == VARIABLE_NODE) {
+		result.insert({var, {{val}, {NAN, NAN}}}); // interval Not supported.
+		extend_seq_map(result, simple_unify(tail(pat), tail(mch)));
+	}
+	else if (var->get_type() == GLOB_NODE) {
+		const auto nxt = pat.begin() + 1;
+		HandleSeq t = mch;
+		HandleSet vals;
+		// match value in mch as long as it is not equal to
+		// next element in pat.
+		if (nxt != pat.end() and *nxt == *t.begin()) {
+			result.insert({var, {{}, {0, 0}}});
+			extend_seq_map(result, simple_unify(tail(pat), t));
+		}
+		else {
+			while ((nxt == pat.end() or (*nxt != *t.begin()))
+			       and t.begin() != t.end())
+			{
+				vals.insert(*t.begin());
+				t = tail(t);
+			}
+			result.insert({var, {vals, {vals.size(), vals.size()}}});
+			extend_seq_map(result, simple_unify(tail(pat), t));
+		}
+	}
+	else
+		result = simple_unify(tail(pat), tail(mch));
+
+	return result;
+}
+
+void MinerUtils::extend_seq_map(HandleValIntvlMap &sup, const HandleValIntvlMap &sub)
+{
+	for (const auto pair :sub)
+	{
+		auto pos = sup.find(pair.first);
+		if (pos == sup.end())
+			sup.insert(pair);
+		else {
+			const GlobInterval prevIntvl = pos->second.second;
+			GlobInterval newIntvl = pair.second.second;
+			newIntvl.first = std::min(newIntvl.first, prevIntvl.first);
+			newIntvl.second = std::max(newIntvl.second, prevIntvl.second);
+			pos->second.first.insert(pair.second.first.begin(), pair.second.first.end());
+			pos->second.second = newIntvl;
+		}
+	}
+}
+
+inline std::string itos(int i)
+{
+	return std::to_string(i);
+}
+
+inline Handle createTVL(const Handle& var, const Handle& tp)
+{
+	return createLink(TYPED_VARIABLE_LINK, var, tp);
+}
+
+inline Handle createTIL(const GlobInterval intval, const Handle& tp)
+{
+	return createLink(TYPE_INTERSECTION_LINK,
+	                  createLink(INTERVAL_LINK,
+	                             createNode(NUMBER_NODE, itos(intval.first)),
+	                             createNode(NUMBER_NODE, itos(intval.second))),
+	                  tp);
+}
+
+inline std::string tname(Type t)
+{
+	return nameserver().getTypeName(t);
+}
+
+Handle MinerUtils::lwst_com_types_decl(const Handle &var, const HandleSeq &vector,
+                                       const GlobInterval &intval)
+{
+	TypeSet types = lwst_com_types(vector);
+	HandleSeq seq;
+	if (types.size() == 1) {
+		if (var->get_type() == VARIABLE_NODE)
+			return createTVL(var, createNode(TYPE_INH_NODE,
+			                                 tname(*types.begin())));
+		else
+			return createTVL(var, createTIL(intval,
+			                                createNode(TYPE_INH_NODE,
+			                                           tname(*types.begin()))));
+	}
+	for (Type type : types)
+		seq.push_back(createNode(TYPE_INH_NODE,
+		                         nameserver().getTypeName(type)));
+	if (var->get_type() == VARIABLE_NODE)
+		return createTVL(var, createLink(seq, TYPE_CHOICE));
+	return createTVL(var, createTIL(intval, createLink(seq, TYPE_CHOICE)));
+}
+
+TypeSet MinerUtils::lwst_com_types(HandleSeq vals)
+{
+	if (vals.empty())
+		return {ATOM};
+
+	auto itr = vals.begin();
+	TypeSet common_types = nameserver().getParentsRecursive((*itr)->get_type());
+	common_types.insert((*itr)->get_type());
+
+	for (++itr; itr != vals.end(); ++itr)
+	{
+		TypeSet nts = nameserver().getParentsRecursive((*itr)->get_type());
+		nts.insert((*itr)->get_type());
+		common_types = set_intersection(common_types, nts);
+	}
+
+	// Remove unknown type coming from getParentsRecursive.
+	while (nameserver().getTypeName(*common_types.begin()) != "Atom")
+		common_types.erase(common_types.begin());
+
+	return lwst_com_types(common_types);
+}
+
+TypeSet MinerUtils::lwst_com_types(TypeSet tsets)
+{
+	Type tp = *tsets.begin();
+	tsets.erase(tsets.begin());
+	if (tsets.empty())
+		return {tp};
+
+	TypeSet common_types = lwst_com_types(tsets);
+
+	bool add_tp=true;
+	for (auto itr=common_types.begin(); itr!=common_types.end(); ++itr)
+	{
+		if (nameserver().isAncestor(tp, *itr)) { // a lower type already exists.
+			add_tp = false;
+			break;
+		}
+		if (nameserver().isA(tp, *itr)) {       // tp is lower than existing types
+			common_types.erase(itr);            // in common_types.
+			break;
+		}
+	}
+	if (add_tp) common_types.insert(tp);
+	return common_types;
 }
 
 std::string oc_to_string(const HandleSeqSeqSeq& hsss,

@@ -33,6 +33,8 @@ namespace opencog
 {
 
 typedef std::vector<HandleSeqSeq> HandleSeqSeqSeq;
+typedef std::pair<HandleSet, GlobInterval> ValIntvlPair;
+typedef std::map<Handle, ValIntvlPair> HandleValIntvlMap;
 
 /**
  * Collection of static methods for the pattern miner.
@@ -74,7 +76,9 @@ public:
 	 *    { (Concept "D") }
 	 *  }
 	 */
-	static HandleSetSeq shallow_abstract(const Valuations& valuations, unsigned ms);
+	static HandleSetSeq shallow_abstract(const Valuations &valuations,
+	                                     unsigned ms, bool type_check,
+	                                     bool glob_support);
 
 	/**
 	 * Given valuations produce all shallow abstractions reaching
@@ -104,7 +108,9 @@ public:
 	 *                                            (Variable "$X1")
 	 *                                            (Variable "$X2"))) }
 	 */
-	static HandleSet focus_shallow_abstract(const Valuations& valuations, unsigned ms);
+	static HandleSet focus_shallow_abstract(const Valuations &valuations,
+	                                        unsigned ms, bool type_check,
+	                                        bool glob_support);
 
 	/**
 	 * Return true iff h is a node or a nullary link.
@@ -135,6 +141,14 @@ public:
 	 * TODO: we may want to support types in variable declaration.
 	 */
 	static Handle shallow_abstract_of_val(const Handle& value);
+
+	static Handle shallow_abstract_of_val(const Handle& value, const HandleSeq& rnd_vars);
+
+	static HandleSeq glob_shallow_abstract_of_val(const Handle &val,
+	                                              const Handle &var, bool type_check);
+
+	static HandleSeq glob_shallow_abstract_of_lst(const Handle &value,
+	                                              const HandleSeq &vars, bool type_check);
 
 	/**
 	 * Wrap a VariableSet around a list of variables if more than one
@@ -172,6 +186,13 @@ public:
 	 * declaration.
 	 */
 	static Handle compose(const Handle& pattern, const HandleMap& var2pat);
+
+	/**
+	 * It does the same as compose except when the value to be substituted
+	 * is a Variable, beta_reduction wont pass type checking. This is an
+	 * alternative using replace_nocheck.
+	 */
+	static Handle compose_nocheck(const Handle& pattern, const HandlePair& var2pat);
 
 	/**
 	 * Given a db concept node, retrieve all its members
@@ -223,7 +244,9 @@ public:
 	 */
 	static HandleSetSeq shallow_abstract(const Handle& pattern,
 	                                     const HandleSeq& db,
-	                                     unsigned ms);
+	                                     unsigned ms,
+	                                     bool type_check,
+	                                     bool glob_support);
 
 	/**
 	 * Return all shallow specializations of pattern with support ms
@@ -235,7 +258,9 @@ public:
 	static HandleSet shallow_specialize(const Handle& pattern,
 	                                    const HandleSeq& db,
 	                                    unsigned ms,
-	                                    unsigned mv=UINT_MAX);
+	                                    unsigned mv=UINT_MAX,
+	                                    bool type_check=false,
+	                                    bool glob_support=false);
 
 	/**
 	 * Create a pattern body from clauses, introducing an AndLink if
@@ -340,6 +365,9 @@ public:
 	 */
 	static HandleSeq gen_rand_variables(size_t n);
 	static Handle gen_rand_variable();
+
+	static HandleSeq gen_rand_globs(size_t n);
+	static Handle gen_rand_glob();
 
 	/**
 	 * Given a pattern return its variables. If the pattern is not a
@@ -774,6 +802,22 @@ public:
 	 */
 	static void remove_if(HandleSeq& clauses,
 	                      std::function<bool(const Handle&, const HandleSeq&)> fun);
+
+	static HandleSet type_restrict_patterns(const HandleSeqMap &);
+
+	static Handle type_restrict_pattern(const std::map<Handle,
+	                      HandleSeq>::value_type &pair);
+
+	static Handle lwst_com_types_decl(const Handle &var, const HandleSeq &vector,
+	                                  const GlobInterval &);
+
+	static TypeSet lwst_com_types(HandleSeq vals);
+
+	static TypeSet lwst_com_types(TypeSet tsets);
+
+	static HandleValIntvlMap simple_unify(const HandleSeq &pat, const HandleSeq &val);
+
+	static void extend_seq_map(HandleValIntvlMap &sup, const HandleValIntvlMap &sub);
 };
 
 /**

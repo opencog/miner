@@ -82,7 +82,8 @@ protected:
 	 *   (Lambda Y (Inheritance Y Y)))
 	 */
 	Handle do_shallow_specialize(Handle pattern, Handle db,
-	                             Handle ms, Handle mv);
+	                             Handle ms, Handle mv,
+	                             Handle type_check, Handle glob_support);
 
 	/**
 	 * Given a pattern, a db concept and a minimum support, return
@@ -205,8 +206,8 @@ Handle MinerSCM::do_shallow_abstract(Handle pattern,
 	unsigned ms = MinerUtils::get_uint(ms_h);
 
 	// Generate all shallow abstractions
-	HandleSetSeq shabs_per_var =
-		MinerUtils::shallow_abstract(pattern, db_seq, ms);
+	HandleSetSeq shabs_per_var =                 // TODO add type and glob params.
+		MinerUtils::shallow_abstract(pattern, db_seq, ms, false, false);
 
 	// Turn that sequence of handle sets into a set of ready to be
 	// applied shallow abstractions
@@ -231,7 +232,9 @@ Handle MinerSCM::do_shallow_abstract(Handle pattern,
 Handle MinerSCM::do_shallow_specialize(Handle pattern,
                                        Handle db,
                                        Handle ms_h,
-                                       Handle mv_h)
+                                       Handle mv_h,
+                                       Handle type_check,
+                                       Handle glob_support)
 {
 	AtomSpace *as = SchemeSmob::ss_get_env_as("cog-shallow-specialize");
 
@@ -243,7 +246,10 @@ Handle MinerSCM::do_shallow_specialize(Handle pattern,
 	unsigned mv = MinerUtils::get_uint(mv_h);
 
 	// Generate all shallow specializations
-	HandleSet shaspes = MinerUtils::shallow_specialize(pattern, db_seq, ms, mv);
+	HandleSet shaspes =
+			MinerUtils::shallow_specialize(pattern, db_seq, ms, mv,
+					type_check->getTruthValue()->get_mean() > 0,
+					glob_support->getTruthValue()->get_mean() > 0);
 
 	return as->add_link(SET_LINK, HandleSeq(shaspes.begin(), shaspes.end()));
 }

@@ -134,7 +134,8 @@ HandleTree Miner::specialize_alt(const Handle& pattern,
 	Variables vars = MinerUtils::get_variables(pattern);
 
 	// Calculate all shallow abstractions of pattern
-	HandleSetSeq shabs = MinerUtils::shallow_abstract(valuations, param.minsup);
+	// No type support for cpp-miner.
+	HandleSetSeq shabs = MinerUtils::shallow_abstract(valuations, param.minsup, false, false);
 
 	// Generate all associated specializations
 	for (unsigned i = 0; i < shabs.size(); i++) {
@@ -176,7 +177,8 @@ HandleTree Miner::specialize_shabs(const Handle& pattern,
 	// Generate shallow patterns of the first variable of the
 	// valuations and associate the remaining valuations (excluding
 	// that variable) to them.
-	HandleSet shapats = MinerUtils::focus_shallow_abstract(valuations, param.minsup);
+	// No type and glob support for cpp-miner
+	HandleSet shapats = MinerUtils::focus_shallow_abstract(valuations, param.minsup, false, false);
 
 	// No shallow abstraction to use for specialization
 	if (shapats.empty())
@@ -207,7 +209,10 @@ HandleTree Miner::specialize_shapat(const Handle& pattern,
                                     int maxdepth)
 {
 	// Perform the composition (that is specialize)
-	Handle npat = MinerUtils::compose(pattern, {{var, shapat}});
+
+	Handle npat = nameserver().isA(shapat->get_type(), VARIABLE_NODE) ?
+	              MinerUtils::compose_nocheck(pattern, {var, shapat}) :
+	              MinerUtils::compose(pattern, {{var, shapat}});
 
 	// If the specialization has too few conjuncts, dismiss it.
 	if (MinerUtils::n_conjuncts(npat) < param.initconjuncts)
