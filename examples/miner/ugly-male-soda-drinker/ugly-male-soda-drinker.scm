@@ -68,7 +68,7 @@
                           #:minsup 5
                           #:maximum-iterations 100
                           #:conjunction-expansion #t
-                          #:max-conjuncts 3
-                          #:max-variables 2
-                          #:max-cnjexp-variables 1
+                          #:maximum-conjuncts 3
+                          #:maximum-variables 2
+                          #:maximum-cnjexp-variables 1
                           #:surprisingness 'nisurp))
