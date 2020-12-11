@@ -83,7 +83,8 @@ protected:
 	 */
 	Handle do_shallow_specialize(Handle pattern, Handle db,
 	                             Handle ms, Handle mv,
-	                             Handle type_check, Handle glob_support);
+	                             Handle type_check, Handle glob_support,
+	                             Handle ignore);
 
 	/**
 	 * Given a pattern, a db concept and a minimum support, return
@@ -234,7 +235,8 @@ Handle MinerSCM::do_shallow_specialize(Handle pattern,
                                        Handle ms_h,
                                        Handle mv_h,
                                        Handle type_check,
-                                       Handle glob_support)
+                                       Handle glob_support,
+                                       Handle ignore)
 {
 	AtomSpace *as = SchemeSmob::ss_get_env_as("cog-shallow-specialize");
 
@@ -249,7 +251,8 @@ Handle MinerSCM::do_shallow_specialize(Handle pattern,
 	HandleSet shaspes =
 			MinerUtils::shallow_specialize(pattern, db_seq, ms, mv,
 					type_check->getTruthValue()->get_mean() > 0,
-					glob_support->getTruthValue()->get_mean() > 0);
+					glob_support->getTruthValue()->get_mean() > 0,
+					ignore->getOutgoingSet());
 
 	return as->add_link(SET_LINK, HandleSeq(shaspes.begin(), shaspes.end()));
 }
