@@ -49,6 +49,7 @@
 (define default-db-ratio 1)
 (define default-type-check #f)
 (define default-glob-support #f)
+(define default-ignore '())
 
 ;; For some crazy reason I need to repaste absolutely-true here while
 ;; it is already defined in ure.
