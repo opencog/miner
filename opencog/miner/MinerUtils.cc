@@ -63,6 +63,14 @@ HandleSetSeq MinerUtils::shallow_abstract(const Valuations& valuations,
 	if (valuations.no_focus())
 		return HandleSetSeq();
 
+	// Dont Specialize Variable if it is in ignore.
+	if (std::count(ignore.begin(), ignore.end(), valuations.focus_variable())) {
+		valuations.inc_focus_variable();
+		HandleSetSeq shabs_per_var = shallow_abstract(valuations, ms, type_check, glob_support, ignore);
+		valuations.dec_focus_variable();
+		return shabs_per_var;
+	}
+
 	// Recursive case
 	HandleSetSeq shabs_per_var{focus_shallow_abstract(valuations, ms,
 	                                                  type_check, glob_support)};
