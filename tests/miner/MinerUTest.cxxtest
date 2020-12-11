@@ -121,7 +121,8 @@ private:
 	              bool enforce_specialization=true,
 	              double complexity_penalty=0.0,
 	              bool type_check=false,
-	              bool glob_support=false);
+	              bool glob_support=false,
+	              std::vector<std::string> ignore_set={});
 	Handle ure_pm(const HandleSeq& db, int minsup,
 	              int max_iter=-1, Handle initpat=Handle::UNDEFINED,
 	              bool conjunction_expansion=false,
@@ -132,7 +133,8 @@ private:
 	              bool enforce_specialization=true,
 	              double complexity_penalty=0.0,
 	              bool type_check=false,
-	              bool glob_support=false);
+	              bool glob_support=false,
+	              std::vector<std::string> ignore_set={});
 
 	/**
 	 * Configure the C++ Miner and run it.
@@ -250,7 +252,8 @@ Handle MinerUTest::ure_pm(const AtomSpace& db_as, int minsup,
                           bool enforce_specialization,
                           double complexity_penalty,
                           bool type_check,
-                          bool glob_support)
+                          bool glob_support,
+                          vector<string> ignore_set)
 {
 	return MinerUTestUtils::ure_pm(_as, _scm, pm_rb, db_as, minsup,
 	                               maximum_iterations, initpat,
@@ -261,7 +264,8 @@ Handle MinerUTest::ure_pm(const AtomSpace& db_as, int minsup,
 	                               enforce_specialization,
 	                               complexity_penalty,
 	                               type_check,
-	                               glob_support);
+	                               glob_support,
+	                               ignore_set);
 }
 
 Handle MinerUTest::ure_pm(const HandleSeq& db, int minsup,
@@ -274,7 +278,8 @@ Handle MinerUTest::ure_pm(const HandleSeq& db, int minsup,
                           bool enforce_specialization,
                           double complexity_penalty,
                           bool type_check,
-                          bool glob_support)
+                          bool glob_support,
+                          vector<string> ignore_set)
 {
 	return MinerUTestUtils::ure_pm(_as, _scm, pm_rb, db, minsup,
 	                               maximum_iterations, initpat,
@@ -285,7 +290,8 @@ Handle MinerUTest::ure_pm(const HandleSeq& db, int minsup,
 	                               enforce_specialization,
 	                               complexity_penalty,
 	                               type_check,
-	                               glob_support);
+	                               glob_support,
+	                               ignore_set);
 }
 
 HandleTree MinerUTest::cpp_pm(const AtomSpace& db_as,
