@@ -135,7 +135,7 @@ HandleTree Miner::specialize_alt(const Handle& pattern,
 
 	// Calculate all shallow abstractions of pattern
 	// No type support for cpp-miner.
-	HandleSetSeq shabs = MinerUtils::shallow_abstract(valuations, param.minsup, false, false);
+	HandleSetSeq shabs = MinerUtils::shallow_abstract(valuations, param.minsup, false, false, {});
 
 	// Generate all associated specializations
 	for (unsigned i = 0; i < shabs.size(); i++) {
