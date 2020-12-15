@@ -57,9 +57,9 @@
 ;;     (Variable "$X-1"))))
 ;;
 (define results (cog-mine (list AB BC DE EF)
-                          #:minsup 2
-                          #:initpat (conjunct-pattern 2)
+                          #:minimum-support 2
+                          #:initial-pattern (conjunct-pattern 2)
                           #:conjunction-expansion #f
-                          #:max-variables 4
+                          #:maximum-variables 4
                           #:maximum-spcial-conjuncts 2
                           #:surprisingness 'none))
