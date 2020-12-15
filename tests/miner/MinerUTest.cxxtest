@@ -121,7 +121,8 @@ private:
 	              bool enforce_specialization=true,
 	              double complexity_penalty=0.0,
 	              bool type_check=false,
-	              bool glob_support=false);
+	              bool glob_support=false,
+	              std::vector<std::string> ignore_set={});
 	Handle ure_pm(const HandleSeq& db, int minsup,
 	              int max_iter=-1, Handle initpat=Handle::UNDEFINED,
 	              bool conjunction_expansion=false,
@@ -132,7 +133,8 @@ private:
 	              bool enforce_specialization=true,
 	              double complexity_penalty=0.0,
 	              bool type_check=false,
-	              bool glob_support=false);
+	              bool glob_support=false,
+	              std::vector<std::string> ignore_set={});
 
 	/**
 	 * Configure the C++ Miner and run it.
@@ -200,6 +202,7 @@ public:
 	void test_type_support_1();
 	void test_type_support_2();
 	void test_typed_glob();
+	void test_ignore_var();
 	void test_2conjuncts_1();
 	void test_2conjuncts_2();
 	void test_2conjuncts_3();
@@ -250,7 +253,8 @@ Handle MinerUTest::ure_pm(const AtomSpace& db_as, int minsup,
                           bool enforce_specialization,
                           double complexity_penalty,
                           bool type_check,
-                          bool glob_support)
+                          bool glob_support,
+                          vector<string> ignore_set)
 {
 	return MinerUTestUtils::ure_pm(_as, _scm, pm_rb, db_as, minsup,
 	                               maximum_iterations, initpat,
@@ -261,7 +265,8 @@ Handle MinerUTest::ure_pm(const AtomSpace& db_as, int minsup,
 	                               enforce_specialization,
 	                               complexity_penalty,
 	                               type_check,
-	                               glob_support);
+	                               glob_support,
+	                               ignore_set);
 }
 
 Handle MinerUTest::ure_pm(const HandleSeq& db, int minsup,
@@ -274,7 +279,8 @@ Handle MinerUTest::ure_pm(const HandleSeq& db, int minsup,
                           bool enforce_specialization,
                           double complexity_penalty,
                           bool type_check,
-                          bool glob_support)
+                          bool glob_support,
+                          vector<string> ignore_set)
 {
 	return MinerUTestUtils::ure_pm(_as, _scm, pm_rb, db, minsup,
 	                               maximum_iterations, initpat,
@@ -285,7 +291,8 @@ Handle MinerUTest::ure_pm(const HandleSeq& db, int minsup,
 	                               enforce_specialization,
 	                               complexity_penalty,
 	                               type_check,
-	                               glob_support);
+	                               glob_support,
+	                               ignore_set);
 }
 
 HandleTree MinerUTest::cpp_pm(const AtomSpace& db_as,
@@ -894,7 +901,7 @@ void MinerUTest::test_shallow_abstract()
 	int ms = 5;
 
 	// Calculate the shallow abstractions
-	HandleSetSeq result = MinerUtils::shallow_abstract(pattern, db, ms, false, false);
+	HandleSetSeq result = MinerUtils::shallow_abstract(pattern, db, ms, false, false, {});
 
 	// Construct expected shallow abstractions
 	Handle
@@ -1639,6 +1646,41 @@ void MinerUTest::test_typed_glob()
 	logger().debug() << "ure_results = " << oc_to_string(ure_results);
 	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
 	TS_ASSERT(are_in(ure_expected->getOutgoingSet(), ure_results->getOutgoingSet()));
+}
+
+void MinerUTest::test_ignore_var()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
+	// Define db
+	Handle InhAB = al(INHERITANCE_LINK, A, B),
+			InhAC = al(INHERITANCE_LINK, A, C),
+			InhBC = al(INHERITANCE_LINK, B, C);
+	HandleSeq db{A, B, C, InhAB, InhAC, InhBC};
+
+	// Define pattern parts
+	Handle VarXY = al(VARIABLE_SET, X, Y),
+			InhXY = al(INHERITANCE_LINK, X, Y),
+			InhAY = al(INHERITANCE_LINK, A, Y);
+
+	// Define initpat
+	Handle initpat = MinerUtils::mk_pattern_no_vardecl({InhXY});
+
+	// Ignore vars
+//	Handle ignore_set = createLink(SET_LINK, Y);
+	vector<string> ignore_set = {"$Y"};
+
+	// Run URE pattern miner
+	Handle ure_results = ure_pm(db, 2, 10, initpat,
+	                            false, UINT_MAX, UINT_MAX, 1, UINT_MAX, true, 0.0, false, false, ignore_set),
+			ure_expected = mk_minsup_evals(2,
+			                               {MinerUtils::mk_pattern(VarXY, {InhXY}),
+			                                 MinerUtils::mk_pattern(Y, {InhAY}) });
+
+	logger().debug() << "ure_results = " << oc_to_string(ure_results);
+	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
+
+	TS_ASSERT(content_eq(ure_results, ure_expected));
 }
 
 void MinerUTest::test_2conjuncts_1()

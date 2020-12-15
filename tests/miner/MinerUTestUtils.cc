@@ -159,7 +159,8 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
                                bool enforce_specialization,
                                double complexity_penalty,
                                bool type_check,
-                               bool glob_support)
+                               bool glob_support,
+                               std::vector<std::string> ignore_set)
 {
 	HandleSeq db;
 	db_as.get_handles_by_type(std::inserter(db, db.end()),
@@ -168,7 +169,7 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
 	              conjunction_expansion, max_conjuncts, max_variables,
 	              max_spcial_conjuncts, max_cnjexp_variables,
 	              enforce_specialization, complexity_penalty,
-	              type_check, glob_support);
+	              type_check, glob_support, ignore_set);
 }
 
 Handle MinerUTestUtils::ure_pm(AtomSpace& as,
@@ -186,7 +187,8 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
                                bool enforce_specialization,
                                double complexity_penalty,
                                bool type_check,
-                               bool glob_support)
+                               bool glob_support,
+                               std::vector<std::string> ignore_set)
 {
 	// Make (Member dt (Concept "db)) links
 	for (const Handle& dt : db)
@@ -216,7 +218,8 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
 	                         max_cnjexp_variables,
 	                         enforce_specialization,
 	                         type_check,
-	                         glob_support);
+	                         glob_support,
+	                         ignore_set);
 
 	// Otherwise prepare the source
 	TruthValuePtr tv = TruthValue::TRUE_TV();
@@ -317,6 +320,15 @@ void MinerUTestUtils::configure_mandatory_rules(SchemeEval& scm)
 	logger().debug() << "MinerUTest::configure_mandatory_rules() rs = " << rs;
 }
 
+inline std::string comb_vars(std::vector<std::string> vnames)
+{
+	std::string slink = "(SetLink ";
+	for(auto vn : vnames)
+		slink += "(VariableNode \"" + vn +"\") ";
+	slink += ")";
+	return slink;
+}
+
 void MinerUTestUtils::configure_optional_rules(SchemeEval& scm,
                                                bool conjunction_expansion,
                                                unsigned max_conjuncts,
@@ -325,7 +337,8 @@ void MinerUTestUtils::configure_optional_rules(SchemeEval& scm,
                                                unsigned max_cnjexp_variables,
                                                bool enforce_specialization,
                                                bool type_check,
-                                               bool glob_support)
+                                               bool glob_support,
+                                               std::vector<std::string> ignore_set)
 {
 	std::string call = "(configure-optional-rules (Concept \"pm-rbs\")";
 	call += " #:conjunction-expansion #";
@@ -344,6 +357,8 @@ void MinerUTestUtils::configure_optional_rules(SchemeEval& scm,
 	call += type_check ? "#t" : "#f";
 	call += " #:glob-support ";
 	call += glob_support ? "#t" : "#f";
+	call += " #:ignore ";
+	call += comb_vars(ignore_set);
 	call += ")";
 	std::string rs = scm.eval(call);
 	logger().debug() << "MinerUTest::configure_optional_rules() rs = " << rs;

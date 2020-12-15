@@ -78,7 +78,8 @@ public:
 	 */
 	static HandleSetSeq shallow_abstract(const Valuations &valuations,
 	                                     unsigned ms, bool type_check,
-	                                     bool glob_support);
+	                                     bool glob_support,
+	                                     const HandleSeq& ignore);
 
 	/**
 	 * Given valuations produce all shallow abstractions reaching
@@ -246,7 +247,8 @@ public:
 	                                     const HandleSeq& db,
 	                                     unsigned ms,
 	                                     bool type_check,
-	                                     bool glob_support);
+	                                     bool glob_support,
+	                                     const HandleSeq& ignore);
 
 	/**
 	 * Return all shallow specializations of pattern with support ms
@@ -260,7 +262,8 @@ public:
 	                                    unsigned ms,
 	                                    unsigned mv=UINT_MAX,
 	                                    bool type_check=false,
-	                                    bool glob_support=false);
+	                                    bool glob_support=false,
+	                                    const HandleSeq& ignore={});
 
 	/**
 	 * Create a pattern body from clauses, introducing an AndLink if
