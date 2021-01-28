@@ -203,7 +203,7 @@ public:
 	void test_type_support_2();
 	void test_typed_glob();
 	void test_ignore_var_1();
-	void test_ignore_var_2();
+	// void test_ignore_var_2();
 	void test_2conjuncts_1();
 	void test_2conjuncts_2();
 	void test_2conjuncts_3();
@@ -1684,40 +1684,40 @@ void MinerUTest::test_ignore_var_1()
 	TS_ASSERT(content_eq(ure_results, ure_expected));
 }
 
-void MinerUTest::test_ignore_var_2()
-{
-	logger().info("BEGIN TEST: %s", __FUNCTION__);
+// void MinerUTest::test_ignore_var_2()
+// {
+// 	logger().info("BEGIN TEST: %s", __FUNCTION__);
 
-	// Define db
-	Handle InhAB = al(INHERITANCE_LINK, A, B),
-		InhAC = al(INHERITANCE_LINK, A, C),
-		InhBC = al(INHERITANCE_LINK, B, C);
-	HandleSeq db{A, B, C, InhAB, InhAC, InhBC};
+// 	// Define db
+// 	Handle InhAB = al(INHERITANCE_LINK, A, B),
+// 		InhAC = al(INHERITANCE_LINK, A, C),
+// 		InhBC = al(INHERITANCE_LINK, B, C);
+// 	HandleSeq db{A, B, C, InhAB, InhAC, InhBC};
 
-	// Define pattern parts
-	Handle VarXY = al(VARIABLE_SET, X, Y),
-		InhXY = al(INHERITANCE_LINK, X, Y),
-		InhXC = al(INHERITANCE_LINK, X, C);
+// 	// Define pattern parts
+// 	Handle VarXY = al(VARIABLE_SET, X, Y),
+// 		InhXY = al(INHERITANCE_LINK, X, Y),
+// 		InhXC = al(INHERITANCE_LINK, X, C);
 
-	// Define initpat
-	Handle initpat = MinerUtils::mk_pattern_no_vardecl({InhXY});
+// 	// Define initpat
+// 	Handle initpat = MinerUtils::mk_pattern_no_vardecl({InhXY});
 
-	// Ignore vars
-	vector<string> ignore_set = {"$X"};
+// 	// Ignore vars
+// 	vector<string> ignore_set = {"$X"};
 
-	// Run URE pattern miner
-	Handle ure_results = ure_pm(db, 2, 10, initpat,
-	                            false, UINT_MAX, UINT_MAX, 1, UINT_MAX, true, 0.0,
-	                            false, false, ignore_set),
-			ure_expected = mk_minsup_evals(2,
-			                               {MinerUtils::mk_pattern(VarXY, {InhXY}),
-			                                MinerUtils::mk_pattern(Y, {InhXC}) });
+// 	// Run URE pattern miner
+// 	Handle ure_results = ure_pm(db, 2, 10, initpat,
+// 	                            false, UINT_MAX, UINT_MAX, 1, UINT_MAX, true, 0.0,
+// 	                            false, false, ignore_set),
+// 			ure_expected = mk_minsup_evals(2,
+// 			                               {MinerUtils::mk_pattern(VarXY, {InhXY}),
+// 			                                MinerUtils::mk_pattern(Y, {InhXC}) });
 
-	logger().debug() << "ure_results = " << oc_to_string(ure_results);
-	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
+// 	logger().debug() << "ure_results = " << oc_to_string(ure_results);
+// 	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
 
-	TS_ASSERT(content_eq(ure_results, ure_expected));
-}
+// 	TS_ASSERT(content_eq(ure_results, ure_expected));
+// }
 
 void MinerUTest::test_2conjuncts_1()
 {
