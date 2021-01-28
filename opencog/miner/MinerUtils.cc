@@ -56,17 +56,26 @@ namespace opencog
 
 HandleSetSeq MinerUtils::shallow_abstract(const Valuations& valuations,
                                           unsigned ms, bool type_check,
-                                          bool glob_support)
+                                          bool glob_support,
+                                          const HandleSeq& ignore)
 {
 	// Base case
 	if (valuations.no_focus())
 		return HandleSetSeq();
 
+	// Dont Specialize Variable if it is in ignore.
+	if (std::count(ignore.begin(), ignore.end(), valuations.focus_variable())) {
+		valuations.inc_focus_variable();
+		HandleSetSeq shabs_per_var = shallow_abstract(valuations, ms, type_check, glob_support, ignore);
+		valuations.dec_focus_variable();
+		return shabs_per_var;
+	}
+
 	// Recursive case
 	HandleSetSeq shabs_per_var{focus_shallow_abstract(valuations, ms,
 	                                                  type_check, glob_support)};
 	valuations.inc_focus_variable();
-	HandleSetSeq remaining = shallow_abstract(valuations, ms, type_check, glob_support);
+	HandleSetSeq remaining = shallow_abstract(valuations, ms, type_check, glob_support, ignore);
 	valuations.dec_focus_variable();
 	append(shabs_per_var, remaining);
 	return shabs_per_var;
@@ -472,10 +481,11 @@ HandleSetSeq MinerUtils::shallow_abstract(const Handle& pattern,
                                           const HandleSeq& db,
                                           unsigned ms,
                                           bool type_check,
-                                          bool glob_support)
+                                          bool glob_support,
+                                          const HandleSeq& ignore)
 {
 	Valuations valuations(pattern, db);
-	return shallow_abstract(valuations, ms, type_check, glob_support);
+	return shallow_abstract(valuations, ms, type_check, glob_support, ignore);
 }
 
 HandleSet MinerUtils::shallow_specialize(const Handle& pattern,
@@ -483,11 +493,12 @@ HandleSet MinerUtils::shallow_specialize(const Handle& pattern,
                                          unsigned ms,
                                          unsigned mv,
                                          bool type_check,
-                                         bool glob_support)
+                                         bool glob_support,
+                                         const HandleSeq& ignore)
 {
 	// Calculate all shallow abstractions of pattern
 	HandleSetSeq shabs_per_var =
-			shallow_abstract(pattern, db, ms, type_check, glob_support);
+			shallow_abstract(pattern, db, ms, type_check, glob_support, ignore);
 
 	// For each variable of pattern, generate the corresponding shallow
 	// specializations
