@@ -186,7 +186,8 @@ public:
 	                     bool enforce_specialization=true,
 	                     double complexity_penalty=0.0,
 	                     bool type_check=false,
-	                     bool glob_support=false);
+	                     bool glob_support=false,
+	                     std::vector<std::string> ignore_set= {});
 	static Handle ure_pm(AtomSpace& as,
 	                     SchemeEval& scm,
 	                     const Handle& pm_rb,
@@ -201,7 +202,8 @@ public:
 	                     bool enforce_specialization=true,
 	                     double complexity_penalty=0.0,
 	                     bool type_check=false,
-	                     bool glob_support=false);
+	                     bool glob_support=false,
+	                     std::vector<std::string> ignore_set= {});
 
 	/**
 	 * Configure the C++ Miner and run it.
@@ -291,7 +293,8 @@ public:
 	                                     unsigned max_cnjexp_variables=UINT_MAX,
 	                                     bool enforce_specialization=false,
 	                                     bool type_check=false,
-	                                     bool glob_support=false);
+	                                     bool glob_support=false,
+	                                     std::vector<std::string> ignore_set= {});
 	static void configure_surprisingness(SchemeEval& scm,
 	                                     const Handle& surp_rb,
 	                                     const std::string& mode,
