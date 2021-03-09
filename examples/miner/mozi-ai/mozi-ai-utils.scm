@@ -50,8 +50,8 @@
   (if (and (cog-atom? x) (not (member? x lst)))
       (let* ((outgoings (cog-outgoing-set x))
              (del (lambda (x) (delete-subgraph-not-in x lst))))
-        (cog-logger-debug "cog-delete ~a" x)
-        (cog-delete x)
+        (cog-logger-debug "cog-extract! ~a" x)
+        (cog-extract! x)
         (map del outgoings))))
 
 (define (get-pattern se)
