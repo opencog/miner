@@ -203,6 +203,7 @@ public:
 	void test_type_support_2();
 	void test_typed_glob();
 	void test_ignore_var_1();
+	// TODO: re-enable below once shallow_specialize(..., ignore) is fixed
 	// void test_ignore_var_2();
 	void test_2conjuncts_1();
 	void test_2conjuncts_2();
