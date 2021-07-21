@@ -1630,7 +1630,7 @@ void MinerUTest::test_typed_glob()
 			VarGB12_2 = al(VARIABLE_SET, VarGB0_1, VarGB1_1),
 			VarGB12_3 = al(VARIABLE_SET, VarGB0_1, VarGB2_2);
 
-	Handle ure_results = ure_pm(db, 2, 10, Handle::UNDEFINED,
+	Handle ure_results = ure_pm(db, 2, 20, Handle::UNDEFINED,
 	                            false, UINT_MAX, UINT_MAX, 1, UINT_MAX, true, 0.0, true, true),
 			ure_expected = mk_minsup_evals(2,
 			                               {top,
