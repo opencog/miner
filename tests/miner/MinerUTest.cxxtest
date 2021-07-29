@@ -1712,7 +1712,7 @@ void MinerUTest::test_ignore_var_1()
  	                            false, false, ignore_set),
  			ure_expected = mk_minsup_evals(2,
  			                               {MinerUtils::mk_pattern(VarXY, {InhXY}),
- 			                                MinerUtils::mk_pattern(Y, {InhXC}) });
+ 			                                MinerUtils::mk_pattern(X, {InhXC}) });
 
  	logger().debug() << "ure_results = " << oc_to_string(ure_results);
  	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
