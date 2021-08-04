@@ -1,0 +1,7 @@
+// Mimic basic types provided by spacetime and PLN.
+AT_TIME_LINK <- ORDERED_LINK
+
+// Natural. For instance 3 is represented by (S (S (S (Z))))
+NATURAL_LINK <- LINK
+S_LINK <- NATURAL_LINK
+Z_LINK <- NATURAL_LINK

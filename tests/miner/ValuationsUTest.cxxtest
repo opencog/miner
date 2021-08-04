@@ -1,0 +1,154 @@
+/*
+ * opencog/tests/miner/Valuations.cxxtest
+ *
+ * Copyright (C) 2021 by SingularityNET Foundation
+ * All Rights Reserved
+ *
+ * Written by Nil Geisweiller
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License v3 as
+ * published by the Free Software Foundation and including the exceptions
+ * at http://opencog.org/wiki/Licenses
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program; if not, write to:
+ * Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+
+#include <cxxtest/TestSuite.h>
+
+#include <opencog/util/Logger.h>
+#include <opencog/util/random.h>
+#include <opencog/atomspace/AtomSpace.h>
+#include <opencog/miner/Valuations.h>
+#include <opencog/miner/MinerLogger.h>
+
+#include <tests/miner/test_types.h>
+
+using namespace opencog;
+using namespace std;
+
+#define al _as.add_link
+#define an _as.add_node
+
+class ValuationsUTest : public CxxTest::TestSuite
+{
+private:
+	AtomSpace _as;
+
+public:
+	ValuationsUTest();
+	~ValuationsUTest();
+
+	void setUp();
+	void tearDown();
+
+	void test_valuations_ctor();
+};
+
+ValuationsUTest::ValuationsUTest()
+{
+	randGen().seed(0);
+
+	// Main logger
+	logger().set_level(Logger::DEBUG);
+	logger().set_timestamp_flag(false);
+	// logger().set_sync_flag(true);
+	logger().set_print_to_stdout_flag(true);
+
+	// URE logger
+	miner_logger().set_level(Logger::FINE);
+	miner_logger().set_timestamp_flag(false);
+	// miner_logger().set_sync_flag(true);
+	miner_logger().set_print_to_stdout_flag(true);
+}
+
+ValuationsUTest::~ValuationsUTest() {}
+
+void ValuationsUTest::setUp()
+{
+}
+
+void ValuationsUTest::tearDown()
+{
+	_as.clear();
+}
+
+void ValuationsUTest::test_valuations_ctor()
+{
+	logger().info("BEGIN TEST: %s", __FUNCTION__);
+
+	Handle P = an(VARIABLE_NODE, "$P");
+	Handle T = an(VARIABLE_NODE, "$T");
+	Handle X = an(VARIABLE_NODE, "$X");
+	Handle Q = an(VARIABLE_NODE, "$Q");
+	Handle PTXQ = al(VARIABLE_SET, P, T, X, Q);
+	Handle AgentPosition = an(PREDICATE_NODE, "Agent Position");
+	Handle PelletPosition = an(PREDICATE_NODE, "Pellet Position");
+	Handle LeftSquare = an(PREDICATE_NODE, "Left Square");
+	Handle RightSquare = an(PREDICATE_NODE, "Right Square");
+	Handle Stay = an(SCHEMA_NODE, "Stay");
+	Handle GoLeft = an(SCHEMA_NODE, "GoLeft");
+	Handle Stay_Exec = al(EXECUTION_LINK, Stay);
+	Handle GoLeft_Exec = al(EXECUTION_LINK, GoLeft);
+	Handle Reward = an(PREDICATE_NODE, "Reward");
+	Handle ZNum = an(NUMBER_NODE, "0");
+	Handle ZNat = al(Z_LINK);
+	Handle SZNat = al(S_LINK, ZNat);
+	Handle SSZNat = al(S_LINK, SZNat);
+	Handle AP_RS_Eval = al(EVALUATION_LINK, AgentPosition, RightSquare);
+	Handle AP_LS_Eval = al(EVALUATION_LINK, AgentPosition, LeftSquare);
+	Handle PP_LS_Eval = al(EVALUATION_LINK, PelletPosition, LeftSquare);
+	Handle Rw_ZN_Eval = al(EVALUATION_LINK, Reward, ZNum);
+
+	Handle pattern =
+		al(LAMBDA_LINK,
+			PTXQ,
+			al(PRESENT_LINK,
+				al(AT_TIME_LINK,
+					al(EVALUATION_LINK,
+						Reward,
+						ZNum),
+					al(S_LINK, T)),
+				al(AT_TIME_LINK,
+					al(EVALUATION_LINK,
+						Q,
+						LeftSquare),
+					T),
+				al(AT_TIME_LINK,
+					al(EXECUTION_LINK, Stay),
+					T),
+				al(AT_TIME_LINK,
+					al(EVALUATION_LINK,
+						P,
+						X),
+					T)));
+
+	HandleSeq db = {
+		al(AT_TIME_LINK, AP_RS_Eval, ZNat),
+		al(AT_TIME_LINK, PP_LS_Eval, ZNat),
+		al(AT_TIME_LINK, GoLeft_Exec, ZNat),
+		al(AT_TIME_LINK, Rw_ZN_Eval, SSZNat),
+		al(AT_TIME_LINK, PP_LS_Eval, SZNat),
+		al(AT_TIME_LINK, AP_LS_Eval, SZNat),
+		al(AT_TIME_LINK, Stay_Exec, SZNat),
+		al(AT_TIME_LINK, Rw_ZN_Eval, SZNat)
+	};
+
+	Valuations vls(pattern, db);
+
+	logger().debug() << "vls = " << oc_to_string(vls);
+
+	// TODO: test more properties, or maybe the entire vls
+	TS_ASSERT_EQUALS(vls.size(), 6);
+}
+
+#undef al
+#undef an
