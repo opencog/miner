@@ -26,7 +26,6 @@
 
 #include "MinerUTestUtils.h"
 
-#include <opencog/util/Config.h>
 #include <opencog/util/algorithm.h>
 #include <opencog/util/random.h>
 #include <opencog/atoms/truthvalue/TruthValue.h>
