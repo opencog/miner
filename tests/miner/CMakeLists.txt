@@ -44,6 +44,7 @@ TARGET_LINK_LIBRARIES(ValuationsUTest
 
 ADD_CXXTEST(MinerUTest)
 TARGET_LINK_LIBRARIES(MinerUTest
+  test-types
   minerutestutils
 )
 
