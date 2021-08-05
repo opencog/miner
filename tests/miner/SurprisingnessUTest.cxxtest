@@ -153,7 +153,7 @@ void SurprisingnessUTest::load_ugly_male_soda_drinker_corpus()
 	HandleSet db;
 	_as.get_handles_by_type(std::inserter(db, db.end()),
 	                        opencog::INHERITANCE_LINK, true);
-	for (const Handle dt : db)
+	for (const Handle& dt : db)
 		al(MEMBER_LINK, dt, _db_cpt);
 }
 

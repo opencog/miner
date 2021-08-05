@@ -22,6 +22,7 @@
  */
 
 #include "MinerUtils.h"
+#include "MinerLogger.h"
 
 #include <opencog/util/dorepeat.h>
 #include <opencog/util/random.h>
@@ -499,6 +500,15 @@ HandleSet MinerUtils::shallow_specialize(const Handle& pattern,
                                          bool glob_support,
                                          const HandleSeq& ignore)
 {
+	// LAZY_MINER_LOG_FINE << "MinerUtils::shallow_specialize("
+	//                     << "pattern=" << oc_to_string(pattern)
+	//                     << ", db=" << oc_to_string(db)
+	//                     << ", ms=" << ms
+	//                     << ", mv=" << mv
+	//                     << ", type_check=" << type_check
+	//                     << ", glob_support=" << glob_support
+	//                     << ", ignore=" << oc_to_string(ignore) << ")";
+
 	// Calculate all shallow abstractions of pattern
 	HandleSetSeq shabs_per_var =
 			shallow_abstract(pattern, db, ms, type_check, glob_support, ignore);
@@ -1299,10 +1309,10 @@ Handle MinerUtils::type_restrict_pattern(const HandleSeqMap::value_type &pair)
 
 	HandleSeq t_decls;
 	HandleValIntvlMap vvmap;
-	for (const Handle v : pair.second)
+	for (const Handle& v : pair.second)
 		extend_seq_map(vvmap, simple_unify(body->getOutgoingSet(),
 		                                   v->getOutgoingSet()));
-	for (const auto vvpair : vvmap)
+	for (const auto& vvpair : vvmap)
 		t_decls.push_back(lwst_com_types_decl(vvpair.first,
 				HandleSeq(vvpair.second.first.begin(), vvpair.second.first.end()),
 				vvpair.second.second));
@@ -1324,7 +1334,7 @@ HandleValIntvlMap MinerUtils::simple_unify(const HandleSeq &pat, const HandleSeq
 		       result :
 		       throw RuntimeException(TRACE_INFO, "Error type checking pattern.");
 	if (mch.empty()) {
-		for (const Handle g : pat) {
+		for (const Handle& g : pat) {
 			if (g->get_type() != GLOB_NODE)
 				throw RuntimeException(TRACE_INFO, "Error type checking pattern.");
 			result.insert({g, {{}, {0, 0}}});
@@ -1372,7 +1382,7 @@ HandleValIntvlMap MinerUtils::simple_unify(const HandleSeq &pat, const HandleSeq
 
 void MinerUtils::extend_seq_map(HandleValIntvlMap &sup, const HandleValIntvlMap &sub)
 {
-	for (const auto pair :sub)
+	for (const auto& pair :sub)
 	{
 		auto pos = sup.find(pair.first);
 		if (pos == sup.end())
