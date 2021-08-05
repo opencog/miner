@@ -22,6 +22,7 @@
  */
 
 #include "MinerUtils.h"
+#include "MinerLogger.h"
 
 #include <opencog/util/dorepeat.h>
 #include <opencog/util/random.h>
@@ -499,6 +500,15 @@ HandleSet MinerUtils::shallow_specialize(const Handle& pattern,
                                          bool glob_support,
                                          const HandleSeq& ignore)
 {
+	// LAZY_MINER_LOG_FINE << "MinerUtils::shallow_specialize("
+	//                     << "pattern=" << oc_to_string(pattern)
+	//                     << ", db=" << oc_to_string(db)
+	//                     << ", ms=" << ms
+	//                     << ", mv=" << mv
+	//                     << ", type_check=" << type_check
+	//                     << ", glob_support=" << glob_support
+	//                     << ", ignore=" << oc_to_string(ignore) << ")";
+
 	// Calculate all shallow abstractions of pattern
 	HandleSetSeq shabs_per_var =
 			shallow_abstract(pattern, db, ms, type_check, glob_support, ignore);
