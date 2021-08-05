@@ -1309,10 +1309,10 @@ Handle MinerUtils::type_restrict_pattern(const HandleSeqMap::value_type &pair)
 
 	HandleSeq t_decls;
 	HandleValIntvlMap vvmap;
-	for (const Handle v : pair.second)
+	for (const Handle& v : pair.second)
 		extend_seq_map(vvmap, simple_unify(body->getOutgoingSet(),
 		                                   v->getOutgoingSet()));
-	for (const auto vvpair : vvmap)
+	for (const auto& vvpair : vvmap)
 		t_decls.push_back(lwst_com_types_decl(vvpair.first,
 				HandleSeq(vvpair.second.first.begin(), vvpair.second.first.end()),
 				vvpair.second.second));
@@ -1334,7 +1334,7 @@ HandleValIntvlMap MinerUtils::simple_unify(const HandleSeq &pat, const HandleSeq
 		       result :
 		       throw RuntimeException(TRACE_INFO, "Error type checking pattern.");
 	if (mch.empty()) {
-		for (const Handle g : pat) {
+		for (const Handle& g : pat) {
 			if (g->get_type() != GLOB_NODE)
 				throw RuntimeException(TRACE_INFO, "Error type checking pattern.");
 			result.insert({g, {{}, {0, 0}}});
@@ -1382,7 +1382,7 @@ HandleValIntvlMap MinerUtils::simple_unify(const HandleSeq &pat, const HandleSeq
 
 void MinerUtils::extend_seq_map(HandleValIntvlMap &sup, const HandleValIntvlMap &sub)
 {
-	for (const auto pair :sub)
+	for (const auto& pair :sub)
 	{
 		auto pos = sup.find(pair.first);
 		if (pos == sup.end())
