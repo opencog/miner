@@ -1499,6 +1499,14 @@ TypeSet MinerUtils::lwst_com_types(TypeSet tsets)
 	return common_types;
 }
 
+bool MinerUtils::content_is_in(const Handle& h, const HandleSeq& hs)
+{
+	for (const Handle& o : hs)
+		if (content_eq(h, o))
+			return true;
+	return false;
+}
+
 std::string oc_to_string(const HandleSeqSeqSeq& hsss,
                          const std::string& indent)
 {

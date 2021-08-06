@@ -821,6 +821,9 @@ public:
 	static HandleValIntvlMap simple_unify(const HandleSeq &pat, const HandleSeq &val);
 
 	static void extend_seq_map(HandleValIntvlMap &sup, const HandleValIntvlMap &sub);
+
+	// Return true if h is in hs based on content_eq
+	static bool content_is_in(const Handle& h, const HandleSeq& hs);
 };
 
 /**
