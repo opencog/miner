@@ -60,6 +60,13 @@ HandleSetSeq MinerUtils::shallow_abstract(const Valuations& valuations,
                                           bool glob_support,
                                           const HandleSeq& ignore)
 {
+	// LAZY_MINER_LOG_FINE << "MinerUtils::shallow_abstract(valuations="
+	//                     << oc_to_string(valuations)
+	//                     << ", ms=" << ms
+	//                     << ", type_check=" << type_check
+	//                     << ", glob_support=" << glob_support
+	//                     << ", ignore=" << oc_to_string(ignore);
+
 	// Base case
 	if (valuations.no_focus())
 		return HandleSetSeq();
