@@ -112,7 +112,10 @@ public:
 	 *
 	 * (Evaluation
 	 *   (Predicate "minsup")
-	 *   (List pattern (Concept "db") minsup))
+	 *   (List
+	 *     pattern
+	 *     db-cpt
+	 *     minsup))
 	 *
 	 * return pattern.
 	 *

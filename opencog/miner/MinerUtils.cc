@@ -74,7 +74,7 @@ HandleSetSeq MinerUtils::shallow_abstract(const Valuations& valuations,
 	// Recursive case
 	HandleSetSeq shabs_per_var{
 		// Don't specialize the focused variable if it is in ignore
-		content_is_in(valuations.focus_variable(), ignore) ?
+		content_contains(ignore, valuations.focus_variable()) ?
 		// We have to pass empty shallow abstractions for ignored variables to tell
 		// the shallow_specialize code to ignore them gracefully.
 		HandleSet()
@@ -413,7 +413,7 @@ Handle MinerUtils::compose_nocheck(const Handle& pattern, const HandlePair& var2
 	if (nameserver().isA(val->get_type(), VARIABLE_NODE)) {
 		Handle sa_decl = pvars.get_type_decl(var, val);
 		pvars.erase(var2pat.first);
-		if (not pvars.is_in_varset(val)) pvars.extend(Variables(sa_decl));
+		if (not pvars.varset_contains(val)) pvars.extend(Variables(sa_decl));
 	}
 	else {
 		pvars.erase(var2pat.first);
@@ -832,7 +832,7 @@ bool MinerUtils::is_pat_syntax_more_abstract(const Handle& l_pat,
 	Handle r_body = MinerUtils::get_body(r_pat);
 
 	// Let's first make sure that var is both in l_pat and r_pat
-	if (not l_vars.is_in_varset(var) or not r_vars.is_in_varset(var))
+	if (not l_vars.varset_contains(var) or not r_vars.varset_contains(var))
 		return false;
 
 	// Remove var from l_vars and r_vars to be considered as value
@@ -934,13 +934,13 @@ Handle MinerUtils::alpha_convert(const Handle& pattern,
 	// Detect collision between pattern_vars and other_vars
 	HandleMap aconv;
 	for (const Handle& var : pattern_vars.varset) {
-		if (other_vars.is_in_varset(var)) {
+		if (other_vars.varset_contains(var)) {
 			Handle nvar;
 			bool used;
 			do {
 				nvar = createNode(VARIABLE_NODE, randstr(var->get_name() + "-"));
 				// Make sure it is not in other_vars or pattern_vars
-				used = other_vars.is_in_varset(nvar) or pattern_vars.is_in_varset(nvar);
+				used = other_vars.varset_contains(nvar) or pattern_vars.varset_contains(nvar);
 			} while (used);
 			aconv[var] = nvar;
 		}
@@ -962,7 +962,7 @@ bool MinerUtils::is_value(const Unify::HandleCHandleMap::value_type& var_val,
                           const Variables& vars,
                           const Handle& var)
 {
-	return vars.is_in_varset(var_val.first)
+	return vars.varset_contains(var_val.first)
 		and (var_val.second == Unify::CHandle(var)
 		     or not var_val.second.is_free_variable());
 }
@@ -1493,14 +1493,6 @@ TypeSet MinerUtils::lwst_com_types(TypeSet tsets)
 	}
 	if (add_tp) common_types.insert(tp);
 	return common_types;
-}
-
-bool MinerUtils::content_is_in(const Handle& h, const HandleSeq& hs)
-{
-	for (const Handle& o : hs)
-		if (content_eq(h, o))
-			return true;
-	return false;
 }
 
 std::string oc_to_string(const HandleSeqSeqSeq& hsss,

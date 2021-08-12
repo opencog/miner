@@ -36,7 +36,7 @@ typedef std::map<Handle, HandleTree> HandleHandleTreeMap;
 
 bool content_eq(const HandleTree& htl, const HandleTree& htr);
 bool content_eq(HandleTree::iterator itl, HandleTree::iterator itr);
-bool content_is_in(const Handle& h, const HandleTree& ht);
+bool content_contains(const HandleTree& ht, const Handle& h);
 
 /**
  * Given a list of forests of patterns, merge them into a forest such

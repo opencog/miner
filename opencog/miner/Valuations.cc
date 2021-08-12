@@ -193,7 +193,7 @@ Valuations::Valuations(const Variables& vars)
 const SCValuations& Valuations::get_scvaluations(const Handle& var) const
 {
 	for (const SCValuations& scv : scvs)
-		if (scv.variables.is_in_varset(var))
+		if (scv.variables.varset_contains(var))
 			return scv;
 	throw RuntimeException(TRACE_INFO, "There's likely a bug");
 }

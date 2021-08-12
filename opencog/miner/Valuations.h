@@ -201,7 +201,7 @@ public:
 	 */
 	bool empty() const;
 
-	std::string to_string(const std::string& indent) const;
+	std::string to_string(const std::string& indent=empty_string) const;
 
 	SCValuationsSet scvs;
 
