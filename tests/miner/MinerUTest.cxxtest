@@ -241,7 +241,7 @@ Handle MinerUTest::mk_nconjunct(unsigned n)
 bool MinerUTest::are_in(const HandleSeq& es, const HandleSeq& c)
 {
 	for (const Handle &e : es)
-		if (not is_in(e, c))
+		if (not contains(c, e))
 			return false;
 	return true;
 }
@@ -1069,7 +1069,7 @@ void MinerUTest::test_AB_redundant_cnj()
 	logger().debug() << "results = " << oc_to_string(results->getOutgoingSet());
 	logger().debug() << "no_expect = " << oc_to_string(no_expect);
 
-	TS_ASSERT(not is_in(no_expect, results->getOutgoingSet()));
+	TS_ASSERT(not contains(results->getOutgoingSet(), no_expect));
 }
 
 void MinerUTest::test_AB_AC()
@@ -1095,7 +1095,7 @@ void MinerUTest::test_AB_AC()
 	logger().debug() << "ure_results = " << oc_to_string(ure_results);
 	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
 
-	TS_ASSERT(is_in(ure_expected, ure_results->getOutgoingSet()));
+	TS_ASSERT(contains(ure_results->getOutgoingSet(), ure_expected));
 }
 
 void MinerUTest::test_AB_AC_BC()
@@ -1266,7 +1266,7 @@ void MinerUTest::test_ABAB()
 	logger().debug() << "ure_results = " << oc_to_string(ure_results);
 	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
 
-	TS_ASSERT(is_in(ure_expected, ure_results->getOutgoingSet()));
+	TS_ASSERT(contains(ure_results->getOutgoingSet(), ure_expected));
 }
 
 void MinerUTest::test_AAAA()
@@ -1309,7 +1309,7 @@ void MinerUTest::test_AAAA()
 	logger().debug() << "ure_results = " << oc_to_string(ure_results);
 	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
 
-	TS_ASSERT(is_in(ure_expected, ure_results->getOutgoingSet()));
+	TS_ASSERT(contains(ure_results->getOutgoingSet(), ure_expected));
 }
 
 void MinerUTest::test_glob()
@@ -1414,7 +1414,7 @@ void MinerUTest::test_long_transitivity()
 	logger().debug() << "results = " << oc_to_string(results);
 	logger().debug() << "expected = " << oc_to_string(expected);
 
-	TS_ASSERT(is_in(expected, results->getOutgoingSet()));
+	TS_ASSERT(contains(results->getOutgoingSet(), expected));
 }
 
 void MinerUTest::test_no_transitivity()
@@ -1442,7 +1442,7 @@ void MinerUTest::test_no_transitivity()
 	logger().debug() << "results = " << oc_to_string(results);
 	logger().debug() << "not_expect = " << oc_to_string(not_expect);
 
-	TS_ASSERT(not is_in(not_expect, results->getOutgoingSet()));
+	TS_ASSERT(not contains(results->getOutgoingSet(), not_expect));
 }
 
 void MinerUTest::test_evaluation()
@@ -1474,7 +1474,7 @@ void MinerUTest::test_evaluation()
 	logger().debug() << "ure_results = " << oc_to_string(ure_results);
 	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
 
-	TS_ASSERT(is_in(ure_expected, ure_results->getOutgoingSet()));
+	TS_ASSERT(contains(ure_results->getOutgoingSet(), ure_expected));
 }
 
 void MinerUTest::test_variable_factorization()
@@ -1502,7 +1502,7 @@ void MinerUTest::test_variable_factorization()
 	logger().debug() << "ure_results = " << oc_to_string(ure_results);
 	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
 
-	TS_ASSERT(is_in(ure_expected, ure_results->getOutgoingSet()));
+	TS_ASSERT(contains(ure_results->getOutgoingSet(), ure_expected));
 }
 
 void MinerUTest::test_type_support_1()
@@ -1883,7 +1883,7 @@ void MinerUTest::test_2conjuncts_2()
 	logger().debug() << "ure_results = " << oc_to_string(ure_results);
 	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
 
-	TS_ASSERT(is_in(ure_expected, ure_results->getOutgoingSet()));
+	TS_ASSERT(contains(ure_results->getOutgoingSet(), ure_expected));
 }
 
 void MinerUTest::test_2conjuncts_3()
@@ -1926,7 +1926,7 @@ void MinerUTest::test_2conjuncts_3()
 	logger().debug() << "ure_results = " << oc_to_string(ure_results);
 	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
 
-	TS_ASSERT(is_in(ure_expected, ure_results->getOutgoingSet()));
+	TS_ASSERT(contains(ure_results->getOutgoingSet(), ure_expected));
 }
 
 void MinerUTest::test_2conjuncts_4()
@@ -1970,7 +1970,7 @@ void MinerUTest::test_2conjuncts_4()
 	logger().debug() << "ure_results = " << oc_to_string(ure_results);
 	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
 
-	TS_ASSERT(is_in(ure_expected, ure_results->getOutgoingSet()));
+	TS_ASSERT(contains(ure_results->getOutgoingSet(), ure_expected));
 }
 
 void MinerUTest::test_2conjuncts_5()
@@ -2199,7 +2199,7 @@ void MinerUTest::test_InferenceControl()
 
 	logger().debug() << "ure_results = " << oc_to_string(ure_results);
 
-	TS_ASSERT(is_in(ure_expected, ure_results->getOutgoingSet()));
+	TS_ASSERT(contains(ure_results->getOutgoingSet(), ure_expected));
 }
 
 void MinerUTest::test_SodaDrinker()
@@ -2260,7 +2260,7 @@ void MinerUTest::test_SodaDrinker()
 	logger().debug() << "ure_results = " << oc_to_string(ure_results);
 	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
 
-	TS_ASSERT(is_in(ure_expected, ure_results->getOutgoingSet()));
+	TS_ASSERT(contains(ure_results->getOutgoingSet(), ure_expected));
 }
 
 // Like test_SodaDrinker but starts with the most abstract pattern and
@@ -2322,7 +2322,7 @@ void MinerUTest::test_SodaDrinker_incremental()
 	logger().debug() << "ure_results = " << oc_to_string(ure_results->getOutgoingSet());
 	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
 
-	TS_ASSERT(is_in(ure_expected, ure_results->getOutgoingSet()));
+	TS_ASSERT(contains(ure_results->getOutgoingSet(), ure_expected));
 
 	// Test I-Surprisingness
 	std::string mode("nisurp-old");
@@ -2459,7 +2459,7 @@ void MinerUTest::test_vqa()
 	logger().debug() << "results = " << oc_to_string(results->getOutgoingSet());
 	logger().debug() << "expect = " << oc_to_string(expect);
 
-	TS_ASSERT(is_in(expect, results->getOutgoingSet()));
+	TS_ASSERT(contains(results->getOutgoingSet(), expect));
 }
 
 #undef al
