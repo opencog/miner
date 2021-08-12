@@ -1373,7 +1373,7 @@ void MinerUTest::test_transitivity()
 	logger().debug() << "results = " << oc_to_string(results);
 	logger().debug() << "expected = " << oc_to_string(expected);
 
-	TS_ASSERT(is_in(expected, results->getOutgoingSet()));
+	TS_ASSERT(contains(results->getOutgoingSet(), expected));
 }
 
 void MinerUTest::test_long_transitivity()
