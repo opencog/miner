@@ -1253,7 +1253,7 @@ void MinerUTest::test_ABAB()
 	logger().debug() << "cpp_results = " << oc_to_string(cpp_results);
 	logger().debug() << "cpp_expected = " << oc_to_string(cpp_expected);
 
-	TS_ASSERT(content_is_in(cpp_expected, cpp_results));
+	TS_ASSERT(content_contains(cpp_results, cpp_expected));
 
 	// Run URE pattern miner
 	Handle ure_results = ure_pm(db, 2, 10, initpat),
@@ -1296,7 +1296,7 @@ void MinerUTest::test_AAAA()
 	logger().debug() << "cpp_results = " << oc_to_string(cpp_results);
 	logger().debug() << "cpp_expected = " << oc_to_string(cpp_expected);
 
-	TS_ASSERT(content_is_in(cpp_expected, cpp_results));
+	TS_ASSERT(content_contains(cpp_results, cpp_expected));
 
 	// Run URE pattern miner
 	Handle ure_results = ure_pm(db, 2, 50, initpat),
@@ -1465,7 +1465,7 @@ void MinerUTest::test_evaluation()
 	logger().debug() << "cpp_results = " << oc_to_string(cpp_results);
 	logger().debug() << "cpp_expected = " << oc_to_string(cpp_expected);
 
-	TS_ASSERT(content_is_in(cpp_expected, cpp_results));
+	TS_ASSERT(content_contains(cpp_results, cpp_expected));
 
 	// Run URE pattern miner
 	Handle ure_results = ure_pm(db, 2, 5),
@@ -1801,7 +1801,7 @@ void MinerUTest::test_ignore_var_3()
 	// means that it hasn't been specialized).
 	for (const Handle& h : ure_results->getOutgoingSet()) {
 		Variables vars(MinerUtils::get_variables(MinerUTestUtils::get_pattern(h)));
-		TS_ASSERT(vars.is_in_varset(T));
+		TS_ASSERT(vars.varset_contains(T));
 	}
 }
 
@@ -1858,14 +1858,14 @@ void MinerUTest::test_2conjuncts_2()
 	// Define initpat
 	Handle initpat = MinerUtils::mk_pattern(VarXYZW, {InhXY, InhZW});
 
-//	// Run C++ pattern miner
-//	HandleTree cpp_results = cpp_pm(_as, 2, 2, initpat);
-//	Handle cpp_expected = MinerUtils::mk_pattern(VarXYZ, {InhXY, InhYZ});
-//
-//	logger().debug() << "cpp_results = " << oc_to_string(cpp_results);
-//	logger().debug() << "cpp_expected = " << oc_to_string(cpp_expected);
-//
-//	TS_ASSERT(content_is_in(cpp_expected, cpp_results));
+	// Run C++ pattern miner
+	HandleTree cpp_results = cpp_pm(_as, 2, 2, initpat);
+	Handle cpp_expected = MinerUtils::mk_pattern(VarXYZ, {InhXY, InhYZ});
+
+	logger().debug() << "cpp_results = " << oc_to_string(cpp_results);
+	logger().debug() << "cpp_expected = " << oc_to_string(cpp_expected);
+
+	TS_ASSERT(content_contains(cpp_results, cpp_expected));
 
 	// Run URE pattern miner
 	int ms = 2;
@@ -1908,7 +1908,7 @@ void MinerUTest::test_2conjuncts_3()
 	logger().debug() << "cpp_results = " << oc_to_string(cpp_results);
 	logger().debug() << "cpp_expected = " << oc_to_string(cpp_expected);
 
-	TS_ASSERT(content_is_in(cpp_expected, cpp_results));
+	TS_ASSERT(content_contains(cpp_results, cpp_expected));
 
 	// Run URE pattern miner
 	int ms = 2;
@@ -1952,7 +1952,7 @@ void MinerUTest::test_2conjuncts_4()
 	logger().debug() << "cpp_results = " << oc_to_string(cpp_results);
 	logger().debug() << "cpp_expected = " << oc_to_string(cpp_expected);
 
-	TS_ASSERT(content_is_in(cpp_expected, cpp_results));
+	TS_ASSERT(content_contains(cpp_results, cpp_expected));
 
 	// Run URE pattern miner
 	int ms = 4;
@@ -2012,7 +2012,7 @@ void MinerUTest::test_2conjuncts_5()
 	logger().debug() << "results = " << oc_to_string(results);
 	logger().debug() << "non_expected = " << oc_to_string(non_expected);
 
-	TS_ASSERT(not content_is_in(non_expected, results));
+	TS_ASSERT(not content_contains(results, non_expected));
 }
 
 void MinerUTest::test_2conjuncts_6()
@@ -2184,7 +2184,7 @@ void MinerUTest::test_InferenceControl()
 
 	logger().debug() << "cpp_results = " << oc_to_string(cpp_results);
 
-	TS_ASSERT(content_is_in(expected, cpp_results));
+	TS_ASSERT(content_contains(cpp_results, expected));
 
 	// Run URE pattern miner
 	int ms = 2;
@@ -2244,7 +2244,7 @@ void MinerUTest::test_SodaDrinker()
 
 	logger().debug() << "cpp_results = " << oc_to_string(cpp_results);
 
-	TS_ASSERT(content_is_in(expected, cpp_results));
+	TS_ASSERT(content_contains(cpp_results, expected));
 
 	// Run URE pattern miner
 	int ms = 5;
@@ -2387,7 +2387,7 @@ void MinerUTest::xtest_lojban()
 	logger().debug() << "results = " << oc_to_string(results);
 	logger().debug() << "expected_pattern = " << oc_to_string(expected_pattern);
 
-	TS_ASSERT(content_is_in(expected_pattern, results));
+	TS_ASSERT(content_contains(results, expected_pattern));
 }
 
 void MinerUTest::test_vqa()

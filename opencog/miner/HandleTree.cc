@@ -52,7 +52,7 @@ bool content_eq(HandleTree::iterator itl, HandleTree::iterator itr)
 	return (sibl == itl.end()) == (sibr == itr.end());
 }
 
-bool content_is_in(const Handle& h, const HandleTree& ht)
+bool content_contains(const HandleTree& ht, const Handle& h)
 {
 	// TODO: optimize
 	for (const Handle& oh : ht)
