@@ -150,9 +150,8 @@ void SurprisingnessUTest::load_ugly_male_soda_drinker_corpus()
 	std::string rs =
 		_scm.eval("(load-from-path \"ugly-male-soda-drinker-corpus.scm\")");
 	logger().debug() << "rs = " << rs;
-	HandleSet db;
-	_as.get_handles_by_type(std::inserter(db, db.end()),
-	                        opencog::INHERITANCE_LINK, true);
+	HandleSeq db;
+	_as.get_handles_by_type(db, opencog::INHERITANCE_LINK, true);
 	for (const Handle& dt : db)
 		al(MEMBER_LINK, dt, _db_cpt);
 }

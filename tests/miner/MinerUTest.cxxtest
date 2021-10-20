@@ -897,8 +897,7 @@ void MinerUTest::test_shallow_abstract()
 
 	// Define db
 	HandleSeq db;
-	_tmp_as.get_handles_by_type(std::inserter(db, db.end()),
-	                            opencog::ATOM, true);
+	_tmp_as.get_handles_by_type(db, opencog::ATOM, true);
 
 	// Define minimum support
 	int ms = 5;
