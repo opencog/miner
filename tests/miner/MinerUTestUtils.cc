@@ -163,8 +163,7 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
                                std::vector<std::string> ignore_set)
 {
 	HandleSeq db;
-	db_as.get_handles_by_type(std::inserter(db, db.end()),
-	                          opencog::ATOM, true);
+	db_as.get_handles_by_type(db, opencog::ATOM, true);
 	return ure_pm(as, scm, pm_rb, db, minsup, maximum_iterations, initpat,
 	              conjunction_expansion, max_conjuncts, max_variables,
 	              max_spcial_conjuncts, max_cnjexp_variables,

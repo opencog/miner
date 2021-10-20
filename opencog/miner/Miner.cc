@@ -76,8 +76,7 @@ Miner::Miner(const MinerParameters& prm)
 HandleTree Miner::operator()(const AtomSpace& db_as)
 {
 	HandleSeq db;
-	db_as.get_handles_by_type(std::inserter(db, db.end()),
-	                          opencog::ATOM, true);
+	db_as.get_handles_by_type(db, opencog::ATOM, true);
 	return operator()(db);
 }
 
