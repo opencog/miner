@@ -71,7 +71,10 @@ MinerParameters::MinerParameters(unsigned ms, unsigned iconjuncts,
 }
 
 Miner::Miner(const MinerParameters& prm)
-	: param(prm) {}
+	: param(prm)
+{
+	tmp_as = createAtomSpace(); // Hmm Not used anywhere ...
+}
 
 HandleTree Miner::operator()(const AtomSpace& db_as)
 {

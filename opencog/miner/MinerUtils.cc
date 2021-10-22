@@ -616,25 +616,25 @@ Handle MinerUtils::restricted_satisfying_set(const Handle& pattern,
                                              const HandleSeq& db,
                                              unsigned ms)
 {
-	static AtomSpace tmp_db_as; // TODO: fix to be thread safe
-	tmp_db_as.clear();
+	static AtomSpacePtr tmp_db_as = createAtomSpace(); // TODO: fix to be thread safe
+	tmp_db_as->clear();
 	HandleSeq tmp_db;
 	for (const auto& dt : db)
-		tmp_db.push_back(tmp_db_as.add_atom(dt));
+		tmp_db.push_back(tmp_db_as->add_atom(dt));
 
 	// Avoid pattern matcher warning
 	if (totally_abstract(pattern) and n_conjuncts(pattern) == 1)
-		return tmp_db_as.add_link(SET_LINK, std::move(tmp_db));
+		return tmp_db_as->add_link(SET_LINK, std::move(tmp_db));
 
 	// Define pattern to run
-	AtomSpace tmp_query_as(&tmp_db_as);
-	Handle tmp_pattern = tmp_query_as.add_atom(pattern),
+	AtomSpacePtr tmp_query_as(createAtomSpace(tmp_db_as));
+	Handle tmp_pattern = tmp_query_as->add_atom(pattern),
 		vardecl = get_vardecl(tmp_pattern),
 		body = get_body(tmp_pattern),
-		gl = tmp_query_as.add_link(GET_LINK, vardecl, body);
+		gl = tmp_query_as->add_link(GET_LINK, vardecl, body);
 
 	// Run pattern matcher
-	SatisfyingSet sater(&tmp_db_as);
+	SatisfyingSet sater(tmp_db_as.get());
 	sater.max_results = ms;
 	sater.satisfy(PatternLinkCast(gl));
 

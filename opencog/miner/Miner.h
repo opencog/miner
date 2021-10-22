@@ -138,7 +138,7 @@ public:
 
 private:
 
-	mutable AtomSpace tmp_as;
+	mutable AtomSpacePtr tmp_as;
 
 	/**
 	 * Return true iff maxdepth is null or pattern is not a lambda or
