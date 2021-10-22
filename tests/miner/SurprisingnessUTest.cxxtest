@@ -47,7 +47,8 @@ using namespace std;
 class SurprisingnessUTest : public CxxTest::TestSuite
 {
 private:
-	AtomSpace _as;
+	AtomSpacePtr _asp;
+	AtomSpace& _as;
 	SchemeEval _scm;
 
 	// Surprisingness rule base
@@ -209,7 +210,8 @@ void SurprisingnessUTest::populate_uniform_ternary_list_links(unsigned n_cpts,
 	// logger().debug() << "AtomSpace:" << std::endl << _as;
 }
 
-SurprisingnessUTest::SurprisingnessUTest() : _scm(&_as)
+SurprisingnessUTest::SurprisingnessUTest() :
+	_asp(createAtomSpace()), _as(*_asp.get()), _scm(_asp)
 {
 	randGen().seed(0);
 

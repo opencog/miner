@@ -53,8 +53,10 @@ using namespace std;
 class MinerUTest : public CxxTest::TestSuite
 {
 private:
-	AtomSpace _as;
-	AtomSpace _tmp_as;
+	AtomSpacePtr _asp;
+	AtomSpacePtr _tmp_asp;
+	AtomSpace& _as;
+	AtomSpace& _tmp_as;
 	SchemeEval _scm;
 	SchemeEval _tmp_scm;
 
@@ -316,7 +318,10 @@ HandleTree MinerUTest::cpp_pm(const HandleSeq& db,
 	return MinerUTestUtils::cpp_pm(db, minsup, conjuncts, initpat, maxdepth);
 }
 
-MinerUTest::MinerUTest() : _scm(&_as), _tmp_scm(&_tmp_as)
+MinerUTest::MinerUTest() :
+	_asp(createAtomSpace()), _tmp_asp(createAtomSpace()),
+	_as(*_asp.get()), _tmp_as(*_asp.get()),
+	_scm(&_as), _tmp_scm(&_tmp_as)
 {
 	randGen().seed(0);
 

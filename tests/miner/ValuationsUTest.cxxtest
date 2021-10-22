@@ -35,13 +35,13 @@
 using namespace opencog;
 using namespace std;
 
-#define al _as.add_link
-#define an _as.add_node
+#define al _as->add_link
+#define an _as->add_node
 
 class ValuationsUTest : public CxxTest::TestSuite
 {
 private:
-	AtomSpace _as;
+	AtomSpacePtr _as;
 
 public:
 	ValuationsUTest();
@@ -68,6 +68,8 @@ ValuationsUTest::ValuationsUTest()
 	miner_logger().set_timestamp_flag(false);
 	// miner_logger().set_sync_flag(true);
 	miner_logger().set_print_to_stdout_flag(true);
+
+	_as = createAtomSpace();
 }
 
 ValuationsUTest::~ValuationsUTest() {}
@@ -78,7 +80,7 @@ void ValuationsUTest::setUp()
 
 void ValuationsUTest::tearDown()
 {
-	_as.clear();
+	_as->clear();
 }
 
 void ValuationsUTest::test_valuations_ctor()
