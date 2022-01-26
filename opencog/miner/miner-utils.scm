@@ -996,9 +996,9 @@
                                        #:glob-support glob-support
                                        #:ignore ignore))
 
-	       (dummy (miner-logger-debug "Initial pattern:\n~a" (get-initial-pattern)))
-	       (dummy (miner-logger-debug "Has enough support (min support = ~a)" ms))
-	       (dummy (miner-logger-debug "Launch URE-based pattern mining"))
+               (dummy (miner-logger-debug "Initial pattern:\n~a" (get-initial-pattern)))
+               (dummy (miner-logger-debug "Has enough support (min support = ~a)" ms))
+               (dummy (miner-logger-debug "Launch URE-based pattern mining"))
 
                ;; Run pattern miner in a forward way
                (results (cog-fc miner-rbs source))
@@ -1010,7 +1010,7 @@
 
               ;; No surprisingness, simple return the pattern list
               (let* ((parent-patterns-lst (cog-cp parent-as patterns-lst)))
-		(miner-logger-debug "No surprisingness measure, end pattern miner now")
+                (miner-logger-debug "No surprisingness measure, end pattern miner now")
                 (cog-set-atomspace! parent-as)
                 parent-patterns-lst)
 
@@ -1019,7 +1019,7 @@
                   ;; Configure surprisingness backward chainer
                   ((dummy (miner-logger-debug "Call surprisingness on mined patterns"))
 
-		   (surp-rbs (random-surprisingness-rbs-cpt))
+                   (surp-rbs (random-surprisingness-rbs-cpt))
                    (target (surp-target su db-cpt))
                    (vardecl (surp-vardecl))
                    (cfg-s (configure-surprisingness surp-rbs su mc db-ratio))
@@ -1031,7 +1031,7 @@
 
                    ;; Copy the results to the parent atomspace
                    (parent-surp-res (cog-cp parent-as surp-res-sort-lst)))
-		(miner-logger-debug "End pattern miner")
+                (miner-logger-debug "End pattern miner")
                 (cog-set-atomspace! parent-as)
                 parent-surp-res))))))
 

@@ -1308,7 +1308,7 @@ Handle MinerUtils::type_restrict_pattern(const HandleSeqMap::value_type &pair)
 	Handle body = pat->get_body();
 
 	if (not vars._typemap.empty())        // Vars in this pattern are
-		return pair.first;                // already type restricted.
+		return pair.first;                 // already type restricted.
 
 	HandleSeq t_decls;
 	HandleValIntvlMap vvmap;
@@ -1487,7 +1487,7 @@ TypeSet MinerUtils::lwst_com_types(TypeSet tsets)
 			break;
 		}
 		if (nameserver().isA(tp, *itr)) {       // tp is lower than existing types
-			common_types.erase(itr);            // in common_types.
+			common_types.erase(itr);             // in common_types.
 			break;
 		}
 	}

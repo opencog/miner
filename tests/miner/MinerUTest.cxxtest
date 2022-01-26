@@ -1532,8 +1532,8 @@ void MinerUTest::test_type_support_1()
 	Handle ure_results = ure_pm(db, 2, 10, Handle::UNDEFINED,
 	                            false, UINT_MAX, UINT_MAX, 1, UINT_MAX, true, 0.0, true);
 	Handle ure_expected = mk_minsup_evals(2, {top,
-										   MinerUtils::mk_pattern(VarY, {al(INHERITANCE_LINK, A, Y)}),
-										   MinerUtils::mk_pattern(VarXY, {InhXY})});
+			MinerUtils::mk_pattern(VarY, {al(INHERITANCE_LINK, A, Y)}),
+			MinerUtils::mk_pattern(VarXY, {InhXY})});
 
 	logger().debug() << "ure_results = " << oc_to_string(ure_results);
 	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
@@ -1568,8 +1568,8 @@ void MinerUTest::test_type_support_2()
 	Handle ure_results = ure_pm(db, 2, 10, Handle::UNDEFINED,
 	                            false, UINT_MAX, UINT_MAX, 1, UINT_MAX, true, 0.0, true);
 	Handle ure_expected = mk_minsup_evals(2, {top,
-	                                          MinerUtils::mk_pattern(VarY, {al(INHERITANCE_LINK, A, Y)}),
-	                                          MinerUtils::mk_pattern(VarXY, {InhXY})});
+			MinerUtils::mk_pattern(VarY, {al(INHERITANCE_LINK, A, Y)}),
+			MinerUtils::mk_pattern(VarXY, {InhXY})});
 
 	logger().debug() << "ure_results = " << oc_to_string(ure_results);
 	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
