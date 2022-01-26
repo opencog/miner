@@ -35,6 +35,7 @@
 #include <opencog/miner/HandleTree.h>
 #include <opencog/miner/Miner.h>
 #include <opencog/miner/Surprisingness.h>
+#include <opencog/miner/MinerLogger.h>
 #include <opencog/ure/URELogger.h>
 #include <opencog/guile/SchemeEval.h>
 
@@ -123,9 +124,9 @@ private:
 	              unsigned max_cnjexp_variables=UINT_MAX,
 	              bool enforce_specialization=true,
 	              double complexity_penalty=0.0,
-	              bool type_check=false,
-	              bool glob_support=false,
-	              std::vector<std::string> ignore_set={});
+	              bool enable_type=false,
+	              bool enable_glob=false,
+	              std::vector<std::string> ignore_vars={});
 	Handle ure_pm(const HandleSeq& db, int minsup,
 	              int max_iter=-1, Handle initpat=Handle::UNDEFINED,
 	              bool conjunction_expansion=false,
@@ -135,9 +136,9 @@ private:
 	              unsigned max_cnjexp_variables=UINT_MAX,
 	              bool enforce_specialization=true,
 	              double complexity_penalty=0.0,
-	              bool type_check=false,
-	              bool glob_support=false,
-	              std::vector<std::string> ignore_set={});
+	              bool enable_type=false,
+	              bool enable_glob=false,
+	              std::vector<std::string> ignore_vars={});
 
 	/**
 	 * Configure the C++ Miner and run it.
@@ -257,9 +258,9 @@ Handle MinerUTest::ure_pm(const AtomSpace& db_as, int minsup,
                           unsigned max_cnjexp_variables,
                           bool enforce_specialization,
                           double complexity_penalty,
-                          bool type_check,
-                          bool glob_support,
-                          vector<string> ignore_set)
+                          bool enable_type,
+                          bool enable_glob,
+                          vector<string> ignore_vars)
 {
 	return MinerUTestUtils::ure_pm(_as, _scm, pm_rb, db_as, minsup,
 	                               maximum_iterations, initpat,
@@ -269,9 +270,9 @@ Handle MinerUTest::ure_pm(const AtomSpace& db_as, int minsup,
 	                               max_cnjexp_variables,
 	                               enforce_specialization,
 	                               complexity_penalty,
-	                               type_check,
-	                               glob_support,
-	                               ignore_set);
+	                               enable_type,
+	                               enable_glob,
+	                               ignore_vars);
 }
 
 Handle MinerUTest::ure_pm(const HandleSeq& db, int minsup,
@@ -283,9 +284,9 @@ Handle MinerUTest::ure_pm(const HandleSeq& db, int minsup,
                           unsigned max_cnjexp_variables,
                           bool enforce_specialization,
                           double complexity_penalty,
-                          bool type_check,
-                          bool glob_support,
-                          vector<string> ignore_set)
+                          bool enable_type,
+                          bool enable_glob,
+                          vector<string> ignore_vars)
 {
 	return MinerUTestUtils::ure_pm(_as, _scm, pm_rb, db, minsup,
 	                               maximum_iterations, initpat,
@@ -295,9 +296,9 @@ Handle MinerUTest::ure_pm(const HandleSeq& db, int minsup,
 	                               max_cnjexp_variables,
 	                               enforce_specialization,
 	                               complexity_penalty,
-	                               type_check,
-	                               glob_support,
-	                               ignore_set);
+	                               enable_type,
+	                               enable_glob,
+	                               ignore_vars);
 }
 
 HandleTree MinerUTest::cpp_pm(const AtomSpace& db_as,
@@ -336,6 +337,12 @@ MinerUTest::MinerUTest() :
 	ure_logger().set_timestamp_flag(false);
 	// ure_logger().set_sync_flag(true);
 	// ure_logger().set_print_to_stdout_flag(true);
+
+	// Miner logger
+	miner_logger().set_level(Logger::INFO);
+	miner_logger().set_timestamp_flag(false);
+	// miner_logger().set_sync_flag(true);
+	// miner_logger().set_print_to_stdout_flag(true);
 
 	// Configure scheme load-paths that are common for all tests.
 	_scm.eval("(add-to-load-path \"" PROJECT_SOURCE_DIR
@@ -1332,7 +1339,8 @@ void MinerUTest::test_glob()
 			VarGB12 = al(VARIABLE_SET, GB1, GB2);
 
 	Handle ure_results = ure_pm(db, 2, 10, Handle::UNDEFINED,
-	                            false, UINT_MAX, UINT_MAX, 1, UINT_MAX, true, 0.0, false, true),
+	                            false, UINT_MAX, UINT_MAX, 1, UINT_MAX,
+	                            true, 0.0, false, true),
 			ure_expected = mk_minsup_evals(2,
 			                               {top,
 			                                MinerUtils::mk_pattern(GB1, {p1}),
@@ -1529,11 +1537,13 @@ void MinerUTest::test_type_support_1()
 	                    Y, an(TYPE_INH_NODE, "Atom")));
 	Handle InhXY = al(INHERITANCE_LINK, X, Y);
 
+	bool enable_type = true;
 	Handle ure_results = ure_pm(db, 2, 10, Handle::UNDEFINED,
-	                            false, UINT_MAX, UINT_MAX, 1, UINT_MAX, true, 0.0, true);
+	                            false, UINT_MAX, UINT_MAX, 1, UINT_MAX,
+	                            true, 0.0, enable_type);
 	Handle ure_expected = mk_minsup_evals(2, {top,
-										   MinerUtils::mk_pattern(VarY, {al(INHERITANCE_LINK, A, Y)}),
-										   MinerUtils::mk_pattern(VarXY, {InhXY})});
+			MinerUtils::mk_pattern(VarY, {al(INHERITANCE_LINK, A, Y)}),
+			MinerUtils::mk_pattern(VarXY, {InhXY})});
 
 	logger().debug() << "ure_results = " << oc_to_string(ure_results);
 	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
@@ -1565,11 +1575,13 @@ void MinerUTest::test_type_support_2()
 	                    Y, TChoiceY));
 	Handle InhXY = al(INHERITANCE_LINK, X, Y);
 
+	bool enable_type = true;
 	Handle ure_results = ure_pm(db, 2, 10, Handle::UNDEFINED,
-	                            false, UINT_MAX, UINT_MAX, 1, UINT_MAX, true, 0.0, true);
+	                            false, UINT_MAX, UINT_MAX, 1, UINT_MAX,
+	                            true, 0.0, enable_type);
 	Handle ure_expected = mk_minsup_evals(2, {top,
-	                                          MinerUtils::mk_pattern(VarY, {al(INHERITANCE_LINK, A, Y)}),
-	                                          MinerUtils::mk_pattern(VarXY, {InhXY})});
+			MinerUtils::mk_pattern(VarY, {al(INHERITANCE_LINK, A, Y)}),
+			MinerUtils::mk_pattern(VarXY, {InhXY})});
 
 	logger().debug() << "ure_results = " << oc_to_string(ure_results);
 	logger().debug() << "ure_expected = " << oc_to_string(ure_expected);
@@ -1635,8 +1647,11 @@ void MinerUTest::test_typed_glob()
 			VarGB12_2 = al(VARIABLE_SET, VarGB0_1, VarGB1_1),
 			VarGB12_3 = al(VARIABLE_SET, VarGB0_1, VarGB2_2);
 
+	bool enable_type = true;
+	bool enable_glob = true;
 	Handle ure_results = ure_pm(db, 2, 20, Handle::UNDEFINED,
-	                            false, UINT_MAX, UINT_MAX, 1, UINT_MAX, true, 0.0, true, true),
+	                            false, UINT_MAX, UINT_MAX, 1, UINT_MAX,
+	                            true, 0.0, enable_type, enable_glob),
 			ure_expected = mk_minsup_evals(2,
 			                               {top,
 			                                MinerUtils::mk_pattern(VarGB1_3n, {p1}),
@@ -1674,12 +1689,12 @@ void MinerUTest::test_ignore_var_1()
 	Handle initpat = MinerUtils::mk_pattern_no_vardecl({InhXY});
 
 	// Ignore vars
-	vector<string> ignore_set = {"$Y"};
+	vector<string> ignore_vars = {"$Y"};
 
 	// Run URE pattern miner
 	Handle ure_results = ure_pm(db, 2, 10, initpat,
 	                            false, UINT_MAX, UINT_MAX, 1, UINT_MAX, true, 0.0,
-	                            false, false, ignore_set),
+	                            false, false, ignore_vars),
 			ure_expected = mk_minsup_evals(2,
 			                               {MinerUtils::mk_pattern(VarXY, {InhXY}),
 			                                MinerUtils::mk_pattern(Y, {InhAY}) });
@@ -1709,12 +1724,12 @@ void MinerUTest::test_ignore_var_2()
 	Handle initpat = MinerUtils::mk_pattern_no_vardecl({InhXY});
 
 	// Ignore vars
-	vector<string> ignore_set = {"$X"};
+	vector<string> ignore_vars = {"$X"};
 
 	// Run URE pattern miner
 	Handle ure_results = ure_pm(db, 2, 10, initpat,
 	                            false, UINT_MAX, UINT_MAX, 1, UINT_MAX, true, 0.0,
-	                            false, false, ignore_set),
+	                            false, false, ignore_vars),
 			ure_expected = mk_minsup_evals(2,
 			                               {MinerUtils::mk_pattern(VarXY, {InhXY}),
 			                                MinerUtils::mk_pattern(X, {InhXC}) });
@@ -1777,7 +1792,7 @@ void MinerUTest::test_ignore_var_3()
 		});
 
 	// Ignore vars
-	vector<string> ignore_set = {"$T"};
+	vector<string> ignore_vars = {"$T"};
 
 	// Run URE pattern miner
 	bool conjunction_expansion = false;
@@ -1794,7 +1809,7 @@ void MinerUTest::test_ignore_var_3()
 	                            max_conjuncts, max_variables,
 	                            max_spcial_conjuncts, max_cnjexp_variables,
 	                            enforce_specialization, complexity_penalty,
-	                            false, false, ignore_set);
+	                            false, false, ignore_vars);
 
 	logger().debug() << "ure_results = " << oc_to_string(ure_results);
 

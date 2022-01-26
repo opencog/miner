@@ -158,9 +158,9 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
                                unsigned max_cnjexp_variables,
                                bool enforce_specialization,
                                double complexity_penalty,
-                               bool type_check,
-                               bool glob_support,
-                               std::vector<std::string> ignore_set)
+                               bool enable_type,
+                               bool enable_glob,
+                               std::vector<std::string> ignore_vars)
 {
 	HandleSeq db;
 	db_as.get_handles_by_type(db, opencog::ATOM, true);
@@ -168,7 +168,7 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
 	              conjunction_expansion, max_conjuncts, max_variables,
 	              max_spcial_conjuncts, max_cnjexp_variables,
 	              enforce_specialization, complexity_penalty,
-	              type_check, glob_support, ignore_set);
+	              enable_type, enable_glob, ignore_vars);
 }
 
 Handle MinerUTestUtils::ure_pm(AtomSpace& as,
@@ -185,9 +185,9 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
                                unsigned max_cnjexp_variables,
                                bool enforce_specialization,
                                double complexity_penalty,
-                               bool type_check,
-                               bool glob_support,
-                               std::vector<std::string> ignore_set)
+                               bool enable_type,
+                               bool enable_glob,
+                               std::vector<std::string> ignore_vars)
 {
 	// Make (Member dt (Concept "db)) links
 	for (const Handle& dt : db)
@@ -216,9 +216,9 @@ Handle MinerUTestUtils::ure_pm(AtomSpace& as,
 	                         max_spcial_conjuncts,
 	                         max_cnjexp_variables,
 	                         enforce_specialization,
-	                         type_check,
-	                         glob_support,
-	                         ignore_set);
+	                         enable_type,
+	                         enable_glob,
+	                         ignore_vars);
 
 	// Otherwise prepare the source
 	TruthValuePtr tv = TruthValue::TRUE_TV();
@@ -335,9 +335,9 @@ void MinerUTestUtils::configure_optional_rules(SchemeEval& scm,
                                                unsigned max_spcial_conjuncts,
                                                unsigned max_cnjexp_variables,
                                                bool enforce_specialization,
-                                               bool type_check,
-                                               bool glob_support,
-                                               std::vector<std::string> ignore_set)
+                                               bool enable_type,
+                                               bool enable_glob,
+                                               std::vector<std::string> ignore_vars)
 {
 	std::string call = "(configure-optional-rules (Concept \"pm-rbs\")";
 	call += " #:conjunction-expansion #";
@@ -352,12 +352,12 @@ void MinerUTestUtils::configure_optional_rules(SchemeEval& scm,
 	call += std::to_string(max_cnjexp_variables);
 	call += " #:enforce-specialization ";
 	call += enforce_specialization ? "#t" : "#f";
-	call += " #:type-check ";
-	call += type_check ? "#t" : "#f";
-	call += " #:glob-support ";
-	call += glob_support ? "#t" : "#f";
-	call += " #:ignore ";
-	call += comb_vars(ignore_set);
+	call += " #:enable-type ";
+	call += enable_type ? "#t" : "#f";
+	call += " #:enable-glob ";
+	call += enable_glob ? "#t" : "#f";
+	call += " #:ignore-variables ";
+	call += comb_vars(ignore_vars);
 	call += ")";
 	std::string rs = scm.eval(call);
 	logger().debug() << "MinerUTest::configure_optional_rules() rs = " << rs;

@@ -188,9 +188,9 @@ public:
 	                     unsigned max_cnjexp_variables=UINT_MAX,
 	                     bool enforce_specialization=true,
 	                     double complexity_penalty=0.0,
-	                     bool type_check=false,
-	                     bool glob_support=false,
-	                     std::vector<std::string> ignore_set= {});
+	                     bool enable_type=false,
+	                     bool enable_glob=false,
+	                     std::vector<std::string> ignore_vars={});
 	static Handle ure_pm(AtomSpace& as,
 	                     SchemeEval& scm,
 	                     const Handle& pm_rb,
@@ -204,9 +204,9 @@ public:
 	                     unsigned max_cnjexp_variables=UINT_MAX,
 	                     bool enforce_specialization=true,
 	                     double complexity_penalty=0.0,
-	                     bool type_check=false,
-	                     bool glob_support=false,
-	                     std::vector<std::string> ignore_set= {});
+	                     bool enable_type=false,
+	                     bool enable_glob=false,
+	                     std::vector<std::string> ignore_vars={});
 
 	/**
 	 * Configure the C++ Miner and run it.
@@ -295,9 +295,9 @@ public:
 	                                     unsigned max_spcial_conjuncts=1,
 	                                     unsigned max_cnjexp_variables=UINT_MAX,
 	                                     bool enforce_specialization=false,
-	                                     bool type_check=false,
-	                                     bool glob_support=false,
-	                                     std::vector<std::string> ignore_set= {});
+	                                     bool enable_type=false,
+	                                     bool enable_glob=false,
+	                                     std::vector<std::string> ignore_vars={});
 	static void configure_surprisingness(SchemeEval& scm,
 	                                     const Handle& surp_rb,
 	                                     const std::string& mode,

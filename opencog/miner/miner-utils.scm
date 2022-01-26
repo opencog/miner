@@ -47,9 +47,9 @@
 (define default-maximum-cnjexp-variables 2)
 (define default-surprisingness 'isurp)
 (define default-db-ratio 1)
-(define default-type-check #f)
-(define default-glob-support #f)
-(define default-ignore '())
+(define default-enable-type #f)
+(define default-enable-glob #f)
+(define default-ignore-variables '())
 
 ;; For some crazy reason I need to repaste absolutely-true here while
 ;; it is already defined in ure.
@@ -175,9 +175,9 @@
 (define (configure-shallow-specialization-rules pm-rbs
                                                 maximum-variables
                                                 maximum-spcial-conjuncts
-                                                type-check
-                                                glob-support
-                                                ignore)
+                                                enable-type
+                                                enable-glob
+                                                ignore-variables)
   (define mv (min 9 maximum-variables))
 
   ;; Only define such rules if maximum-spcial-conjuncts if above 0
@@ -194,7 +194,7 @@
              (definify (lambda (i)
                          (DefineLink
                            (aliasify i)
-                           (gen-shallow-specialization-rule i mv type-check glob-support ignore))))
+                           (gen-shallow-specialization-rule i mv enable-type enable-glob ignore-variables))))
              (rule-tv (stv 0.9 1))
              (rulify (lambda (i) (definify i) (list (aliasify i) rule-tv)))
              (rules (map rulify (iota-plus-one maximum-spcial-conjuncts))))
@@ -246,16 +246,16 @@
                                    (maximum-variables default-maximum-variables)
                                    (maximum-spcial-conjuncts default-maximum-spcial-conjuncts)
                                    (maximum-cnjexp-variables default-maximum-cnjexp-variables)
-                                   (type-check default-type-check)
-                                   (glob-support default-glob-support)
-                                   (ignore default-ignore))
+                                   (enable-type default-enable-type)
+                                   (enable-glob default-enable-glob)
+                                   (ignore-variables default-ignore-variables))
   ;; Load shallow specialization and associate to pm-rbs
   (configure-shallow-specialization-rules pm-rbs
                                           maximum-variables
                                           maximum-spcial-conjuncts
-                                          type-check
-                                          glob-support
-                                          ignore)
+                                          enable-type
+                                          enable-glob
+                                          ignore-variables)
 
   ;; Load conjunction-expansion and associate to pm-rbs
   (configure-conjunction-expansion-rules pm-rbs
@@ -272,9 +272,9 @@
                           (maximum-variables default-maximum-variables)
                           (maximum-spcial-conjuncts default-maximum-spcial-conjuncts)
                           (maximum-cnjexp-variables default-maximum-cnjexp-variables)
-                          (type-check default-type-check)
-                          (glob-support default-glob-support)
-                          (ignore default-ignore))
+                          (enable-type default-enable-type)
+                          (enable-glob default-enable-glob)
+                          (ignore-variables default-ignore-variables))
   (configure-mandatory-rules pm-rbs)
   (configure-optional-rules pm-rbs
                             #:conjunction-expansion conjunction-expansion
@@ -283,9 +283,9 @@
                             #:maximum-variables maximum-variables
                             #:maximum-spcial-conjuncts maximum-spcial-conjuncts
                             #:maximum-cnjexp-variables maximum-cnjexp-variables
-                            #:type-check type-check
-                            #:glob-support glob-support
-                            #:ignore ignore))
+                            #:enable-type enable-type
+                            #:enable-glob enable-glob
+                            #:ignore-variables ignore-variables))
 
 (define* (configure-surprisingness surp-rbs mode maximum-conjuncts db-ratio)
   ;; Add surprisingness rules
@@ -336,9 +336,9 @@
                           (maximum-variables default-maximum-variables)
                           (maximum-spcial-conjuncts default-maximum-spcial-conjuncts)
                           (maximum-cnjexp-variables default-maximum-cnjexp-variables)
-                          (type-check default-type-check)
-                          (glob-support default-glob-support)
-                          (ignore default-ignore))
+                          (enable-type default-enable-type)
+                          (enable-glob default-enable-glob)
+                          (ignore-variables default-ignore-variables))
 "
   Given a Concept node representing a rule based system for the
   pattern miner. Automatically configure it with the appropriate
@@ -353,7 +353,10 @@
                           #:maximum-conjuncts mc
                           #:maximum-variables mv
                           #:maximum-spcial-conjuncts mspc
-                          #:maximum-cnjexp-variables mcev)
+                          #:maximum-cnjexp-variables mcev
+                          #:enable-type et
+                          #:enable-glob eg
+                          #:ignore-variables iv)
 
   pm-rbs: Concept node of the rule-based system to configure
 
@@ -372,14 +375,14 @@
       A negative value means more depth. Possible range is (-inf, +inf)
       but it's rarely necessary in practice to go outside of [-10, 10].
 
-  ce: [optional, default=#t] Flag whether to use the conjunction expansion
-      heuristic rules. It will only expand conjunctions with enough support
-      with patterns with enough support.
+  ce: [optional, default=#t] Flag controlling whether to use the conjunction
+      expansion heuristic rules. It will only expand conjunctions with enough
+      support with patterns with enough support.
 
-  es: [optional, default=#t] Flag whether specialization is enforced.
-      Some rules such as conjunction expansion can create abstractions
-      due to having more variables, this flag enforces that only
-      specializations will be created.
+  es: [optional, default=#t] Flag controlling whether specialization is
+      enforced.  Some rules such as conjunction expansion can create
+      abstractions due to having more variables, this flag enforces that
+      only specializations will be created.
 
   mc: [optional, default=3] In case ce is set to #t, and thus incremental
       conjunction expansion is enabled, that option allows to limit the number
@@ -393,6 +396,19 @@
 
   mcev: [optional, default=2] Maximum number of variables in patterns produced
         by the conjunction expansion rule.
+
+  et: [optional, default=#f] Flag controlling whether the mined patterns will
+      have type constraints in their type declaration.  If so, then for
+      instance a variable matching only concept nodes will be type restricted
+      to concept node and its subtypes.
+
+  eg: [optional, default=#f] Flag controlling whether the mined patterns will
+      have glob nodes.  This is convenient when they are links to match with
+      different arities.
+
+  iv: [optional, default=()] List of variables to ignore.  This is used for
+      instance in temporal mining, where the temporal variable must be left
+      untouched.
 "
   ;; Load and associate rules to pm-rbs
   (configure-rules pm-rbs
@@ -402,9 +418,9 @@
                    #:maximum-variables maximum-variables
                    #:maximum-spcial-conjuncts maximum-spcial-conjuncts
                    #:maximum-cnjexp-variables maximum-cnjexp-variables
-                   #:type-check type-check
-                   #:glob-support glob-support
-                   #:ignore ignore)
+                   #:enable-type enable-type
+                   #:enable-glob enable-glob
+                   #:ignore-variables ignore-variables)
 
   ;; Set parameters
   (ure-set-jobs pm-rbs jobs)
@@ -617,10 +633,14 @@
                    ;; db-ratio
                    (db-ratio default-db-ratio)
 
-                   ;; enable type-check
-                   (type-check default-type-check)
-                   (glob-support default-glob-support)
-                   (ignore default-ignore))
+                   ;; Enable type
+                   (enable-type default-enable-type)
+
+                   ;; Enable glob
+                   (enable-glob default-enable-glob)
+
+                   ;; Variables to leave untouched
+                   (ignore-variables default-ignore-variables))
 "
   Mine patterns in db (data trees, a.k.a. grounded hypergraphs) with minimum
   support ms, optionally using mi iterations and starting from the initial
@@ -640,7 +660,10 @@
                    #:maximum-spcial-conjuncts mspc  (or #:maxspcjn mspc)
                    #:maximum-cnjexp-variables mcev  (or #:maxcevar mcev)
                    #:surprisingness su              (or #:surp su)
-                   #:db-ratio dbr)
+                   #:db-ratio dbr
+                   #:enable-type et
+                   #:enable-glob eg
+                   #:ignore-variables iv)
 
   db: Collection of data trees to mine. It can be given in 3 forms
 
@@ -781,6 +804,19 @@
        mining process, even if dbr is set low, given enough iteration, no
        pattern will be missed, however their surprisingness measures might be
        inaccurate.
+
+  et: [optional, default=#f] Flag controlling whether the mined patterns will
+      have type constraints in their type declaration.  If so, then for
+      instance a variable matching only concept nodes will be type restricted
+      to concept node and its subtypes.
+
+  eg: [optional, default=#f] Flag controlling whether the mined patterns will
+      have glob nodes.  This is convenient when they are links to match with
+      different arities.
+
+  iv: [optional, default=()] List of variables to ignore.  This is used for
+      instance in temporal mining, where the temporal variable must be left
+      untouched.
 
   Under the hood it will create a rule base and a query for the rule
   engine, configure it according to the user's options and run it.
@@ -992,13 +1028,13 @@
                                        #:maximum-variables mv
                                        #:maximum-spcial-conjuncts mspc
                                        #:maximum-cnjexp-variables mcev
-                                       #:type-check type-check
-                                       #:glob-support glob-support
-                                       #:ignore ignore))
+                                       #:enable-type enable-type
+                                       #:enable-glob enable-glob
+                                       #:ignore-variables ignore-variables))
 
-	       (dummy (miner-logger-debug "Initial pattern:\n~a" (get-initial-pattern)))
-	       (dummy (miner-logger-debug "Has enough support (min support = ~a)" ms))
-	       (dummy (miner-logger-debug "Launch URE-based pattern mining"))
+               (dummy (miner-logger-debug "Initial pattern:\n~a" (get-initial-pattern)))
+               (dummy (miner-logger-debug "Has enough support (min support = ~a)" ms))
+               (dummy (miner-logger-debug "Launch URE-based pattern mining"))
 
                ;; Run pattern miner in a forward way
                (results (cog-fc miner-rbs source))
@@ -1010,7 +1046,7 @@
 
               ;; No surprisingness, simple return the pattern list
               (let* ((parent-patterns-lst (cog-cp parent-as patterns-lst)))
-		(miner-logger-debug "No surprisingness measure, end pattern miner now")
+                (miner-logger-debug "No surprisingness measure, end pattern miner now")
                 (cog-set-atomspace! parent-as)
                 parent-patterns-lst)
 
@@ -1019,7 +1055,7 @@
                   ;; Configure surprisingness backward chainer
                   ((dummy (miner-logger-debug "Call surprisingness on mined patterns"))
 
-		   (surp-rbs (random-surprisingness-rbs-cpt))
+                   (surp-rbs (random-surprisingness-rbs-cpt))
                    (target (surp-target su db-cpt))
                    (vardecl (surp-vardecl))
                    (cfg-s (configure-surprisingness surp-rbs su mc db-ratio))
@@ -1031,7 +1067,7 @@
 
                    ;; Copy the results to the parent atomspace
                    (parent-surp-res (cog-cp parent-as surp-res-sort-lst)))
-		(miner-logger-debug "End pattern miner")
+                (miner-logger-debug "End pattern miner")
                 (cog-set-atomspace! parent-as)
                 parent-surp-res))))))
 

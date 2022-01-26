@@ -56,16 +56,17 @@ namespace opencog
 {
 
 HandleSetSeq MinerUtils::shallow_abstract(const Valuations& valuations,
-                                          unsigned ms, bool type_check,
-                                          bool glob_support,
-                                          const HandleSeq& ignore)
+                                          unsigned ms,
+                                          bool enable_type,
+                                          bool enable_glob,
+                                          const HandleSeq& ignore_vars)
 {
 	// LAZY_MINER_LOG_FINE << "MinerUtils::shallow_abstract(valuations="
 	//                     << oc_to_string(valuations)
 	//                     << ", ms=" << ms
-	//                     << ", type_check=" << type_check
-	//                     << ", glob_support=" << glob_support
-	//                     << ", ignore=" << oc_to_string(ignore);
+	//                     << ", enable_type=" << enable_type
+	//                     << ", enable_glob=" << enable_glob
+	//                     << ", ignore_vars=" << oc_to_string(ignore_vars);
 
 	// Base case
 	if (valuations.no_focus())
@@ -73,24 +74,25 @@ HandleSetSeq MinerUtils::shallow_abstract(const Valuations& valuations,
 
 	// Recursive case
 	HandleSetSeq shabs_per_var{
-		// Don't specialize the focused variable if it is in ignore
-		content_contains(ignore, valuations.focus_variable()) ?
+		// Don't specialize the focused variable if it is in ignore_vars
+		content_contains(ignore_vars, valuations.focus_variable()) ?
 		// We have to pass empty shallow abstractions for ignored variables to tell
 		// the shallow_specialize code to ignore them gracefully.
 		HandleSet()
 		// Otherwise, look for shallow abstractions of that variable
-		: focus_shallow_abstract(valuations, ms, type_check, glob_support)};
+		: focus_shallow_abstract(valuations, ms, enable_type, enable_glob)};
 	// Recursively look for shallow abstractions of the remaining variables
 	valuations.inc_focus_variable();
-	HandleSetSeq remaining = shallow_abstract(valuations, ms, type_check, glob_support, ignore);
+	HandleSetSeq remaining = shallow_abstract(valuations, ms, enable_type, enable_glob, ignore_vars);
 	valuations.dec_focus_variable();
 	append(shabs_per_var, remaining);
 	return shabs_per_var;
 }
 
 HandleSet MinerUtils::focus_shallow_abstract(const Valuations& valuations,
-                                             unsigned ms, bool type_check,
-                                             bool glob_support)
+                                             unsigned ms,
+                                             bool enable_type,
+                                             bool enable_glob)
 {
 	// If there are no valuations, then the result is empty by
 	// convention, regardless of the minimum support threshold.
@@ -141,11 +143,11 @@ HandleSet MinerUtils::focus_shallow_abstract(const Valuations& valuations,
 		if (Handle shabs = shallow_abstract_of_val(value))
 			shapats[shabs].push_back(value);
 
-		if (glob_support)
+		if (enable_glob)
 		{
 			HandleSeq shabs =
 					glob_shallow_abstract_of_val(value, var_scv.focus_variable(),
-					                             type_check);
+					                             enable_type);
 			for (Handle s : shabs)
 				shapats[s].push_back(value);
 		}
@@ -228,7 +230,7 @@ HandleSet MinerUtils::focus_shallow_abstract(const Valuations& valuations,
 		}
    }
 
-	if (type_check)
+	if (enable_type)
 		return type_restrict_patterns(shabs);
 
 	HandleSet rshabs;
@@ -252,7 +254,8 @@ Handle MinerUtils::shallow_abstract_of_val(const Handle& value)
 	return shallow_abstract_of_val(value, rnd_vars);
 }
 
-Handle MinerUtils::shallow_abstract_of_val(const Handle &value, const HandleSeq &rnd_vars)
+Handle MinerUtils::shallow_abstract_of_val(const Handle &value,
+                                           const HandleSeq &rnd_vars)
 {
 	Type tt = value->get_type();
 	Handle vardecl = variable_set(rnd_vars);
@@ -301,21 +304,23 @@ Handle MinerUtils::shallow_abstract_of_val(const Handle &value, const HandleSeq 
 }
 
 HandleSeq MinerUtils::glob_shallow_abstract_of_val(const Handle &value,
-                                                   const Handle &var, bool type_check)
+                                                   const Handle &var,
+                                                   bool enable_type)
 {
 	// Node or empty link, nothing to abstract
 	if (is_nullary(value))
 		return {}; // should be handled by shallow_abstract_of_val.
 
 	if (var->get_type() == GLOB_NODE)
-		return glob_shallow_abstract_of_lst(value, gen_rand_globs(2), type_check);
+		return glob_shallow_abstract_of_lst(value, gen_rand_globs(2), enable_type);
 
 	HandleSeq rnd_vars = gen_rand_globs(1);
 	return HandleSeq{shallow_abstract_of_val(value, rnd_vars)};
 }
 
 HandleSeq MinerUtils::glob_shallow_abstract_of_lst(const Handle &value,
-                                                   const HandleSeq &vars, bool type_check)
+                                                   const HandleSeq &vars,
+                                                   bool enable_type)
 {
 	OC_ASSERT(value->get_type() == LIST_LINK,
 	          "Values of a glob must be wrapped with ListLink");
@@ -356,16 +361,16 @@ HandleSeq MinerUtils::glob_shallow_abstract_of_lst(const Handle &value,
 			// but if type check is on (Ordered A G B) is a valid abstraction
 			// since the interval of G will be restricted to [0,0] later when
 			// type checking.
-			if (j == 0 and (j != vals.size() - n or type_check))
+			if (j == 0 and (j != vals.size() - n or enable_type))
 				new_vals.insert(lambda(vars[0], createLink(left, LIST_LINK)));
 
 			HandleSeq right(nval);
 			right.insert(right.begin(), vars[0]);
-			if (j == vals.size() - n and (j != 0 or type_check))
+			if (j == vals.size() - n and (j != 0 or enable_type))
 				new_vals.insert(lambda(vars[0], createLink(right, LIST_LINK)));
 
 			right.insert(right.end(), vars[1]);
-			if ((j != 0 and j != vals.size() - n) or type_check)
+			if ((j != 0 and j != vals.size() - n) or enable_type)
 				new_vals.insert(lambda(variable_set(vars), createLink(right, LIST_LINK)));
 		}
 	}
@@ -487,34 +492,34 @@ bool MinerUtils::enough_support(const Handle& pattern,
 HandleSetSeq MinerUtils::shallow_abstract(const Handle& pattern,
                                           const HandleSeq& db,
                                           unsigned ms,
-                                          bool type_check,
-                                          bool glob_support,
-                                          const HandleSeq& ignore)
+                                          bool enable_type,
+                                          bool enable_glob,
+                                          const HandleSeq& ignore_vars)
 {
 	Valuations valuations(pattern, db);
-	return shallow_abstract(valuations, ms, type_check, glob_support, ignore);
+	return shallow_abstract(valuations, ms, enable_type, enable_glob, ignore_vars);
 }
 
 HandleSet MinerUtils::shallow_specialize(const Handle& pattern,
                                          const HandleSeq& db,
                                          unsigned ms,
                                          unsigned mv,
-                                         bool type_check,
-                                         bool glob_support,
-                                         const HandleSeq& ignore)
+                                         bool enable_type,
+                                         bool enable_glob,
+                                         const HandleSeq& ignore_vars)
 {
 	// LAZY_MINER_LOG_FINE << "MinerUtils::shallow_specialize("
 	//                     << "pattern=" << oc_to_string(pattern)
 	//                     << ", db=" << oc_to_string(db)
 	//                     << ", ms=" << ms
 	//                     << ", mv=" << mv
-	//                     << ", type_check=" << type_check
-	//                     << ", glob_support=" << glob_support
-	//                     << ", ignore=" << oc_to_string(ignore) << ")";
+	//                     << ", enable_type=" << enable_type
+	//                     << ", enable_glob=" << enable_glob
+	//                     << ", ignore_vars=" << oc_to_string(ignore_vars) << ")";
 
 	// Calculate all shallow abstractions of pattern
 	HandleSetSeq shabs_per_var =
-			shallow_abstract(pattern, db, ms, type_check, glob_support, ignore);
+			shallow_abstract(pattern, db, ms, enable_type, enable_glob, ignore_vars);
 
 	// For each variable of pattern, generate the corresponding shallow
 	// specializations
@@ -1308,7 +1313,7 @@ Handle MinerUtils::type_restrict_pattern(const HandleSeqMap::value_type &pair)
 	Handle body = pat->get_body();
 
 	if (not vars._typemap.empty())        // Vars in this pattern are
-		return pair.first;                // already type restricted.
+		return pair.first;                 // already type restricted.
 
 	HandleSeq t_decls;
 	HandleValIntvlMap vvmap;
@@ -1487,7 +1492,7 @@ TypeSet MinerUtils::lwst_com_types(TypeSet tsets)
 			break;
 		}
 		if (nameserver().isA(tp, *itr)) {       // tp is lower than existing types
-			common_types.erase(itr);            // in common_types.
+			common_types.erase(itr);             // in common_types.
 			break;
 		}
 	}

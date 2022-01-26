@@ -77,9 +77,10 @@ public:
 	 *  }
 	 */
 	static HandleSetSeq shallow_abstract(const Valuations &valuations,
-	                                     unsigned ms, bool type_check,
-	                                     bool glob_support,
-	                                     const HandleSeq& ignore);
+	                                     unsigned ms,
+	                                     bool enable_type,
+	                                     bool enable_glob,
+	                                     const HandleSeq& ignore_vars);
 
 	/**
 	 * Given valuations produce all shallow abstractions reaching
@@ -110,8 +111,8 @@ public:
 	 *                                            (Variable "$X2"))) }
 	 */
 	static HandleSet focus_shallow_abstract(const Valuations &valuations,
-	                                        unsigned ms, bool type_check,
-	                                        bool glob_support);
+	                                        unsigned ms, bool enable_type,
+	                                        bool enable_glob);
 
 	/**
 	 * Return true iff h is a node or a nullary link.
@@ -146,10 +147,10 @@ public:
 	static Handle shallow_abstract_of_val(const Handle& value, const HandleSeq& rnd_vars);
 
 	static HandleSeq glob_shallow_abstract_of_val(const Handle &val,
-	                                              const Handle &var, bool type_check);
+	                                              const Handle &var, bool enable_type);
 
 	static HandleSeq glob_shallow_abstract_of_lst(const Handle &value,
-	                                              const HandleSeq &vars, bool type_check);
+	                                              const HandleSeq &vars, bool enable_type);
 
 	/**
 	 * Wrap a VariableSet around a list of variables if more than one
@@ -246,9 +247,9 @@ public:
 	static HandleSetSeq shallow_abstract(const Handle& pattern,
 	                                     const HandleSeq& db,
 	                                     unsigned ms,
-	                                     bool type_check,
-	                                     bool glob_support,
-	                                     const HandleSeq& ignore);
+	                                     bool enable_type,
+	                                     bool enable_glob,
+	                                     const HandleSeq& ignore_vars);
 
 	/**
 	 * Return all shallow specializations of pattern with support ms
@@ -256,14 +257,28 @@ public:
 	 *
 	 * mv is the maximum number of variables allowed in the resulting
 	 * patterns.
+	 *
+	 * enable_type is a flag controlling whether type declaration is
+	 * specialized as well.  For instance if a given variable is only
+	 * matching concept nodes, then if enable_type is set to true, such
+	 * variable will be type restricted to concept nodes in the
+	 * specialized pattern.
+	 *
+	 * enable_glob is a flag controlling whether GlobNode may be
+	 * supported in the specialized patterns.  Convenient for matching
+	 * links with varying arity.
+	 *
+	 * ignore_vars is a set of variables not to specialize.  This is
+	 * convenient for instance for temporal mining, where the temporal
+	 * variable must not be specialized.
 	 */
 	static HandleSet shallow_specialize(const Handle& pattern,
 	                                    const HandleSeq& db,
 	                                    unsigned ms,
 	                                    unsigned mv=UINT_MAX,
-	                                    bool type_check=false,
-	                                    bool glob_support=false,
-	                                    const HandleSeq& ignore={});
+	                                    bool enable_type=false,
+	                                    bool enable_glob=false,
+	                                    const HandleSeq& ignore_vars={});
 
 	/**
 	 * Create a pattern body from clauses, introducing an AndLink if
@@ -808,8 +823,7 @@ public:
 
 	static HandleSet type_restrict_patterns(const HandleSeqMap &);
 
-	static Handle type_restrict_pattern(const std::map<Handle,
-	                      HandleSeq>::value_type &pair);
+	static Handle type_restrict_pattern(const HandleSeqMap::value_type &pair);
 
 	static Handle lwst_com_types_decl(const Handle &var, const HandleSeq &vector,
 	                                  const GlobInterval &);
