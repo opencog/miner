@@ -352,11 +352,11 @@ void MinerUTestUtils::configure_optional_rules(SchemeEval& scm,
 	call += std::to_string(max_cnjexp_variables);
 	call += " #:enforce-specialization ";
 	call += enforce_specialization ? "#t" : "#f";
-	call += " #:type-check ";
+	call += " #:enable-type ";
 	call += enable_type ? "#t" : "#f";
-	call += " #:glob-support ";
+	call += " #:enable-glob ";
 	call += enable_glob ? "#t" : "#f";
-	call += " #:ignore ";
+	call += " #:ignore-variables ";
 	call += comb_vars(ignore_vars);
 	call += ")";
 	std::string rs = scm.eval(call);
