@@ -353,7 +353,10 @@
                           #:maximum-conjuncts mc
                           #:maximum-variables mv
                           #:maximum-spcial-conjuncts mspc
-                          #:maximum-cnjexp-variables mcev)
+                          #:maximum-cnjexp-variables mcev
+                          #:enable-type et
+                          #:enable-glob eg
+                          #:ignore-variables iv)
 
   pm-rbs: Concept node of the rule-based system to configure
 
@@ -372,14 +375,14 @@
       A negative value means more depth. Possible range is (-inf, +inf)
       but it's rarely necessary in practice to go outside of [-10, 10].
 
-  ce: [optional, default=#t] Flag whether to use the conjunction expansion
-      heuristic rules. It will only expand conjunctions with enough support
-      with patterns with enough support.
+  ce: [optional, default=#t] Flag controlling whether to use the conjunction
+      expansion heuristic rules. It will only expand conjunctions with enough
+      support with patterns with enough support.
 
-  es: [optional, default=#t] Flag whether specialization is enforced.
-      Some rules such as conjunction expansion can create abstractions
-      due to having more variables, this flag enforces that only
-      specializations will be created.
+  es: [optional, default=#t] Flag controlling whether specialization is
+      enforced.  Some rules such as conjunction expansion can create
+      abstractions due to having more variables, this flag enforces that
+      only specializations will be created.
 
   mc: [optional, default=3] In case ce is set to #t, and thus incremental
       conjunction expansion is enabled, that option allows to limit the number
@@ -393,6 +396,19 @@
 
   mcev: [optional, default=2] Maximum number of variables in patterns produced
         by the conjunction expansion rule.
+
+  et: [optional, default=#f] Flag controlling whether the mined patterns will
+      have type constraints in their type declaration.  If so, then for
+      instance a variable matching only concept nodes will be type restricted
+      to concept node and its subtypes.
+
+  eg: [optional, default=#f] Flag controlling whether the mined patterns will
+      have glob nodes.  This is convenient when they are links to match with
+      different arities.
+
+  iv: [optional, default=()] List of variables to ignore.  This is used for
+      instance in temporal mining, where the temporal variable must be left
+      untouched.
 "
   ;; Load and associate rules to pm-rbs
   (configure-rules pm-rbs
@@ -617,9 +633,13 @@
                    ;; db-ratio
                    (db-ratio default-db-ratio)
 
-                   ;; enable type
+                   ;; Enable type
                    (enable-type default-enable-type)
+
+                   ;; Enable glob
                    (enable-glob default-enable-glob)
+
+                   ;; Variables to leave untouched
                    (ignore-variables default-ignore-variables))
 "
   Mine patterns in db (data trees, a.k.a. grounded hypergraphs) with minimum
@@ -640,7 +660,10 @@
                    #:maximum-spcial-conjuncts mspc  (or #:maxspcjn mspc)
                    #:maximum-cnjexp-variables mcev  (or #:maxcevar mcev)
                    #:surprisingness su              (or #:surp su)
-                   #:db-ratio dbr)
+                   #:db-ratio dbr
+                   #:enable-type et
+                   #:enable-glob eg
+                   #:ignore-variables iv)
 
   db: Collection of data trees to mine. It can be given in 3 forms
 
@@ -781,6 +804,19 @@
        mining process, even if dbr is set low, given enough iteration, no
        pattern will be missed, however their surprisingness measures might be
        inaccurate.
+
+  et: [optional, default=#f] Flag controlling whether the mined patterns will
+      have type constraints in their type declaration.  If so, then for
+      instance a variable matching only concept nodes will be type restricted
+      to concept node and its subtypes.
+
+  eg: [optional, default=#f] Flag controlling whether the mined patterns will
+      have glob nodes.  This is convenient when they are links to match with
+      different arities.
+
+  iv: [optional, default=()] List of variables to ignore.  This is used for
+      instance in temporal mining, where the temporal variable must be left
+      untouched.
 
   Under the hood it will create a rule base and a query for the rule
   engine, configure it according to the user's options and run it.
