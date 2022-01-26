@@ -35,6 +35,7 @@
 #include <opencog/miner/HandleTree.h>
 #include <opencog/miner/Miner.h>
 #include <opencog/miner/Surprisingness.h>
+#include <opencog/miner/MinerLogger.h>
 #include <opencog/ure/URELogger.h>
 #include <opencog/guile/SchemeEval.h>
 
@@ -336,6 +337,12 @@ MinerUTest::MinerUTest() :
 	ure_logger().set_timestamp_flag(false);
 	// ure_logger().set_sync_flag(true);
 	// ure_logger().set_print_to_stdout_flag(true);
+
+	// Miner logger
+	miner_logger().set_level(Logger::INFO);
+	miner_logger().set_timestamp_flag(false);
+	// miner_logger().set_sync_flag(true);
+	// miner_logger().set_print_to_stdout_flag(true);
 
 	// Configure scheme load-paths that are common for all tests.
 	_scm.eval("(add-to-load-path \"" PROJECT_SOURCE_DIR
