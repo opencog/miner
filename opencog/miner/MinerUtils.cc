@@ -633,6 +633,7 @@ Handle MinerUtils::restricted_satisfying_set(const Handle& pattern,
 
 	// Define pattern to run
 	AtomSpacePtr tmp_query_as(createAtomSpace(tmp_db_as));
+	tmp_query_as->clear_copy_on_write(); // Ensure that _as is write-through
 	Handle tmp_pattern = tmp_query_as->add_atom(pattern),
 		vardecl = get_vardecl(tmp_pattern),
 		body = get_body(tmp_pattern),
