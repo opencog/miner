@@ -35,14 +35,8 @@ IF (HAVE_GUILE)
     ${GUILE_LIBRARIES}
   )
 
-  INSTALL (TARGETS guile-miner DESTINATION "lib${LIB_DIR_SUFFIX}/opencog")
+  ADD_SUBDIRECTORY(scm)
 
-  ADD_GUILE_MODULE (FILES
-    miner.scm
-    miner-utils.scm
-    MODULE_DESTINATION "${GUILE_SITE_DIR}/opencog/miner"
-  )
-  ADD_GUILE_EXTENSION(SCM_CONFIG guile-miner "opencog-ext-path-miner")
+  INSTALL(TARGETS guile-miner DESTINATION "lib${LIB_DIR_SUFFIX}/opencog")
 
-  ADD_SUBDIRECTORY (rules)
 ENDIF (HAVE_GUILE)
