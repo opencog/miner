@@ -35,7 +35,7 @@ IF (HAVE_GUILE)
     ${GUILE_LIBRARIES}
   )
 
-  ADD_SUBDIRECTORY(miner)
+  ADD_SUBDIRECTORY(scm)
 
   INSTALL(TARGETS guile-miner DESTINATION "lib${LIB_DIR_SUFFIX}/opencog")
 
