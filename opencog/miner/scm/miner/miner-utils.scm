@@ -60,7 +60,7 @@
   (bool->tv (tv->bool (cog-tv A))))
 
 (define (mk-full-rule-path brf)
-  (let ((rule-path "opencog/miner/rules/"))
+  (let ((rule-path "opencog/miner/"))
     (string-append rule-path brf)))
 
 ;; Load here otherwise gen-shallow-specialization-rule is inaccessible

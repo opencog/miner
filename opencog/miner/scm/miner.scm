@@ -9,8 +9,5 @@
 
 ;; Load miner utils
 
-;; TODO: this doesn't correspond to the local path, it needs to be
-;; installed, maybe we should do like atomspace/scm/opencog so that
-;; the installed path matches the local path
-(load-from-path "opencog/miner/miner-utils.scm")
+(include-from-path "opencog/miner/miner-utils.scm")
 (export-miner-utils)
