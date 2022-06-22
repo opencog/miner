@@ -199,7 +199,7 @@ Handle MinerSCM::do_shallow_abstract(Handle pattern,
                                      Handle db,
                                      Handle ms_h)
 {
-	AtomSpace *as = SchemeSmob::ss_get_env_as("cog-shallow-abstract");
+	AtomSpacePtr asp = SchemeSmob::ss_get_env_as("cog-shallow-abstract");
 
 	// Fetch data trees
 	HandleSeq db_seq = MinerUtils::get_db(db);
@@ -223,12 +223,12 @@ Handle MinerSCM::do_shallow_abstract(Handle pattern,
 			sa_lists.insert(sa_list.size() == 1 ? sa_list[0]
 			                // Only Wrap in a list if arity is greater
 			                // than one
-			                : as->add_link(LIST_LINK, std::move(sa_list)));
+			                : asp->add_link(LIST_LINK, std::move(sa_list)));
 		}
 		vari++;
 	}
 
-	return as->add_link(SET_LINK, HandleSeq(sa_lists.begin(), sa_lists.end()));
+	return asp->add_link(SET_LINK, HandleSeq(sa_lists.begin(), sa_lists.end()));
 }
 
 Handle MinerSCM::do_shallow_specialize(Handle pattern,
@@ -239,7 +239,7 @@ Handle MinerSCM::do_shallow_specialize(Handle pattern,
                                        Handle enable_glob,
                                        Handle ignore_vars)
 {
-	AtomSpace *as = SchemeSmob::ss_get_env_as("cog-shallow-specialize");
+	AtomSpacePtr asp = SchemeSmob::ss_get_env_as("cog-shallow-specialize");
 
 	// Fetch data trees
 	HandleSeq db_seq = MinerUtils::get_db(db);
@@ -255,7 +255,7 @@ Handle MinerSCM::do_shallow_specialize(Handle pattern,
 					enable_glob->getTruthValue()->get_mean() > 0,
 					ignore_vars->getOutgoingSet());
 
-	return as->add_link(SET_LINK, HandleSeq(shaspes.begin(), shaspes.end()));
+	return asp->add_link(SET_LINK, HandleSeq(shaspes.begin(), shaspes.end()));
 }
 
 bool MinerSCM::do_enough_support(Handle pattern, Handle db, Handle ms_h)
@@ -273,7 +273,7 @@ Handle MinerSCM::do_expand_conjunction(Handle cnjtion, Handle pattern,
                                        Handle db, Handle ms_h, Handle mv_h,
                                        bool es)
 {
-	AtomSpace *as = SchemeSmob::ss_get_env_as("cog-expand-conjunction");
+	AtomSpacePtr asp = SchemeSmob::ss_get_env_as("cog-expand-conjunction");
 
 	// Fetch data trees
 	HandleSeq db_seq = MinerUtils::get_db(db);
@@ -284,7 +284,7 @@ Handle MinerSCM::do_expand_conjunction(Handle cnjtion, Handle pattern,
 
 	HandleSet results = MinerUtils::expand_conjunction(cnjtion, pattern,
 	                                                   db_seq, ms, mv, es);
-	return as->add_link(SET_LINK, HandleSeq(results.begin(), results.end()));
+	return asp->add_link(SET_LINK, HandleSeq(results.begin(), results.end()));
 }
 
 double MinerSCM::do_isurp_old(Handle pattern, Handle db, Handle /*db_ratio*/)
