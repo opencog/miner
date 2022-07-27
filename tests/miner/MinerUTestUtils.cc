@@ -114,7 +114,7 @@ HandleSeq MinerUTestUtils::get_patterns(const HandleSeq& minsup_evals)
 Handle MinerUTestUtils::add_abs_true_eval(AtomSpace& as, const Handle& h)
 {
 	return al(EVALUATION_LINK,
-	          an(GROUNDED_PREDICATE_NODE, "scm: absolutely-true"),
+	          an(GROUNDED_PREDICATE_NODE, "scm-eager: absolutely-true"),
 	          h);
 }
 

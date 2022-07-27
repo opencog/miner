@@ -128,7 +128,7 @@ public:
 	 * Add
 	 *
 	 * (Evaluation
-	 *   (GroundedPredicate "scm: absolutely-true")
+	 *   (GroundedPredicate "scm-eager: absolutely-true")
 	 *   h)
 	 *
 	 * to as.
