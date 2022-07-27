@@ -92,7 +92,7 @@
   (define g (Quote (Lambda (Unquote g-vardecl) (Unquote g-body))))
   (define minsup-g (minsup-eval g db ms))
   ;; Formula
-  (define formula-name (string-append "scm: conjunction-expansion-"
+  (define formula-name (string-append "scm-eager: conjunction-expansion-"
                                       (if enforce-specialization
                                           "specialization-" "")
                                       "mv-" (number->string mv)

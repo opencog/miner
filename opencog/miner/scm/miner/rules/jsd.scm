@@ -47,7 +47,7 @@
       (gt-zero-confidence-eval emp)
       (gt-zero-confidence-eval est))
     (ExecutionOutput
-      (GroundedSchema "scm: jsd-formula")
+      (GroundedSchema "scm-eager: jsd-formula")
       (List
         (jsd-eval pattern db)
         emp
