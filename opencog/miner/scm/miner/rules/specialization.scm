@@ -101,7 +101,7 @@
          (precond-2 (absolutely-true-eval shabs-eval))
          ;; Rewrite
          (rewrite (ExecutionOutput
-                    (GroundedSchema "scm: specialization-formula")
+                    (GroundedSchema "scm-eager: specialization-formula")
                     (List
                       (minsup-eval
                         (Quote (Put

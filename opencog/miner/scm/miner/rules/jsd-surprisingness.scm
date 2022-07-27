@@ -70,7 +70,7 @@
             (absolutely-true-eval minsup-e)
             (gt-zero-confidence-eval jsd-e))
           (ExecutionOutput
-            (GroundedSchema "scm: jsd-surprisingness-formula")
+            (GroundedSchema "scm-eager: jsd-surprisingness-formula")
             (List
               surp-e
               minsup-e

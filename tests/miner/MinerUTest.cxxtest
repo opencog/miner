@@ -676,7 +676,7 @@ void MinerUTest::test_compose_2()
 		                al(EVALUATION_LINK,
 		                   X,
 		                   Y))),
-		gpn = an(GROUNDED_PREDICATE_NODE, "scm: absolutely-true"),
+		gpn = an(GROUNDED_PREDICATE_NODE, "scm-eager: absolutely-true"),
 		subpat = gpn;
 
 	Handle npat = MinerUtils::compose(pattern, {{X, subpat}}),

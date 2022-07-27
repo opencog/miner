@@ -51,7 +51,7 @@
       (Present minsup-pattern)
       (absolutely-true-eval minsup-pattern))
     (ExecutionOutput
-      (GroundedSchema "scm: est-formula")
+      (GroundedSchema "scm-eager: est-formula")
       (List
         (est-eval pattern db)
         minsup-pattern)))))

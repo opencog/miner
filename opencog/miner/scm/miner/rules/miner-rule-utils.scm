@@ -57,7 +57,7 @@
 
 (define (unary-conjunction-eval body)
   (Evaluation
-    (GroundedPredicate "scm: unary-conjunction")
+    (GroundedPredicate "scm-eager: unary-conjunction")
     ;; Wrap the single argument in List in case it is itself a list
     (List body)))
 
@@ -70,7 +70,7 @@
 
 (define (unary-conjunction-pattern-eval pattern)
   (Evaluation
-    (GroundedPredicate "scm: unary-conjunction-pattern")
+    (GroundedPredicate "scm-eager: unary-conjunction-pattern")
     pattern))
 
 (define (equal-top x)

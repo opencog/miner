@@ -76,7 +76,7 @@
       (Present minsup-pattern)
       (absolutely-true-eval minsup-pattern))
     (ExecutionOutput
-      (GroundedSchema (string-append "scm: shallow-specialization-mv-"
+      (GroundedSchema (string-append "scm-eager: shallow-specialization-mv-"
                                      (number->string mv)
                                      "-formula"))
       (List

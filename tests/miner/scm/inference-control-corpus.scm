@@ -24,7 +24,7 @@
          (BindLink
             (AndLink
                (EvaluationLink
-                  (GroundedPredicateNode "scm: gt-zero-confidence")
+                  (GroundedPredicateNode "scm-eager: gt-zero-confidence")
                   (EvaluationLink (stv 1 1)
                      (PredicateNode "alphabetical-order")
                      (ListLink
@@ -35,7 +35,7 @@
                )
             )
             (ExecutionOutputLink
-               (GroundedSchemaNode "scm: conditional-full-instantiation-scope-formula")
+               (GroundedSchemaNode "scm-eager: conditional-full-instantiation-scope-formula")
                (ListLink
                   (InheritanceLink
                      (ConceptNode "a")
@@ -107,7 +107,7 @@
          (BindLink
             (AndLink
                (EvaluationLink
-                  (GroundedPredicateNode "scm: gt-zero-confidence")
+                  (GroundedPredicateNode "scm-eager: gt-zero-confidence")
                   (EvaluationLink (stv 1 1)
                      (PredicateNode "alphabetical-order")
                      (ListLink
@@ -118,7 +118,7 @@
                )
             )
             (ExecutionOutputLink
-               (GroundedSchemaNode "scm: conditional-full-instantiation-scope-formula")
+               (GroundedSchemaNode "scm-eager: conditional-full-instantiation-scope-formula")
                (ListLink
                   (InheritanceLink
                      (ConceptNode "a")
@@ -198,11 +198,11 @@
                )
             )
             (EvaluationLink
-               (GroundedPredicateNode "scm: gt-zero-confidence")
+               (GroundedPredicateNode "scm-eager: gt-zero-confidence")
                (VariableNode "$A-3ce0ef76")
             )
             (EvaluationLink
-               (GroundedPredicateNode "scm: gt-zero-confidence")
+               (GroundedPredicateNode "scm-eager: gt-zero-confidence")
                (SubsetLink
                   (VariableNode "$A-3ce0ef76")
                   (InheritanceLink
@@ -213,7 +213,7 @@
             )
          )
          (ExecutionOutputLink
-            (GroundedSchemaNode "scm: modus-ponens-formula")
+            (GroundedSchemaNode "scm-eager: modus-ponens-formula")
             (ListLink
                (InheritanceLink
                   (ConceptNode "a")
@@ -239,7 +239,7 @@
          (BindLink
             (AndLink
                (EvaluationLink
-                  (GroundedPredicateNode "scm: gt-zero-confidence")
+                  (GroundedPredicateNode "scm-eager: gt-zero-confidence")
                   (EvaluationLink
                      (PredicateNode "alphabetical-order")
                      (ListLink
@@ -250,7 +250,7 @@
                )
             )
             (ExecutionOutputLink
-               (GroundedSchemaNode "scm: conditional-full-instantiation-scope-formula")
+               (GroundedSchemaNode "scm-eager: conditional-full-instantiation-scope-formula")
                (ListLink
                   (InheritanceLink
                      (ConceptNode "d")
@@ -307,11 +307,11 @@
          (AndLink
             (VariableNode "$A-4d3401d5")
             (EvaluationLink
-               (GroundedPredicateNode "scm: gt-zero-confidence")
+               (GroundedPredicateNode "scm-eager: gt-zero-confidence")
                (VariableNode "$A-4d3401d5")
             )
             (EvaluationLink
-               (GroundedPredicateNode "scm: gt-zero-confidence")
+               (GroundedPredicateNode "scm-eager: gt-zero-confidence")
                (ImplicationLink
                   (VariableNode "$A-4d3401d5")
                   (EvaluationLink
@@ -335,14 +335,14 @@
             )
          )
          (ExecutionOutputLink
-            (GroundedSchemaNode "scm: conditional-full-instantiation-scope-formula")
+            (GroundedSchemaNode "scm-eager: conditional-full-instantiation-scope-formula")
             (ListLink
                (InheritanceLink
                   (ConceptNode "d")
                   (ConceptNode "y")
                )
                (ExecutionOutputLink
-                  (GroundedSchemaNode "scm: modus-ponens-formula")
+                  (GroundedSchemaNode "scm-eager: modus-ponens-formula")
                   (ListLink
                      (EvaluationLink
                         (PredicateNode "alphabetical-order")
@@ -419,7 +419,7 @@
          (AndLink
             (VariableNode "$A-485f010a")
             (EvaluationLink
-               (GroundedPredicateNode "scm: gt-zero-confidence")
+               (GroundedPredicateNode "scm-eager: gt-zero-confidence")
                (ImplicationLink
                   (VariableNode "$A-485f010a")
                   (InheritanceLink
@@ -429,7 +429,7 @@
                )
             )
             (EvaluationLink
-               (GroundedPredicateNode "scm: gt-zero-confidence")
+               (GroundedPredicateNode "scm-eager: gt-zero-confidence")
                (VariableNode "$A-485f010a")
             )
             (ImplicationLink
@@ -441,7 +441,7 @@
             )
          )
          (ExecutionOutputLink
-            (GroundedSchemaNode "scm: modus-ponens-formula")
+            (GroundedSchemaNode "scm-eager: modus-ponens-formula")
             (ListLink
                (InheritanceLink
                   (ConceptNode "a")
@@ -494,7 +494,7 @@
                )
             )
             (EvaluationLink
-               (GroundedPredicateNode "scm: gt-zero-confidence")
+               (GroundedPredicateNode "scm-eager: gt-zero-confidence")
                (SubsetLink
                   (VariableNode "$A-42e1ada")
                   (InheritanceLink
@@ -504,12 +504,12 @@
                )
             )
             (EvaluationLink
-               (GroundedPredicateNode "scm: gt-zero-confidence")
+               (GroundedPredicateNode "scm-eager: gt-zero-confidence")
                (VariableNode "$A-42e1ada")
             )
          )
          (ExecutionOutputLink
-            (GroundedSchemaNode "scm: modus-ponens-formula")
+            (GroundedSchemaNode "scm-eager: modus-ponens-formula")
             (ListLink
                (InheritanceLink
                   (ConceptNode "a")
@@ -553,7 +553,7 @@
       (BindLink
          (AndLink
             (EvaluationLink
-               (GroundedPredicateNode "scm: gt-zero-confidence")
+               (GroundedPredicateNode "scm-eager: gt-zero-confidence")
                (EvaluationLink (stv 1 1)
                   (PredicateNode "alphabetical-order")
                   (ListLink
@@ -564,7 +564,7 @@
             )
          )
          (ExecutionOutputLink
-            (GroundedSchemaNode "scm: conditional-full-instantiation-scope-formula")
+            (GroundedSchemaNode "scm-eager: conditional-full-instantiation-scope-formula")
             (ListLink
                (InheritanceLink
                   (ConceptNode "a")
@@ -632,11 +632,11 @@
          (AndLink
             (VariableNode "$A-2a3abe9e")
             (EvaluationLink
-               (GroundedPredicateNode "scm: gt-zero-confidence")
+               (GroundedPredicateNode "scm-eager: gt-zero-confidence")
                (VariableNode "$A-2a3abe9e")
             )
             (EvaluationLink
-               (GroundedPredicateNode "scm: gt-zero-confidence")
+               (GroundedPredicateNode "scm-eager: gt-zero-confidence")
                (InheritanceLink
                   (VariableNode "$A-2a3abe9e")
                   (InheritanceLink
@@ -654,7 +654,7 @@
             )
          )
          (ExecutionOutputLink
-            (GroundedSchemaNode "scm: modus-ponens-formula")
+            (GroundedSchemaNode "scm-eager: modus-ponens-formula")
             (ListLink
                (InheritanceLink
                   (ConceptNode "a")
@@ -698,7 +698,7 @@
       (BindLink
          (AndLink
             (EvaluationLink
-               (GroundedPredicateNode "scm: gt-zero-confidence")
+               (GroundedPredicateNode "scm-eager: gt-zero-confidence")
                (EvaluationLink
                   (PredicateNode "alphabetical-order")
                   (ListLink
@@ -709,7 +709,7 @@
             )
          )
          (ExecutionOutputLink
-            (GroundedSchemaNode "scm: conditional-full-instantiation-scope-formula")
+            (GroundedSchemaNode "scm-eager: conditional-full-instantiation-scope-formula")
             (ListLink
                (InheritanceLink
                   (ConceptNode "d")
@@ -799,7 +799,7 @@
             )
          )
          (ExecutionOutputLink
-            (GroundedSchemaNode "scm: deduction-formula")
+            (GroundedSchemaNode "scm-eager: deduction-formula")
             (ListLink
                (InheritanceLink
                   (ConceptNode "a")
@@ -852,11 +852,11 @@
                )
             )
             (EvaluationLink
-               (GroundedPredicateNode "scm: gt-zero-confidence")
+               (GroundedPredicateNode "scm-eager: gt-zero-confidence")
                (VariableNode "$A-51055a30")
             )
             (EvaluationLink
-               (GroundedPredicateNode "scm: gt-zero-confidence")
+               (GroundedPredicateNode "scm-eager: gt-zero-confidence")
                (InheritanceLink
                   (VariableNode "$A-51055a30")
                   (InheritanceLink
@@ -867,7 +867,7 @@
             )
          )
          (ExecutionOutputLink
-            (GroundedSchemaNode "scm: modus-ponens-formula")
+            (GroundedSchemaNode "scm-eager: modus-ponens-formula")
             (ListLink
                (InheritanceLink
                   (ConceptNode "a")
@@ -920,7 +920,7 @@
                )
             )
             (EvaluationLink
-               (GroundedPredicateNode "scm: gt-zero-confidence")
+               (GroundedPredicateNode "scm-eager: gt-zero-confidence")
                (SubsetLink
                   (VariableNode "$A-2df312ff")
                   (InheritanceLink
@@ -930,12 +930,12 @@
                )
             )
             (EvaluationLink
-               (GroundedPredicateNode "scm: gt-zero-confidence")
+               (GroundedPredicateNode "scm-eager: gt-zero-confidence")
                (VariableNode "$A-2df312ff")
             )
          )
          (ExecutionOutputLink
-            (GroundedSchemaNode "scm: modus-ponens-formula")
+            (GroundedSchemaNode "scm-eager: modus-ponens-formula")
             (ListLink
                (InheritanceLink
                   (ConceptNode "d")
@@ -979,7 +979,7 @@
       (BindLink
          (AndLink
             (EvaluationLink
-               (GroundedPredicateNode "scm: gt-zero-confidence")
+               (GroundedPredicateNode "scm-eager: gt-zero-confidence")
                (EvaluationLink (stv 1 1)
                   (PredicateNode "alphabetical-order")
                   (ListLink
@@ -990,7 +990,7 @@
             )
          )
          (ExecutionOutputLink
-            (GroundedSchemaNode "scm: conditional-full-instantiation-scope-formula")
+            (GroundedSchemaNode "scm-eager: conditional-full-instantiation-scope-formula")
             (ListLink
                (InheritanceLink
                   (ConceptNode "a")
@@ -1058,7 +1058,7 @@
          (AndLink
             (VariableNode "$A-5e64c5c0")
             (EvaluationLink
-               (GroundedPredicateNode "scm: gt-zero-confidence")
+               (GroundedPredicateNode "scm-eager: gt-zero-confidence")
                (InheritanceLink
                   (VariableNode "$A-5e64c5c0")
                   (InheritanceLink
@@ -1068,7 +1068,7 @@
                )
             )
             (EvaluationLink
-               (GroundedPredicateNode "scm: gt-zero-confidence")
+               (GroundedPredicateNode "scm-eager: gt-zero-confidence")
                (VariableNode "$A-5e64c5c0")
             )
             (InheritanceLink
@@ -1080,7 +1080,7 @@
             )
          )
          (ExecutionOutputLink
-            (GroundedSchemaNode "scm: modus-ponens-formula")
+            (GroundedSchemaNode "scm-eager: modus-ponens-formula")
             (ListLink
                (InheritanceLink
                   (ConceptNode "d")

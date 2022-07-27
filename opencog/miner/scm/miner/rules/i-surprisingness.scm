@@ -87,7 +87,7 @@
   (define typed-db (TypedVariable db ConceptT))
   (define typed-ms (TypedVariable ms NumberT))
   ;; Formula
-  (define formula-name (string-append "scm: " (symbol->string mode) "-formula"))
+  (define formula-name (string-append "scm-eager: " (symbol->string mode) "-formula"))
   (define formula (GroundedSchema formula-name))
 
   (if (< 1 nary)

@@ -75,7 +75,7 @@
       (Present minsup-g)
       (absolutely-true-eval minsup-g))
     (ExecutionOutput
-      (GroundedSchema "scm: shallow-abstraction-formula")
+      (GroundedSchema "scm-eager: shallow-abstraction-formula")
       (List
         (Set)               ; Cannot know the structure of the rule
                             ; conclusion in advance, because we don't

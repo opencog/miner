@@ -69,7 +69,7 @@
       (Present minsup-pattern)
       (absolutely-true-eval minsup-pattern))
     (ExecutionOutput
-      (GroundedSchema "scm: emp-formula")
+      (GroundedSchema "scm-eager: emp-formula")
       (List
         ;; Conclusion
         (emp-eval pattern db)
