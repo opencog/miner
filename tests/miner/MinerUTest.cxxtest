@@ -1564,7 +1564,7 @@ void MinerUTest::test_type_support_2()
 	Handle TChoiceY = al(TYPE_CHOICE,
 	                     an(TYPE_INH_NODE, "UnorderedLink"),
 	                     an(TYPE_INH_NODE, "CrispOutputLink"),
-	                     an(TYPE_INH_NODE, "BooleanLink"));
+	                     an(TYPE_INH_NODE, "CrispInputLink"));
 	Handle VarXY = al(VARIABLE_SET,
 	                  al(TYPED_VARIABLE_LINK,
 	                     X, an(TYPE_INH_NODE, "ConceptNode")),
