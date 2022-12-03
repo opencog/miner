@@ -32,6 +32,7 @@ TARGET_LINK_LIBRARIES(minerutestutils
   miner
   guile-miner
   ${URE_LIBRARIES}
+  ${UNIFY_LIBRARIES}
 )
 
 ADD_CXXTEST(ValuationsUTest)
@@ -40,6 +41,7 @@ TARGET_LINK_LIBRARIES(ValuationsUTest
   miner
   guile-miner
   ${URE_LIBRARIES}
+  ${UNIFY_LIBRARIES}
 )
 
 ADD_CXXTEST(MinerUTest)
