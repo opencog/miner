@@ -40,7 +40,7 @@ To build and run the unit tests, from the `./build` directory enter
 ```
 Tests can be run in parallel as well:
 ```
-    make -j test ARGS=-j4
+    make -j check ARGS=-j4
 ```
 
 ### Install
