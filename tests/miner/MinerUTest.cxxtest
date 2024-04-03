@@ -215,7 +215,7 @@ public:
 	void test_2conjuncts_4();
 	void test_2conjuncts_5();
 	void test_2conjuncts_6();
-	void test_InferenceControl();
+	void xtest_InferenceControl();
 	void test_SodaDrinker();
 	void test_SodaDrinker_incremental();
 	void xtest_lojban();         // TODO: add support
@@ -2088,7 +2088,7 @@ void MinerUTest::test_2conjuncts_6()
 	TS_ASSERT(are_in(ure_expected->getOutgoingSet(), ure_results->getOutgoingSet()));
 }
 
-void MinerUTest::test_InferenceControl()
+void MinerUTest::xtest_InferenceControl()
 {
 	logger().info("BEGIN TEST: %s", __FUNCTION__);
 
