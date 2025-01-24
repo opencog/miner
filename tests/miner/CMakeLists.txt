@@ -13,7 +13,7 @@ ADD_CUSTOM_TARGET(test_atom_types DEPENDS test_types.h)
 INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR})
 
 ADD_LIBRARY (test-types SHARED
-   test_types.cc
+   test_types.h
    TestTypes.cc
 )
 
@@ -25,7 +25,7 @@ TARGET_LINK_LIBRARIES(test-types
 )
 
 ADD_LIBRARY(minerutestutils SHARED
-  MinerUTestUtils
+  MinerUTestUtils.cc
 )
 
 TARGET_LINK_LIBRARIES(minerutestutils
