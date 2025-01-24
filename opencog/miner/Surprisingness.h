@@ -23,6 +23,7 @@
 #ifndef OPENCOG_SURPRISINGNESS_H_
 #define OPENCOG_SURPRISINGNESS_H_
 
+#include <opencog/util/Counter.h>
 #include <opencog/atoms/base/Handle.h>
 #include <opencog/atoms/core/LambdaLink.h>
 #include <opencog/atomspace/AtomSpace.h>
@@ -30,6 +31,11 @@
 
 namespace opencog
 {
+//! a map from handle to double
+typedef Counter<Handle, double> HandleCounter;
+
+//! a map from handle to unsigned
+typedef Counter<Handle, unsigned> HandleUCounter;
 
 /**
  * Collection of tools to calculate pattern surprisingness.
