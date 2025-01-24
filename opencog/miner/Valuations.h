@@ -23,12 +23,19 @@
 #ifndef OPENCOG_VALUATIONS_H_
 #define OPENCOG_VALUATIONS_H_
 
+#include <opencog/util/Counter.h>
 #include <opencog/util/empty_string.h>
 #include <opencog/atoms/base/Handle.h>
 #include <opencog/atoms/core/Variables.h>
 
 namespace opencog
 {
+
+//! a map from handle to double
+typedef Counter<Handle, double> HandleCounter;
+
+//! a map from handle to unsigned
+typedef Counter<Handle, unsigned> HandleUCounter;
 
 class ValuationsBase
 {
