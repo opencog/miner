@@ -640,12 +640,12 @@ Handle MinerUtils::restricted_satisfying_set(const Handle& pattern,
 		gl = tmp_query_as->add_link(GET_LINK, vardecl, body);
 
 	// Run pattern matcher
-	SatisfyingSet sater(tmp_db_as.get());
+	QueueValuePtr qvp(createQueueValue());
+	SatisfyingSet sater(tmp_db_as.get(), qvp);
 	sater.max_results = ms;
 	sater.satisfy(PatternLinkCast(gl));
 
-	QueueValuePtr qv(sater.get_result_queue());
-	HandleSeq hs(qv->to_handle_seq());
+	HandleSeq hs(qvp->to_handle_seq());
 	return Handle(createUnorderedLink(std::move(hs), SET_LINK));
 }
 
