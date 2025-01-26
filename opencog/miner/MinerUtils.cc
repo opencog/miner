@@ -42,6 +42,7 @@
 #include <opencog/atoms/core/UnorderedLink.h>
 #include <opencog/atoms/pattern/PatternLink.h>
 #include <opencog/atoms/pattern/GetLink.h>
+#include <opencog/atoms/value/QueueValue.h>
 #include <opencog/query/Satisfier.h>
 
 #include <boost/range/algorithm/transform.hpp>
@@ -641,7 +642,8 @@ Handle MinerUtils::restricted_satisfying_set(const Handle& pattern,
 
 	// Run pattern matcher
 	QueueValuePtr qvp(createQueueValue());
-	SatisfyingSet sater(tmp_db_as.get(), qvp);
+	ContainerValuePtr cvp(qvp);
+	SatisfyingSet sater(tmp_db_as.get(), cvp);
 	sater.max_results = ms;
 	sater.satisfy(PatternLinkCast(gl));
 
