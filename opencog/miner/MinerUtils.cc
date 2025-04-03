@@ -42,6 +42,7 @@
 #include <opencog/atoms/core/UnorderedLink.h>
 #include <opencog/atoms/pattern/PatternLink.h>
 #include <opencog/atoms/pattern/GetLink.h>
+#include <opencog/atoms/value/ContainerValue.h>
 #include <opencog/atoms/value/QueueValue.h>
 #include <opencog/query/Satisfier.h>
 
