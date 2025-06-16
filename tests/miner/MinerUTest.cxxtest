@@ -522,6 +522,9 @@ void MinerUTest::test_is_pat_more_abstract_3()
 
 	// Left pattern is more abstract than right pattern, relative to Y.
 	TS_ASSERT(MinerUtils::is_pat_more_abstract(l_pat, r_pat, Y));
+
+	// Left pattern is not more abstract than right pattern, relative to Z.
+	TS_ASSERT(not MinerUtils::is_pat_more_abstract(l_pat, r_pat, Z));
 }
 
 void MinerUTest::xtest_is_pat_more_abstract_4()

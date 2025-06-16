@@ -1028,7 +1028,7 @@ HandleSeqSeqSeq MinerUtils::combinatorial_insert(const Handle& h,
 	HandleSeqSeq fst(from, to);
 	fst.push_back(head);
 	rst.push_back(fst);
-	return rst; 
+	return rst;
 }
 
 HandleSeqSeqSeq MinerUtils::partitions(const HandleSeq& hs)

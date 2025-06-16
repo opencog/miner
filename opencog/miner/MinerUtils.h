@@ -491,7 +491,7 @@ public:
 	 * r_blk = { List W A Z }
 	 *
 	 * l_blk is more abstract than r_blk relative to Z because the
-	 * matching values of Z in l_blk is a subset of the matching values
+	 * matching values of Z in r_blk is a subset of the matching values
 	 * of Z in l_blk.
 	 *
 	 * Warning to future developers: this method and the one below have
