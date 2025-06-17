@@ -527,7 +527,21 @@ public:
 	 * partition of conjunctions of clauses in l_pat) such that there
 	 * exists a subset rs of r_pat (meaning a subset of clauses of
 	 * r_pat) such that rs is a syntactic specialization, relative to
-	 * var, of each block lb of lp.
+	 * var, of each block lb of lp.  This indeed garanties that l_pat
+	 * is more abstract than r_pat, find the proof below.
+	 *
+	 * Let lp be a partition of l_blk and lbᵢ be the blocks of lp, let
+	 * rs be a subset of r_blk.  Let mᵢ be the matching values of var
+	 * according to pattern bᵢ and ms be the matching values of var
+	 * according to pattern rs.
+	 *
+	 * ∀ i ranging over the blocks of lp, if lbᵢ is syntactically more
+	 * abstract than rs, then ms ⊆ mᵢ.  Therefore ms ⊆ (⋂ᵢ mᵢ),
+	 * therefore l_blk is more abstract than rs.  Since rs is a subset
+	 * (i.e. a sub-conjunction) of r_blk, it is necessarily more
+	 * abstract than r_blk.  Since l_blk is more abstract than rs and
+	 * rs is more abstract than r_blk, by transitivity, l_blk is more
+	 * abstract than r_blk.  Quod Erat Demonstrandum.
 	 *
 	 * For instance
 	 *
