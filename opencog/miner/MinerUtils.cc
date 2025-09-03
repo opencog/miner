@@ -472,7 +472,7 @@ unsigned MinerUtils::support(const Handle& pattern,
 	                 { return component_support(cp, db, ms); });
 
 	// Return the product of all frequencies
-	return boost::accumulate(freqs, 1, std::multiplies<unsigned>());
+	return std::accumulate(freqs.begin(), freqs.end(), 1, std::multiplies<unsigned>());
 }
 
 unsigned MinerUtils::component_support(const Handle& component,
