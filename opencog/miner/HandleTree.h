@@ -26,7 +26,7 @@
 
 #include <opencog/util/empty_string.h>
 #include <opencog/atoms/base/Handle.h>
-#include <opencog/util/tree.h>
+#include <opencog/miner/tree.h>
 
 namespace opencog {
 
