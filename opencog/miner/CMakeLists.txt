@@ -3,6 +3,7 @@ ADD_LIBRARY(miner SHARED
 	MinerLogger.cc
 	MinerUtils.cc
 	HandleTree.cc
+	tree.cc
 	Valuations.cc
 	Surprisingness.cc
 )
@@ -21,6 +22,7 @@ INSTALL (FILES
 	MinerLogger.h
 	MinerUtils.h
 	HandleTree.h
+	tree.h
 	Valuations.h
 	Surprisingness.h
 	DESTINATION "include/opencog/miner"
