@@ -493,6 +493,14 @@
   (let* ((result (>= (get-cardinality db) (cog-number ms))))
     (bool->tv result)))
 
+(define (cog-cp ATOMSPACE ATOM-LIST)
+"
+  cog-cp ATOMSPACE ATOM-LIST - Copy the atoms in ATOM-LIST to ATOMSPACE.
+  Returns the list of copied atoms.
+"
+  (map (lambda (AT) (cog-new-atom AT ATOMSPACE)) ATOM-LIST)
+)
+
 (define (db->atomspace db)
 "
   Create an atomspace with all members of concept db in it.
