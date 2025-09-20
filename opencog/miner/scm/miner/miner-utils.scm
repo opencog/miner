@@ -478,7 +478,7 @@
 "
   Given a concept node C, return all its members
 "
-  (let* ((member-links (cog-filter 'MemberLink (cog-incoming-set C)))
+  (let* ((member-links (cog-incoming-by-type C 'MemberLink))
          (member-of-C (lambda (x) (equal? C (gdr x))))
          (members (map gar (filter member-of-C member-links))))
     members))
