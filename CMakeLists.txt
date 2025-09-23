@@ -12,6 +12,11 @@
 # cogutils already requires 3.12, so may as well ask for that.
 CMAKE_MINIMUM_REQUIRED(VERSION 3.12)
 
+# Python venv seems to need this.
+IF(CMAKE_VERSION VERSION_GREATER 3.31)
+   CMAKE_POLICY(SET CMP0177 NEW)
+ENDIF(CMAKE_VERSION VERSION_GREATER 3.31)
+
 PROJECT(miner)
 
 # ----------------------------------------------------------
@@ -101,32 +106,19 @@ include(Summary)
 # Check for boost. We need dynamic-linked, threaded libs by default.
 SET(Boost_USE_STATIC_LIBS OFF)
 SET(Boost_USE_MULTITHREADED ON)
-SET(MIN_BOOST 1.46)
 
 # Required boost packages
-FIND_PACKAGE(Boost ${MIN_BOOST} REQUIRED)
+FIND_PACKAGE(Boost CONFIG)
 
 IF(Boost_FOUND)
-	SET(Boost_FOUND_SAVE 1)
+	MESSAGE(STATUS "Boost version ${Boost_VERSION} found.")
 ELSE(Boost_FOUND)
-	MESSAGE(FATAL_ERROR "Boost ${MIN_BOOST} or newer is needed to build OpenCog!")
+	MESSAGE(FATAL_ERROR "Boost is needed to build OpenCog!")
 ENDIF(Boost_FOUND)
 
-# Opencog won't compile with Boost 1.51, some kind of conflict with
-# hash functions, see github bugs 1 and 36
-IF(105100 EQUAL ${Boost_VERSION})
-	MESSAGE(FATAL_ERROR "Boost version 1.51 will not work with OpenCog.  Please use a different version.")
-ENDIF(105100 EQUAL ${Boost_VERSION})
-MESSAGE(STATUS "Boost version ${Boost_VERSION} found.")
-
 # Optional boost packages; can build without these.
-FIND_PACKAGE(Boost ${MIN_BOOST} COMPONENTS python program_options QUIET)
-FIND_PACKAGE(Boost ${MIN_BOOST} COMPONENTS math_c99 QUIET)
-
-# Arghhh. Except cmake is treating above as required, not optional. #$%**&
-IF(Boost_FOUND_SAVE)
-	SET(Boost_FOUND 1)
-ENDIF(Boost_FOUND_SAVE)
+FIND_PACKAGE(Boost CONFIG COMPONENTS python program_options QUIET)
+FIND_PACKAGE(Boost CONFIG COMPONENTS math_c99 QUIET)
 
 # ----------------------------------------------------------
 # Needed for unit tests
