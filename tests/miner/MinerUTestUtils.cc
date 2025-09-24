@@ -70,8 +70,8 @@ Handle MinerUTestUtils::add_minsup_eval(AtomSpace& as,
 	                             pattern,
 	                             add_db_cpt(as),
 	                             an(NUMBER_NODE, std::to_string(minsup))));
-	if (TruthValue::DEFAULT_TV() != tv)
-		minsup_eval_h->setTruthValue(tv);
+	if (tv)
+		minsup_eval_h->setValue(truth_key(), tv);
 	return minsup_eval_h;
 }
 
@@ -396,7 +396,8 @@ HandleSeq MinerUTestUtils::ure_surp(AtomSpace& as,
 	HandleSeq surp_results_seq = surp_results->getOutgoingSet();
 	// Sort according to surprisingness
 	boost::sort(surp_results_seq, [](const Handle& lh, const Handle& rh) {
-			return lh->getTruthValue()->get_mean() > rh->getTruthValue()->get_mean();
+			return TruthValueCast(lh->getValue(truth_key()))->get_mean() >
+TruthValueCast(rh->getValue(truth_key()))->get_mean();
 		});
 	return surp_results_seq;
 }

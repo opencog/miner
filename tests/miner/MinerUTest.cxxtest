@@ -95,10 +95,10 @@ private:
 	 */
 	Handle mk_minsup_eval(int minsup,
 	                      const Handle& pattern,
-	                      TruthValuePtr tv=TruthValue::DEFAULT_TV());
+	                      TruthValuePtr = nullptr);
 	Handle mk_minsup_evals(int minsup,
 	                       const HandleSeq& patterns,
-	                       TruthValuePtr tv=TruthValue::DEFAULT_TV());
+	                       TruthValuePtr = nullptr);
 
 	/**
 	 * Make

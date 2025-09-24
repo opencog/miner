@@ -84,7 +84,7 @@ public:
 	static Handle add_minsup_eval(AtomSpace& as,
 	                              const Handle& pattern,
 	                              int minsup,
-	                              TruthValuePtr tv=TruthValue::DEFAULT_TV());
+	                              TruthValuePtr = nullptr);
 
 	/**
 	 * Repeat add_minsup_eval over a sequence of patterns.
@@ -92,7 +92,7 @@ public:
 	static Handle add_minsup_evals(AtomSpace& as,
 	                               const HandleSeq& patterns,
 	                               int minsup,
-	                               TruthValuePtr tv=TruthValue::DEFAULT_TV());
+	                               TruthValuePtr = nullptr);
 
 	/**
 	 * Insert

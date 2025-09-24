@@ -251,8 +251,8 @@ Handle MinerSCM::do_shallow_specialize(Handle pattern,
 	// Generate all shallow specializations
 	HandleSet shaspes =
 			MinerUtils::shallow_specialize(pattern, db_seq, ms, mv,
-					enable_type->getTruthValue()->get_mean() > 0,
-					enable_glob->getTruthValue()->get_mean() > 0,
+					TruthValueCast(enable_type->getValue(truth_key()))->get_mean() > 0,
+					TruthValueCast(enable_glob->getValue(truth_key()))->get_mean() > 0,
 					ignore_vars->getOutgoingSet());
 
 	return asp->add_link(SET_LINK, HandleSeq(shaspes.begin(), shaspes.end()));
